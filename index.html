@@ -1,835 +1,673 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Barcode & QR Code Generator - Toko</title>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalkulator Barcode + Web Serial</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    @keyframes buttonPress {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.95); }
+      100% { transform: scale(1); }
     }
-
-    body {
-      background: #f9f9f9;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px;
+    .button-press {
+      animation: buttonPress 0.1s ease-in-out;
     }
-
-    .calculator {
-      width: 100%;
-      max-width: 450px;
-      background: #e67e22;
-      padding: 25px;
-      border-radius: 25px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    }
-
-    #display {
-      background: #f0f0f0;
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 20px;
-      text-align: right;
-      font-family: monospace;
-      font-size: 1.1em;
-    }
-
-    .function-row, .buttons {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .function-row {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .buttons {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    button {
-      padding: 14px 8px;
-      border: none;
-      background: #ffffff;
-      color: #333;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 16px;
-      min-height: 48px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: box-shadow 0.15s ease;
-      font-weight: 600;
-      position: relative;
-      overflow: hidden;
-    }
-
-    button:active {
-      transform: scale(0.98);
-      box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3); /* Hijau lembut */
-    }
-
-    .function-btn {
-      background: #ffffff;
-    }
-    .function-btn:active {
-      background: #d35400;
-    }
-
-    .backspace-btn {
-      background: #c0392b;
-      color: white;
-    }
-    .backspace-btn:active {
-      background: #a93226;
-    }
-
-    .decimal-btn {
-      background: #ffffff;
-    }
-
-    .print-btn {
-      grid-column: span 3;
-      background: #ffffff !important;
-    }
-    .print-btn:active {
-      background: #27ae60 !important;
-    }
-
-    .active-mode {
-      background: #27ae60 !important;
-      color: white;
-    }
-
-    /* Preview berdampingan */
-    .preview-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 15px;
-    }
-
-    .preview-box {
-      flex: 1;
-      background: white;
-      border-radius: 20px;
-      padding: 8px;
-      text-align: center;
-      font-size: 12px;
-      color: #555;
-      min-height: 100px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .preview-box svg {
-      width: 100%;
-      max-height: 60px;
-      margin-top: 4px;
-    }
-
-    #qr-weight {
-      width: 100%;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #qr-weight canvas, #qr-weight img {
-      max-width: 100%;
-      max-height: 60px;
-    }
-
-    #status {
-      margin-top: 12px;
-      padding: 8px;
-      border-radius: 15px;
-      text-align: center;
-      color: white;
-      font-size: 13px;
-    }
-
-    .status-connected { background-color: #27ae60; }
-    .status-disconnected { background-color: #c0392b; }
-
-    #notification {
+    
+    /* Suara loading indicator */
+    .audio-loading {
       position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 16px;
-      border-radius: 5px;
-      display: none;
+      top: 10px;
+      right: 10px;
+      background: #4CAF50;
       color: white;
-      background-color: #2c3e50;
-      max-width: 90%;
-      text-align: center;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
       z-index: 1000;
-      font-size: 14px;
+    }
+    .audio-loading.show {
+      opacity: 1;
     }
   </style>
 </head>
-<body>
-  <div class="calculator">
-    <div id="display">
-      <div>KODE: <span id="current-id">000000</span></div>
-      <div>BERAT: <span id="current-weight">00000</span></div>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="audio-loading" id="audio-status">Audio: Memuat...</div>
+  
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">Kalkulator Barcode</h1>
+    
+    <!-- Display -->
+    <div class="bg-gray-900 text-white rounded-lg p-4 mb-4 text-right display text-2xl font-semibold h-16 overflow-x-auto overflow-y-hidden flex items-center justify-end">
+      <span id="display">0</span>
     </div>
     
-    <div class="function-row">
-      <button id="id-btn" class="function-btn active-mode" onclick="setInputMode('id'); playClickSound()">KODE</button>
-      <button id="weight-btn" class="function-btn" onclick="setInputMode('weight'); playClickSound()">BERAT</button>
-      <button class="backspace-btn" onclick="backspace(); playClickSound()">⌫</button>
+    <!-- Barcode Preview -->
+    <div class="mb-6 bg-white p-4 rounded-lg border border-gray-300 flex justify-center">
+      <svg id="barcode"></svg>
     </div>
     
-    <div class="function-row">
-      <button class="function-btn" onclick="clearInput(); playClickSound()">CLEAR</button>
-      <button class="function-btn" onclick="generate(); playClickSound()">GENERATE</button>
-      <button class="function-btn" onclick="connectToPrinter(); playClickSound()">CONNECT</button>
+    <!-- Connection Status -->
+    <div id="status" class="mb-4 p-3 rounded-lg text-center text-sm">
+      <span class="status-text">Printer belum terhubung</span>
     </div>
     
-    <div class="buttons">
-      <button onclick="appendNumber('1'); playClickSound()">1</button>
-      <button onclick="appendNumber('2'); playClickSound()">2</button>
-      <button onclick="appendNumber('3'); playClickSound()">3</button>
-      
-      <button onclick="appendNumber('4'); playClickSound()">4</button>
-      <button onclick="appendNumber('5'); playClickSound()">5</button>
-      <button onclick="appendNumber('6'); playClickSound()">6</button>
-      
-      <button onclick="appendNumber('7'); playClickSound()">7</button>
-      <button onclick="appendNumber('8'); playClickSound()">8</button>
-      <button onclick="appendNumber('9'); playClickSound()">9</button>
-      
-      <button onclick="appendNumber('0'); playClickSound()">0</button>
-      <button onclick="appendNumber('00'); playClickSound()">00</button>
-      <button class="decimal-btn" onclick="appendDecimal(); playClickSound()">.</button>
-      
-      <button class="print-btn function-btn" onclick="printBarcode(); playClickSound()">PRINT</button>
+    <!-- Notifications -->
+    <div id="notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+      <span id="notification-text"></span>
     </div>
-
-    <!-- Preview berdampingan -->
-    <div class="preview-row">
-      <div class="preview-box">
-        <div>KODE (Barcode)</div>
-        <svg id="svg-id"></svg>
-      </div>
-      <div class="preview-box">
-        <div>BERAT (QR Code)</div>
-        <div id="qr-weight"></div>
-      </div>
+    
+    <!-- Keypad -->
+    <div class="grid grid-cols-4 gap-3 mb-4">
+      <!-- Row 1 -->
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="1">1</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="2">2</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="3">3</button>
+      <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-lg transition duration-150" id="backspace">←</button>
+      
+      <!-- Row 2 -->
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="4">4</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="5">5</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="6">6</button>
+      <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-lg transition duration-150" id="reset">C</button>
+      
+      <!-- Row 3 -->
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="7">7</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="8">8</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="9">9</button>
+      <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-lg transition duration-150" id="print">Print</button>
+      
+      <!-- Row 4 -->
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="0">0</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="00">00</button>
+      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" id="decimal-btn" data-value=".">.</button>
+      <button class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg transition duration-150" id="connect">Connect</button>
     </div>
-
-    <div id="status" class="status-disconnected">Printer: Tidak Terkoneksi</div>
+    
+    <div class="mt-4 text-center text-sm text-gray-500">
+      <p>Ketik angka untuk menghasilkan barcode, lalu tekan Connect dan Print</p>
+      <p class="mt-1 text-xs">Gunakan Chrome/Edge untuk koneksi Web Serial API</p>
+    </div>
   </div>
-  <div id="notification"></div>
 
   <script>
-    let currentInputMode = 'id';
-    let kodeValue = '';
-    let beratValue = '';
-    let port = null;
-    let writer = null;
-    let generated = false;
-    let qrCodeInstance = null;
-    
-    // Audio context untuk efek suara
+    // Audio system
     let audioContext = null;
-    let clickSoundBuffer = null;
+    let isAudioInitialized = false;
+    const audioStatus = document.getElementById('audio-status');
     
-    // Inisialisasi audio
+    // Initialize audio
     function initAudio() {
       try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        createClickSound();
-        console.log('Audio initialized successfully');
+        if (window.AudioContext || window.webkitAudioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          
+          // Create a simple test tone to verify audio works
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          gainNode.gain.value = 0.001; // Very quiet test
+          oscillator.frequency.value = 440;
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.01);
+          
+          isAudioInitialized = true;
+          audioStatus.textContent = "Audio: Siap";
+          setTimeout(() => {
+            audioStatus.classList.remove('show');
+          }, 2000);
+          
+          console.log("Audio initialized successfully");
+        } else {
+          audioStatus.textContent = "Audio: Tidak didukung";
+          setTimeout(() => {
+            audioStatus.classList.remove('show');
+          }, 2000);
+        }
       } catch (error) {
-        console.log('Web Audio API not supported:', error);
+        console.log("Audio initialization error:", error);
+        audioStatus.textContent = "Audio: Error";
+        setTimeout(() => {
+          audioStatus.classList.remove('show');
+        }, 2000);
       }
     }
     
-    // Buat efek suara klik sederhana
-    function createClickSound() {
-      if (!audioContext) return;
-      
-      // Durasi suara (dalam detik)
-      const duration = 0.1;
-      const sampleRate = audioContext.sampleRate;
-      const numFrames = duration * sampleRate;
-      
-      // Buat audio buffer
-      const buffer = audioContext.createBuffer(1, numFrames, sampleRate);
-      const channelData = buffer.getChannelData(0);
-      
-      // Generate suara klik (beep pendek)
-      const frequency = 800; // Frekuensi dalam Hz
-      for (let i = 0; i < numFrames; i++) {
-        // Envelope untuk mencegah popping
-        const envelope = (i < numFrames * 0.1) ? i / (numFrames * 0.1) : 
-                        (i > numFrames * 0.7) ? 1 - ((i - numFrames * 0.7) / (numFrames * 0.3)) : 1;
-        
-        // Gelombang sinus
-        channelData[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * envelope * 0.2;
+    // Show audio status
+    audioStatus.classList.add('show');
+    
+    // Play sound function
+    function playSound(type = 'click', frequency = 800, duration = 0.1, volume = 0.2) {
+      if (!isAudioInitialized) {
+        initAudio();
+        if (!isAudioInitialized) return;
       }
       
-      clickSoundBuffer = buffer;
-    }
-    
-    // Fungsi untuk memainkan efek suara
-    function playClickSound() {
       try {
-        // Jika audio belum diinisialisasi, inisialisasi sekarang
-        if (!audioContext) {
-          initAudio();
+        // Resume audio context if suspended (required by some browsers)
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
         }
         
-        // Jika masih belum ada audio context, keluar
-        if (!audioContext || !clickSoundBuffer) {
-          return;
-        }
-        
-        // Buat source audio
-        const source = audioContext.createBufferSource();
-        source.buffer = clickSoundBuffer;
-        
-        // Buat gain node untuk kontrol volume
+        const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        gainNode.gain.value = 0.3; // Volume 30%
         
-        // Hubungkan node
-        source.connect(gainNode);
+        oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        // Mainkan suara
-        source.start(0);
-        
-        // Bersihkan setelah selesai
-        source.onended = () => {
-          source.disconnect();
-          gainNode.disconnect();
-        };
-      } catch (error) {
-        console.log('Error playing sound:', error);
-      }
-    }
-    
-    // Fungsi untuk memainkan suara yang berbeda untuk tombol khusus
-    function playSpecialSound(type = 'click') {
-      if (!audioContext) {
-        initAudio();
-        if (!audioContext) return;
-      }
-      
-      try {
-        const source = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        // Atur parameter berdasarkan jenis suara
-        let frequency = 600;
-        let volume = 0.2;
-        let duration = 0.15;
-        
+        // Set parameters based on sound type
         switch(type) {
-          case 'backspace':
+          case 'number':
+            frequency = 600 + Math.random() * 100;
+            volume = 0.15;
+            break;
+          case 'delete':
             frequency = 400;
-            volume = 0.25;
+            volume = 0.2;
+            duration = 0.08;
             break;
           case 'function':
             frequency = 1000;
-            volume = 0.2;
+            volume = 0.18;
             break;
           case 'print':
             frequency = 1200;
-            duration = 0.2;
-            volume = 0.25;
+            duration = 0.15;
+            volume = 0.2;
             break;
           case 'success':
             frequency = 800;
-            duration = 0.3;
+            duration = 0.2;
             volume = 0.25;
+            break;
+          case 'error':
+            frequency = 300;
+            duration = 0.15;
+            volume = 0.25;
+            break;
+          case 'connect':
+            frequency = 600;
+            duration = 0.2;
+            volume = 0.22;
             break;
         }
         
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
         
-        source.frequency.value = frequency;
-        source.type = 'sine';
-        
-        // Atur envelope volume
+        // Set envelope for smooth sound
         const now = audioContext.currentTime;
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
         
-        source.start(now);
-        source.stop(now + duration);
+        oscillator.start(now);
+        oscillator.stop(now + duration);
         
-        // Bersihkan setelah selesai
-        source.onended = () => {
-          source.disconnect();
+        // Cleanup
+        oscillator.onended = () => {
+          oscillator.disconnect();
           gainNode.disconnect();
         };
       } catch (error) {
-        console.log('Error playing special sound:', error);
+        console.log("Sound error:", error);
       }
     }
-
-    function setInputMode(mode) {
-      currentInputMode = mode;
-      document.getElementById('id-btn').classList.toggle('active-mode', mode === 'id');
-      document.getElementById('weight-btn').classList.toggle('active-mode', mode === 'weight');
+    
+    // Play click sound (simplified version)
+    function playClickSound() {
+      playSound('number');
     }
     
-    function appendNumber(num) {
-      if (currentInputMode === 'id') {
-        if (num === ',' || num === '.') return; // abaikan koma/titik di ID
-        if (kodeValue.length < 12) {
-          if (num === '00') {
-            if (kodeValue.length <= 10) kodeValue += '00';
-          } else {
-            kodeValue += num;
+    // Elements
+    const display = document.getElementById('display');
+    const barcodeSvg = document.getElementById('barcode');
+    const status = document.getElementById('status');
+    const statusText = document.querySelector('.status-text');
+    const notification = document.getElementById('notification');
+    const notificationText = document.getElementById('notification-text');
+    const decimalBtn = document.getElementById('decimal-btn');
+    
+    // State
+    let currentValue = '0';
+    let port = null;
+    let writer = null;
+    
+    // Initialize barcode with default value
+    updateBarcode();
+    
+    // Initialize audio on first user interaction
+    document.addEventListener('click', function initAudioOnInteraction() {
+      if (!isAudioInitialized) {
+        initAudio();
+      }
+      document.removeEventListener('click', initAudioOnInteraction);
+    }, { once: true });
+    
+    // Update barcode
+    function updateBarcode() {
+      if (currentValue === '0') {
+        barcodeSvg.innerHTML = '';
+      } else {
+        JsBarcode(barcodeSvg, currentValue, {
+          format: "CODE128",
+          width: 2,
+          height: 80,
+          displayValue: true,
+          fontSize: 16,
+          margin: 10,
+          valid: function(data) {
+            return /^[\x00-\x7F]+$/.test(data);
           }
-        }
-      } else if (currentInputMode === 'weight') {
-        // Untuk berat, kita hanya terima angka (titik akan ditangani di appendDecimal)
-        if (num === ',' || num === '.') return;
-        if (beratValue.length < 10) {
-          if (num === '00') {
-            if (beratValue.length <= 8) beratValue += '00';
-          } else {
-            beratValue += num;
-          }
-        }
+        });
       }
-      updateDisplay();
     }
     
-    function appendDecimal() {
-      if (currentInputMode === 'weight') {
-        // Hanya izinkan satu titik desimal
-        if (!beratValue.includes('.') && beratValue.length < 9) {
-          // Jika beratValue kosong, tambahkan "0." 
-          if (beratValue === '' || beratValue === '0') {
-            beratValue = '0.';
-          } else {
-            beratValue += '.';
-          }
-        }
-      }
-      updateDisplay();
-    }
-    
-    function backspace() {
-      playSpecialSound('backspace');
-      if (currentInputMode === 'id' && kodeValue.length > 0) {
-        kodeValue = kodeValue.slice(0, -1);
-      } else if (currentInputMode === 'weight' && beratValue.length > 0) {
-        beratValue = beratValue.slice(0, -1);
-      }
-      updateDisplay();
-    }
-    
-    function clearInput() {
-      playSpecialSound('backspace');
-      kodeValue = '';
-      beratValue = '';
-      generated = false;
-      if (qrCodeInstance) {
-        qrCodeInstance.clear();
-      }
-      document.getElementById('qr-weight').innerHTML = '';
-      updateDisplay();
-    }
-    
+    // Update display and barcode
     function updateDisplay() {
-      document.getElementById('current-id').textContent = kodeValue || '000000';
-      document.getElementById('current-weight').textContent = beratValue || '0';
+      display.textContent = currentValue;
+      updateBarcode();
     }
     
-    function formatBeratValue(berat) {
-      // Format berat untuk ditampilkan: pastikan format desimal yang benar
-      if (berat === '' || berat === '0') return '0';
+    // Show notification
+    function showNotification(message, duration = 3000) {
+      notificationText.textContent = message;
+      notification.classList.remove('hidden');
       
-      // Jika berakhir dengan titik, biarkan (misal: "12." berarti masih input)
-      if (berat.endsWith('.')) return berat;
+      setTimeout(() => {
+        notification.classList.add('hidden');
+      }, duration);
+    }
+    
+    // Update status display
+    function updateStatus(message, type = 'info') {
+      statusText.textContent = message;
       
-      // Hilangkan nol yang tidak perlu di belakang koma
-      if (berat.includes('.')) {
-        let parts = berat.split('.');
-        if (parts[1] === '0' || parts[1] === '00' || parts[1] === '000') {
-          return parts[0]; // Hanya tampilkan angka bulat jika desimal .0
-        }
+      if (type === 'error') {
+        status.className = 'mb-4 p-3 rounded-lg bg-red-100 text-red-800 text-center text-sm';
+        playSound('error');
+      } else if (type === 'success') {
+        status.className = 'mb-4 p-3 rounded-lg bg-green-100 text-green-800 text-center text-sm';
+        playSound('success');
+      } else if (type === 'warning') {
+        status.className = 'mb-4 p-3 rounded-lg bg-yellow-100 text-yellow-800 text-center text-sm';
+      } else {
+        status.className = 'mb-4 p-3 rounded-lg bg-blue-100 text-blue-800 text-center text-sm';
       }
-      
-      return berat;
     }
     
-    function validateBerat(berat) {
-      // Validasi input berat
-      if (!berat.trim()) return false;
-      
-      // Pastikan hanya angka dan satu titik desimal
-      const regex = /^\d*\.?\d*$/;
-      if (!regex.test(berat)) return false;
-      
-      // Tidak boleh dimulai dengan titik
-      if (berat.startsWith('.')) return false;
-      
+    // Check if value can accept decimal point
+    function canAddDecimal(value) {
+      if (value.includes('.')) return false;
+      if (value === '0' || value === '') return true;
+      if (value.length >= 20) return false;
       return true;
     }
     
-    function generate() {
-      playSpecialSound('function');
-      if (!kodeValue.trim()) {
-        showNotification('Kode tidak boleh kosong');
-        return;
-      }
-
-      // Generate barcode KODE
-      try {
-        JsBarcode("#svg-id", kodeValue, {
-          format: "CODE128",
-          displayValue: false,
-          height: 40,
-          margin: 2,
-          fontSize: 0
-        });
-      } catch (e) {
-        showNotification('Kode tidak valid');
-        return;
-      }
-
-      // Validasi dan format berat
-      if (!validateBerat(beratValue)) {
-        showNotification('Berat tidak valid. Gunakan format angka (contoh: 12.5)');
-        return;
-      }
-      
-      // Format berat untuk ditampilkan
-      const formattedBerat = formatBeratValue(beratValue);
-      const displayBerat = formattedBerat === '0' ? '0' : formattedBerat;
-      
-      // Jika berat kosong atau hanya "0", minta input
-      if (beratValue === '' || beratValue === '0') {
-        showNotification('Masukkan berat yang valid');
-        return;
-      }
-
-      // Generate QR Code untuk BERAT
-      const qrContainer = document.getElementById('qr-weight');
-      qrContainer.innerHTML = '';
-      
-      if (qrCodeInstance) {
-        qrCodeInstance.clear();
-      }
-      
-      // Gunakan nilai asli untuk QR Code (dengan titik)
-      qrCodeInstance = new QRCode(qrContainer, {
-        text: beratValue,
-        width: 100,
-        height: 100,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-
-      generated = true;
-      playSpecialSound('success');
-      showNotification('Barcode & QR Code berhasil digenerate');
+    // Validate barcode with decimal point
+    function validateBarcodeValue(value) {
+      if (value.startsWith('.') || value.endsWith('.')) return false;
+      const dotCount = (value.match(/\./g) || []).length;
+      if (dotCount > 1) return false;
+      return /^\d+(\.\d+)?$/.test(value);
     }
     
-    // Fungsi untuk membuat perintah QR Code ESC/POS
-    function generateQRCodeCommand(data) {
-      // Pastikan data dalam format string
-      data = String(data);
-      
-      // Perintah ESC/POS untuk QR Code
-      const GS = 0x1D; // Group Separator
-      
-      // 1. Set QR Code model (Model 2 - paling umum)
-      let cmd = [GS, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00];
-      
-      // 2. Set QR Code size (ukuran modul 6-8 biasanya bagus)
-      cmd = cmd.concat([GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x06]);
-      
-      // 3. Set error correction level (H = 30%)
-      cmd = cmd.concat([GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x48]);
-      
-      // 4. Simpan data QR Code
-      const dataLength = data.length + 3;
-      const pL = dataLength % 256;
-      const pH = Math.floor(dataLength / 256);
-      
-      cmd = cmd.concat([GS, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30]);
-      
-      // Tambahkan data sebagai bytes
-      const encoder = new TextEncoder();
-      const dataBytes = encoder.encode(data);
-      cmd = cmd.concat(Array.from(dataBytes));
-      
-      // 5. Print QR Code
-      cmd = cmd.concat([GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]);
-      
-      return new Uint8Array(cmd);
-    }
-    
-    // Fungsi untuk membuat perintah barcode ESC/POS
-    function generateBarcodeCommand(data) {
-      // Pastikan data dalam format string
-      data = String(data);
-      
-      // Perintah untuk barcode CODE128
-      const GS = 0x1D;
-      let cmd = [];
-      
-      // Set barcode height
-      cmd.push(GS, 0x68, 0x50); // height = 80 dots
-      
-      // Set barcode width
-      cmd.push(GS, 0x77, 0x02); // width = 2
-      
-      // Print barcode CODE128
-      cmd.push(GS, 0x6B, 0x49); // CODE128
-      cmd.push(data.length); // panjang data
-      
-      // Tambahkan data sebagai bytes
-      const encoder = new TextEncoder();
-      const dataBytes = encoder.encode(data);
-      cmd = cmd.concat(Array.from(dataBytes));
-      
-      return new Uint8Array(cmd);
-    }
-    
-    async function connectToPrinter() {
-      playSpecialSound('function');
-      try {
-        if (!("serial" in navigator)) {
-          showNotification("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.");
-          return false;
+    // Number button click handler
+    document.querySelectorAll('.number-btn').forEach(button => {
+      button.addEventListener('click', function() {
+        // Animation
+        this.classList.add('button-press');
+        setTimeout(() => {
+          this.classList.remove('button-press');
+        }, 100);
+        
+        // Sound effect
+        const value = this.getAttribute('data-value');
+        if (value === '.') {
+          playSound('function');
+        } else {
+          playClickSound();
         }
+        
+        if (value === '.') {
+          if (canAddDecimal(currentValue)) {
+            if (currentValue === '0') {
+              currentValue = '0.';
+            } else {
+              currentValue += '.';
+            }
+            updateDisplay();
+          } else {
+            playSound('error');
+            showNotification('Titik desimal sudah ada', 1000);
+          }
+          return;
+        }
+        
+        if (currentValue === '0') {
+          if (currentValue === '0' && !currentValue.includes('.')) {
+            currentValue = value;
+          } else {
+            currentValue += value;
+          }
+        } else {
+          if (currentValue.includes('.')) {
+            const decimalPart = currentValue.split('.')[1];
+            if (decimalPart.length < 3) {
+              currentValue += value;
+            } else {
+              playSound('error');
+              showNotification('Maksimal 3 digit desimal', 1000);
+            }
+          } else {
+            if (currentValue.length < 20) {
+              currentValue += value;
+            } else {
+              playSound('error');
+              showNotification('Maksimal 20 digit', 1000);
+            }
+          }
+        }
+        
+        if (!validateBarcodeValue(currentValue) && currentValue !== '0') {
+          playSound('error');
+          showNotification('Format barcode tidak valid', 1000);
+          currentValue = currentValue.slice(0, -1);
+          if (currentValue === '') currentValue = '0';
+        }
+        
+        updateDisplay();
+      });
+    });
+    
+    // Backspace button
+    document.getElementById('backspace').addEventListener('click', function() {
+      // Animation
+      this.classList.add('button-press');
+      setTimeout(() => {
+        this.classList.remove('button-press');
+      }, 100);
+      
+      // Sound
+      playSound('delete');
+      
+      if (currentValue.length > 1) {
+        currentValue = currentValue.slice(0, -1);
+      } else {
+        currentValue = '0';
+      }
+      
+      updateDisplay();
+    });
+    
+    // Reset button
+    document.getElementById('reset').addEventListener('click', function() {
+      // Animation
+      this.classList.add('button-press');
+      setTimeout(() => {
+        this.classList.remove('button-press');
+      }, 100);
+      
+      // Sound
+      playSound('delete');
+      
+      currentValue = '0';
+      updateDisplay();
+    });
+    
+    // Connect button - Web Serial API
+    document.getElementById('connect').addEventListener('click', async function() {
+      // Animation
+      this.classList.add('button-press');
+      setTimeout(() => {
+        this.classList.remove('button-press');
+      }, 100);
+      
+      // Sound
+      playSound('connect');
+      
+      if (!("serial" in navigator)) {
+        updateStatus("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge versi terbaru.", "error");
+        showNotification("Browser tidak mendukung Web Serial API");
+        return;
+      }
 
-        showNotification("Memilih printer...");
+      try {
+        updateStatus("Memilih printer...", "info");
         port = await navigator.serial.requestPort();
-        showNotification("Membuka koneksi...");
+        updateStatus("Membuka koneksi...", "info");
         await port.open({ baudRate: 9600 });
         writer = port.writable.getWriter();
-        updateConnectionStatus(true);
-        playSpecialSound('success');
-        showNotification('Printer berhasil terhubung!');
-        return true;
-      } catch (error) {
-        console.error("Connection error:", error);
-        if (error.name === 'NotFoundError') {
-          showNotification("Tidak ada printer yang dipilih");
+        updateStatus("✅ Printer terhubung via Serial/USB", "success");
+        showNotification("Printer berhasil terhubung!");
+        
+      } catch (err) {
+        console.error("Connection error:", err);
+        if (err.name === 'NotFoundError') {
+          updateStatus("❌ Tidak ada printer yang dipilih", "error");
         } else {
-          showNotification("Gagal terhubung: " + error.message);
+          updateStatus("❌ Gagal terhubung ke printer: " + err.message, "error");
         }
-        updateConnectionStatus(false);
-        return false;
+        showNotification("Gagal terhubung ke printer");
       }
+    });
+    
+    // Function to generate barcode command ESC/POS
+    function generateBarcodeCommand(value) {
+      const esc = '\x1B';
+      const gs = '\x1D';
+      
+      let cmd = '';
+      cmd += gs + 'h' + '\x50'; // height = 80 dots
+      cmd += gs + 'w' + '\x02'; // width = 2
+      cmd += gs + 'k' + '\x49'; // CODE128
+      cmd += String.fromCharCode(value.length) + value;
+      
+      return cmd;
     }
     
-    async function printBarcode() {
-      playSpecialSound('print');
-      if (!generated) {
-        showNotification('Harap klik GENERATE dulu');
+    // Print button - MODIFIED spacing as requested (5 empty lines after barcode)
+    document.getElementById('print').addEventListener('click', async function() {
+      // Animation
+      this.classList.add('button-press');
+      setTimeout(() => {
+        this.classList.remove('button-press');
+      }, 100);
+      
+      // Sound
+      playSound('print');
+      
+      if (currentValue === '0') {
+        playSound('error');
+        showNotification('Tidak ada barcode untuk dicetak');
         return;
       }
+
       if (!writer) {
-        showNotification('Printer belum terhubung. Klik CONNECT.');
+        playSound('error');
+        showNotification('Printer belum terhubung. Klik tombol Connect dulu.');
+        return;
+      }
+
+      if (!validateBarcodeValue(currentValue) && currentValue !== '0') {
+        playSound('error');
+        showNotification('Format barcode tidak valid untuk dicetak');
         return;
       }
 
       try {
-        showNotification("Mengirim ke printer...");
-
-        // Inisialisasi printer
+        updateStatus("Mengirim data ke printer...", "info");
+        
+        // ESC/POS commands
+        const esc = '\x1B';
+        const gs = '\x1D';
         const encoder = new TextEncoder();
         let commands = [];
         
-        // Reset printer
+        // Initialize printer
         commands.push(0x1B, 0x40); // ESC @
         
-        // Set alignment center
+        // Set alignment to center for text
         commands.push(0x1B, 0x61, 0x01); // ESC a 1 (center)
         
-        // Format berat untuk ditampilkan
-        const displayBerat = formatBeratValue(beratValue);
+        // Print the number with normal font size immediately
+        const textBytes = encoder.encode(currentValue);
+        commands = commands.concat(Array.from(textBytes));
         
-        // Baris 1: [Kode Produk][berat produk]
-        const produkText = encoder.encode("[" + kodeValue + "][" + displayBerat + "]\n");
-        commands = commands.concat(Array.from(produkText));
+        // Add 1 empty line after the number
+        commands.push(0x0A); // \n (1 baris kosong)
         
-        // Feed lines
-        commands.push(0x0A); // \n
+        // Set alignment to center for barcode
+        commands.push(0x1B, 0x61, 0x01); // ESC a 1 (center) again for barcode
         
-        // Baris 2: [Barcode]
-        // Set alignment center untuk barcode
-        commands.push(0x1B, 0x61, 0x01); // ESC a 1 (center)
+        // Generate barcode command
+        const barcodeCmd = generateBarcodeCommand(currentValue);
+        const barcodeBytes = encoder.encode(barcodeCmd);
+        commands = commands.concat(Array.from(barcodeBytes));
         
-        // Cetak barcode KODE
-        const barcodeCmd = generateBarcodeCommand(kodeValue);
-        commands = commands.concat(Array.from(barcodeCmd));
+        // **MODIFIED: Add 5 empty lines after barcode**
+        commands.push(0x0A, 0x0A, 0x0A); // \n \n \n (5 baris kosong)
         
-        // Feed lines setelah barcode
-        commands.push(0x0A); // \n
-        
-        // Baris 3: [QR Code]
-        // Cetak QR Code untuk BERAT
-        const qrCmd = generateQRCodeCommand(beratValue);
-        commands = commands.concat(Array.from(qrCmd));
-        
-        // Feed lines setelah QR Code
-        commands.push(0x0A, 0x0A); // \n \n
-        
-        // Potong kertas (full cut)
+        // Cut paper (full cut)
         commands.push(0x1D, 0x56, 0x41, 0x00); // GS V 41 0
         
-        // Kirim semua perintah ke printer
+        // Send all commands to printer
         await writer.write(new Uint8Array(commands));
         
-        playSpecialSound('success');
-        showNotification('Berhasil dicetak!');
-      } catch (error) {
-        console.error("Print error:", error);
-        showNotification("Gagal cetak: " + error.message);
+        updateStatus("✅ Barcode berhasil dikirim ke printer!", "success");
+        showNotification("Barcode berhasil dicetak!");
         
-        // Coba alternatif format QR Code jika gagal
-        if (error.message.includes("not supported") || error.message.includes("invalid")) {
+      } catch (err) {
+        console.error("Print error:", err);
+        updateStatus("❌ Gagal mengirim ke printer: " + err.message, "error");
+        showNotification("Gagal mencetak barcode");
+        
+        if (err.message.includes("invalid") || err.message.includes("character")) {
           showNotification("Mencoba format alternatif...");
           await tryAlternativePrint();
         }
       }
-    }
+    });
     
-    // Alternatif format QR Code jika yang pertama gagal
+    // Alternative print if format with dot is not supported
     async function tryAlternativePrint() {
       try {
+        const esc = '\x1B';
+        const gs = '\x1D';
         const encoder = new TextEncoder();
         let commands = [];
         
-        // Reset printer
-        commands.push(0x1B, 0x40);
+        commands.push(0x1B, 0x40); // Initialize printer
+        commands.push(0x1B, 0x61, 0x01); // Center align
         
-        // Set alignment center
-        commands.push(0x1B, 0x61, 0x01); // center
+        // Print the number immediately
+        const textBytes = encoder.encode(currentValue);
+        commands = commands.concat(Array.from(textBytes));
         
-        // Format berat untuk ditampilkan
-        const displayBerat = formatBeratValue(beratValue);
+        // Add 1 empty line after the number
+        commands.push(0x0A);
         
-        // Baris 1: [Kode Produk][berat produk]
-        const produkText = encoder.encode("[" + kodeValue + "][" + displayBerat + "]\n\n");
-        commands = commands.concat(Array.from(produkText));
+        // If printer doesn't support dot, replace with dash
+        let barcodeForPrint = currentValue;
+        if (currentValue.includes('.')) {
+          barcodeForPrint = currentValue.replace('.', '-');
+          showNotification('Mengganti titik dengan strip (-) untuk barcode');
+        }
         
-        // Alternatif: Perintah yang lebih sederhana untuk QR Code
-        const GS = 0x1D;
+        // Set alignment to center for barcode
+        commands.push(0x1B, 0x61, 0x01); // Center align
         
-        // Set alignment center untuk barcode
-        commands.push(0x1B, 0x61, 0x01); // center
+        // Set barcode height and width
+        commands.push(0x1D, 0x68, 0x50); // GS h 80 (height)
+        commands.push(0x1D, 0x77, 0x02); // GS w 2 (width)
         
-        // Cetak barcode
-        const barcodeCmd = generateBarcodeCommand(kodeValue);
-        commands = commands.concat(Array.from(barcodeCmd));
+        // CODE128 barcode
+        commands.push(0x1D, 0x6B, 0x49); // GS k 73 (CODE128)
+        commands.push(barcodeForPrint.length); // Length
+        const barcodeBytes = encoder.encode(barcodeForPrint);
+        commands = commands.concat(Array.from(barcodeBytes));
         
-        // Feed lines
-        commands.push(0x0A); // \n
+        // **MODIFIED: Add 5 empty lines after barcode**
+        commands.push(0x0A, 0x0A, 0x0A, 0x0A, 0x0A); // 5 baris kosong
         
-        // Alternatif QR Code
-        commands = commands.concat([GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x08]); // size
-        commands = commands.concat([GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x33]); // error correction
-        
-        // Store data
-        const dataLength = beratValue.length + 3;
-        const pL = dataLength % 256;
-        const pH = Math.floor(dataLength / 256);
-        commands = commands.concat([GS, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30]);
-        
-        // Data
-        const dataBytes = encoder.encode(beratValue);
-        commands = commands.concat(Array.from(dataBytes));
-        
-        // Print
-        commands = commands.concat([GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]);
-        
-        // Feed dan cut
-        commands.push(0x0A, 0x0A);
-        commands.push(0x1D, 0x56, 0x41, 0x00);
+        // Cut command
+        commands.push(0x1D, 0x56, 0x41, 0x00); // Full cut
         
         await writer.write(new Uint8Array(commands));
-        playSpecialSound('success');
-        showNotification('Berhasil dicetak dengan format alternatif!');
+        
+        updateStatus("✅ Barcode berhasil dicetak dengan format alternatif!", "success");
+        showNotification("Barcode berhasil dicetak!");
+        
       } catch (error2) {
         console.error("Alternative print error:", error2);
-        showNotification("Printer mungkin tidak mendukung QR Code. Ganti ke barcode?");
+        showNotification("Gagal mencetak dengan format alternatif");
       }
     }
     
-    function updateConnectionStatus(connected) {
-      const status = document.getElementById('status');
-      status.className = connected ? 'status-connected' : 'status-disconnected';
-      status.textContent = connected ? 'Printer: Terkoneksi' : 'Printer: Tidak Terkoneksi';
-    }
-    
-    function showNotification(message, duration = 3000) {
-      const n = document.getElementById('notification');
-      n.textContent = message;
-      n.style.display = 'block';
-      setTimeout(() => n.style.display = 'none', duration);
-    }
-    
-    // Fungsi untuk menangani input keyboard
-    function handleKeyPress(event) {
+    // Keyboard support with sound
+    document.addEventListener('keydown', function(event) {
       const key = event.key;
       
-      // Putar suara saat tombol keyboard ditekan
-      playClickSound();
-      
-      // Jika angka ditekan
+      // Play sound for any key press
       if (key >= '0' && key <= '9') {
-        appendNumber(key);
-      }
-      // Jika titik atau koma ditekan (untuk berat)
-      else if (key === '.' || key === ',') {
-        if (currentInputMode === 'weight') {
-          event.preventDefault();
-          appendDecimal();
+        playClickSound();
+      } else if (key === '.' || key === ',') {
+        playSound('function');
+      } else if (key === 'Backspace' || key === 'Delete' || key === 'Escape') {
+        playSound('delete');
+      } else if (key === 'Enter') {
+        playSound('print');
+      } else if (key === 'c' || key === 'C') {
+        if (!event.ctrlKey) {
+          playSound('connect');
         }
       }
-      // Jika backspace ditekan
-      else if (key === 'Backspace') {
-        event.preventDefault();
-        backspace();
+      
+      // Numbers
+      if (key >= '0' && key <= '9') {
+        const button = document.querySelector(`.number-btn[data-value="${key}"]`);
+        if (button) {
+          button.click();
+        }
       }
-      // Jika enter ditekan
-      else if (key === 'Enter') {
+      
+      // Decimal point
+      if (key === '.' || key === ',') {
+        decimalBtn.click();
         event.preventDefault();
-        generate();
       }
-    }
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      updateDisplay();
       
-      // Inisialisasi audio saat halaman dimuat
-      initAudio();
-      
-      // Tambahkan event listener untuk keyboard
-      document.addEventListener('keydown', handleKeyPress);
-      
-      if (!("serial" in navigator)) {
-        document.getElementById('status').textContent = 'Browser tidak mendukung Web Serial API';
+      // Special keys
+      switch(key) {
+        case 'Backspace':
+          document.getElementById('backspace').click();
+          break;
+        case 'Delete':
+        case 'Escape':
+          document.getElementById('reset').click();
+          break;
+        case 'Enter':
+          document.getElementById('print').click();
+          break;
+        case 'c':
+        case 'C':
+          if (event.ctrlKey) break;
+          document.getElementById('connect').click();
+          break;
       }
     });
+    
+    // Initial status
+    if (!("serial" in navigator)) {
+      updateStatus("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.", "warning");
+    }
   </script>
 </body>
 </html>
