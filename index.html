@@ -1,98 +1,436 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kalkulator Barcode + Web Serial</title>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Barcode Calculator Scale</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
-    @keyframes buttonPress {
-      0% { transform: scale(1); }
-      50% { transform: scale(0.95); }
-      100% { transform: scale(1); }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
-    .button-press {
-      animation: buttonPress 0.1s ease-in-out;
+
+    body {
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      touch-action: manipulation;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .calculator {
+      width: 100%;
+      max-width: 420px;
+      background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+      padding: 25px;
+      border-radius: 35px;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.15),
+        0 10px 20px rgba(0, 0, 0, 0.1),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.05),
+        inset 0 2px 5px rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    #display {
+      background: linear-gradient(145deg, #1a1a1a 0%, #000000 100%);
+      padding: 20px;
+      margin-bottom: 25px;
+      border-radius: 25px;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      font-size: 1em;
+      color: #00ff00;
+      user-select: text;
+      box-shadow: 
+        inset 0 4px 8px rgba(0, 0, 0, 0.5),
+        0 2px 4px rgba(0, 0, 0, 0.2);
+      border: 2px solid #333;
+    }
+
+    .display-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .display-item {
+      text-align: center;
+      flex: 1;
+    }
+
+    .display-label {
+      font-size: 0.75em;
+      color: #888;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .display-value {
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+      letter-spacing: 1px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .function-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .small-function-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 18px 12px;
+      border: none;
+      background: linear-gradient(145deg, #2c3e50 0%, #34495e 100%);
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 17px;
+      min-height: 60px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+      box-shadow: 
+        0 6px 12px rgba(0, 0, 0, 0.15),
+        0 3px 6px rgba(0, 0, 0, 0.1),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+      transform: translateZ(0);
+      will-change: transform, box-shadow;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    button:active, button.active {
+      transform: scale(0.95) translateY(2px) translateZ(0);
+      box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+      transition: transform 0.05s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(145deg, #1a252f 0%, #2c3e50 100%);
+    }
+
+    .function-btn {
+      background: linear-gradient(145deg, #555 0%, #333 100%);
+      color: white;
+    }
+
+    .function-btn:active, .function-btn.active {
+      background: linear-gradient(145deg, #333 0%, #222 100%);
+    }
+
+    #barcode {
+      width: 100%;
+      margin-top: 25px;
+      padding: 15px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e0e0e0;
+    }
+
+    #status {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 20px;
+      text-align: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 3px rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .status-connected {
+      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%);
+      box-shadow: 
+        0 4px 8px rgba(39, 174, 96, 0.3),
+        inset 0 1px 3px rgba(255, 255, 255, 0.2);
+    }
+
+    .status-disconnected {
+      background: linear-gradient(145deg, #c0392b 0%, #e74c3c 100%);
+      box-shadow: 
+        0 4px 8px rgba(192, 57, 43, 0.3),
+        inset 0 1px 3px rgba(255, 255, 255, 0.1);
+    }
+
+    #notification {
+      position: fixed;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 16px 24px;
+      border-radius: 20px;
+      display: none;
+      color: white;
+      background: linear-gradient(145deg, #2c3e50 0%, #34495e 100%);
+      max-width: 90%;
+      text-align: center;
+      z-index: 1000;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.2),
+        0 5px 10px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .print-btn {
+      grid-column: span 3;
+      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%) !important;
+      color: white;
+    }
+
+    .print-btn:active, .print-btn.active {
+      background: linear-gradient(145deg, #219653 0%, #27ae60 100%) !important;
+      transform: scale(0.95) translateY(2px) translateZ(0);
+    }
+
+    .backspace-btn {
+      background: linear-gradient(145deg, #c0392b 0%, #e74c3c 100%);
+      color: white;
+    }
+
+    .backspace-btn:active, .backspace-btn.active {
+      background: linear-gradient(145deg, #a93226 0%, #c0392b 100%);
+    }
+
+    .active-mode {
+      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%) !important;
+      color: white;
+      box-shadow: 
+        0 6px 12px rgba(39, 174, 96, 0.3),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    }
+
+    .small-btn {
+      padding: 14px 8px;
+      font-size: 14px;
+      min-height: 48px;
+      border-radius: 18px;
     }
     
-    /* Suara loading indicator */
-    .audio-loading {
+    /* Audio status indicator */
+    .audio-status {
       position: fixed;
-      top: 10px;
-      right: 10px;
-      background: #4CAF50;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%);
       color: white;
-      padding: 5px 10px;
-      border-radius: 15px;
+      padding: 8px 16px;
+      border-radius: 20px;
       font-size: 12px;
       opacity: 0;
-      transition: opacity 0.3s;
+      transition: opacity 0.3s ease;
       z-index: 1000;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    .audio-loading.show {
+    .audio-status.show {
       opacity: 1;
+    }
+    
+    /* Ripple effect for buttons */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(0);
+      animation: ripple-animation 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+    
+    @keyframes ripple-animation {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+    
+    /* Title styling */
+    .app-title {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2c3e50;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Subtle border for calculator */
+    .calculator::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      bottom: -1px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.1));
+      border-radius: 36px;
+      z-index: -1;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      .calculator {
+        padding: 20px;
+        border-radius: 30px;
+      }
+      
+      button {
+        padding: 16px 10px;
+        min-height: 55px;
+        border-radius: 18px;
+        font-size: 16px;
+      }
+      
+      .small-btn {
+        padding: 12px 6px;
+        min-height: 44px;
+        font-size: 13px;
+      }
+      
+      #display {
+        padding: 16px;
+        border-radius: 22px;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .calculator {
+        padding: 15px;
+      }
+      
+      button {
+        padding: 14px 8px;
+        min-height: 50px;
+        font-size: 15px;
+      }
+      
+      .display-value {
+        font-size: 1.1em;
+      }
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <div class="audio-loading" id="audio-status">Audio: Memuat...</div>
+<body>
+  <div class="audio-status" id="audio-status">Audio: Ready</div>
   
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">Kalkulator Barcode</h1>
+  <div class="calculator">
+    <div class="app-title">BARCODE SCALE</div>
     
-    <!-- Display -->
-    <div class="bg-gray-900 text-white rounded-lg p-4 mb-4 text-right display text-2xl font-semibold h-16 overflow-x-auto overflow-y-hidden flex items-center justify-end">
-      <span id="display">0</span>
+    <div id="display">
+      <div class="display-row">
+        <div class="display-item">
+          <div class="display-label">FLEX</div>
+          <div class="display-value" id="current-flex">00</div>
+        </div>
+        <div class="display-item">
+          <div class="display-label">CATEGORY</div>
+          <div class="display-value" id="current-category">000</div>
+        </div>
+      </div>
+      <div class="display-row">
+        <div class="display-item">
+          <div class="display-label">PRODUCT</div>
+          <div class="display-value" id="current-product">000</div>
+        </div>
+        <div class="display-item">
+          <div class="display-label">WEIGHT</div>
+          <div class="display-value" id="current-weight">00000</div>
+        </div>
+      </div>
+      <div class="display-row">
+        <div class="display-item" style="flex: 2;">
+          <div class="display-label">BARCODE</div>
+          <div class="display-value" id="current-barcode">0000000000000</div>
+        </div>
+      </div>
     </div>
     
-    <!-- Barcode Preview -->
-    <div class="mb-6 bg-white p-4 rounded-lg border border-gray-300 flex justify-center">
-      <svg id="barcode"></svg>
+    <div class="small-function-row">
+      <button id="flex-btn" class="function-btn small-btn active-mode">FLEX</button>
+      <button id="category-btn" class="function-btn small-btn">CATEGORY</button>
     </div>
     
-    <!-- Connection Status -->
-    <div id="status" class="mb-4 p-3 rounded-lg text-center text-sm">
-      <span class="status-text">Printer belum terhubung</span>
+    <div class="function-row">
+      <button id="product-btn" class="function-btn">PRODUCT</button>
+      <button id="weight-btn" class="function-btn">WEIGHT</button>
+      <button class="backspace-btn">⌫</button>
     </div>
     
-    <!-- Notifications -->
-    <div id="notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-      <span id="notification-text"></span>
+    <div class="function-row">
+      <button class="function-btn">CLEAR</button>
+      <button class="function-btn">ENTER</button>
+      <button class="function-btn">CONNECT</button>
     </div>
     
-    <!-- Keypad -->
-    <div class="grid grid-cols-4 gap-3 mb-4">
-      <!-- Row 1 -->
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="1">1</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="2">2</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="3">3</button>
-      <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-lg transition duration-150" id="backspace">←</button>
+    <div class="buttons">
+      <button>7</button>
+      <button>8</button>
+      <button>9</button>
       
-      <!-- Row 2 -->
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="4">4</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="5">5</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="6">6</button>
-      <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-lg transition duration-150" id="reset">C</button>
+      <button>4</button>
+      <button>5</button>
+      <button>6</button>
       
-      <!-- Row 3 -->
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="7">7</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="8">8</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="9">9</button>
-      <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-lg transition duration-150" id="print">Print</button>
+      <button>1</button>
+      <button>2</button>
+      <button>3</button>
       
-      <!-- Row 4 -->
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="0">0</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" data-value="00">00</button>
-      <button class="number-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-lg transition duration-150" id="decimal-btn" data-value=".">.</button>
-      <button class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg transition duration-150" id="connect">Connect</button>
+      <button>0</button>
+      <button>00</button>
+      
+      <button class="print-btn function-btn">PRINT</button>
     </div>
     
-    <div class="mt-4 text-center text-sm text-gray-500">
-      <p>Ketik angka untuk menghasilkan barcode, lalu tekan Connect dan Print</p>
-      <p class="mt-1 text-xs">Gunakan Chrome/Edge untuk koneksi Web Serial API</p>
-    </div>
+    <svg id="barcode"></svg>
+    <div id="status" class="status-disconnected">Printer: Disconnected</div>
   </div>
+  <div id="notification"></div>
 
   <script>
     // Audio system
@@ -119,14 +457,14 @@
           oscillator.stop(audioContext.currentTime + 0.01);
           
           isAudioInitialized = true;
-          audioStatus.textContent = "Audio: Siap";
+          audioStatus.textContent = "Audio: Ready";
           setTimeout(() => {
             audioStatus.classList.remove('show');
           }, 2000);
           
           console.log("Audio initialized successfully");
         } else {
-          audioStatus.textContent = "Audio: Tidak didukung";
+          audioStatus.textContent = "Audio: Not Supported";
           setTimeout(() => {
             audioStatus.classList.remove('show');
           }, 2000);
@@ -144,14 +482,14 @@
     audioStatus.classList.add('show');
     
     // Play sound function
-    function playSound(type = 'click', frequency = 800, duration = 0.1, volume = 0.2) {
+    function playSound(type = 'number', frequency = 600, duration = 0.1, volume = 0.2) {
       if (!isAudioInitialized) {
         initAudio();
         if (!isAudioInitialized) return;
       }
       
       try {
-        // Resume audio context if suspended (required by some browsers)
+        // Resume audio context if suspended
         if (audioContext.state === 'suspended') {
           audioContext.resume();
         }
@@ -169,22 +507,32 @@
             volume = 0.15;
             break;
           case 'delete':
-            frequency = 400;
+            frequency = 350;
             volume = 0.2;
             duration = 0.08;
             break;
-          case 'function':
-            frequency = 1000;
+          case 'mode':
+            frequency = 700;
             volume = 0.18;
             break;
+          case 'function':
+            frequency = 900;
+            volume = 0.18;
+            duration = 0.12;
+            break;
           case 'print':
-            frequency = 1200;
+            frequency = 1100;
             duration = 0.15;
+            volume = 0.22;
+            break;
+          case 'connect':
+            frequency = 800;
+            duration = 0.18;
             volume = 0.2;
             break;
           case 'success':
-            frequency = 800;
-            duration = 0.2;
+            frequency = 1000;
+            duration = 0.25;
             volume = 0.25;
             break;
           case 'error':
@@ -192,10 +540,10 @@
             duration = 0.15;
             volume = 0.25;
             break;
-          case 'connect':
-            frequency = 600;
-            duration = 0.2;
-            volume = 0.22;
+          case 'notification':
+            frequency = 1200;
+            duration = 0.15;
+            volume = 0.2;
             break;
         }
         
@@ -221,27 +569,19 @@
       }
     }
     
-    // Play click sound (simplified version)
+    // Play click sound
     function playClickSound() {
       playSound('number');
     }
-    
-    // Elements
-    const display = document.getElementById('display');
-    const barcodeSvg = document.getElementById('barcode');
-    const status = document.getElementById('status');
-    const statusText = document.querySelector('.status-text');
-    const notification = document.getElementById('notification');
-    const notificationText = document.getElementById('notification-text');
-    const decimalBtn = document.getElementById('decimal-btn');
-    
-    // State
-    let currentValue = '0';
+
+    // Global variables
+    let currentInputMode = 'flex';
+    let flexValue = '';
+    let categoryValue = '';
+    let productValue = '';
+    let weightValue = '';
     let port = null;
     let writer = null;
-    
-    // Initialize barcode with default value
-    updateBarcode();
     
     // Initialize audio on first user interaction
     document.addEventListener('click', function initAudioOnInteraction() {
@@ -251,423 +591,570 @@
       document.removeEventListener('click', initAudioOnInteraction);
     }, { once: true });
     
-    // Update barcode
-    function updateBarcode() {
-      if (currentValue === '0') {
-        barcodeSvg.innerHTML = '';
-      } else {
-        JsBarcode(barcodeSvg, currentValue, {
-          format: "CODE128",
-          width: 2,
-          height: 80,
-          displayValue: true,
-          fontSize: 16,
-          margin: 10,
-          valid: function(data) {
-            return /^[\x00-\x7F]+$/.test(data);
-          }
-        });
-      }
-    }
-    
-    // Update display and barcode
-    function updateDisplay() {
-      display.textContent = currentValue;
-      updateBarcode();
-    }
-    
-    // Show notification
-    function showNotification(message, duration = 3000) {
-      notificationText.textContent = message;
-      notification.classList.remove('hidden');
+    // Button ripple effect
+    function createRipple(event) {
+      const button = event.currentTarget;
+      const circle = document.createElement("span");
+      const diameter = Math.max(button.clientWidth, button.clientHeight);
+      const radius = diameter / 2;
       
+      circle.style.width = circle.style.height = `${diameter}px`;
+      circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+      circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+      circle.classList.add("ripple");
+      
+      const ripple = button.getElementsByClassName("ripple")[0];
+      
+      if (ripple) {
+        ripple.remove();
+      }
+      
+      button.appendChild(circle);
+    }
+    
+    // Button press animation
+    function animateButtonPress(button) {
+      button.classList.add('active');
       setTimeout(() => {
-        notification.classList.add('hidden');
-      }, duration);
+        button.classList.remove('active');
+      }, 150);
     }
     
-    // Update status display
-    function updateStatus(message, type = 'info') {
-      statusText.textContent = message;
-      
-      if (type === 'error') {
-        status.className = 'mb-4 p-3 rounded-lg bg-red-100 text-red-800 text-center text-sm';
+    // Input handling functions
+    function setInputMode(mode) {
+      currentInputMode = mode;
+      // Update visual indicator
+      document.getElementById('flex-btn').classList.toggle('active-mode', mode === 'flex');
+      document.getElementById('category-btn').classList.toggle('active-mode', mode === 'category');
+      document.getElementById('product-btn').classList.toggle('active-mode', mode === 'product');
+      document.getElementById('weight-btn').classList.toggle('active-mode', mode === 'weight');
+    }
+    
+    function appendNumber(num) {
+      if (currentInputMode === 'flex') {
+        if (num === '00') {
+          if (flexValue.length === 0) {
+            flexValue = '00';
+          }
+        } else if (flexValue.length < 2) {
+          flexValue += num;
+        }
+      } else if (currentInputMode === 'category') {
+        if (num === '00') {
+          if (categoryValue.length <= 1) {
+            categoryValue += '00';
+          }
+        } else if (categoryValue.length < 3) {
+          categoryValue += num;
+        }
+      } else if (currentInputMode === 'product') {
+        if (num === '00') {
+          if (productValue.length <= 1) {
+            productValue += '00';
+          }
+        } else if (productValue.length < 3) {
+          productValue += num;
+        }
+      } else if (currentInputMode === 'weight') {
+        if (num === '00') {
+          if (weightValue.length <= 3) {
+            weightValue += '00';
+          }
+        } else if (weightValue.length < 5) {
+          weightValue += num;
+        }
+      }
+      updateDisplay();
+    }
+    
+    function backspace() {
+      if (currentInputMode === 'flex' && flexValue.length > 0) {
+        flexValue = flexValue.slice(0, -1);
+      } else if (currentInputMode === 'category' && categoryValue.length > 0) {
+        categoryValue = categoryValue.slice(0, -1);
+      } else if (currentInputMode === 'product' && productValue.length > 0) {
+        productValue = productValue.slice(0, -1);
+      } else if (currentInputMode === 'weight' && weightValue.length > 0) {
+        weightValue = weightValue.slice(0, -1);
+      }
+      updateDisplay();
+    }
+    
+    function clearInput() {
+      productValue = '';
+      weightValue = '';
+      updateDisplay();
+      JsBarcode("#barcode", "", { displayValue: false });
+      showNotification('Product and weight code has been reset');
+    }
+    
+    // Display and formatting functions
+    function formatBarcodeData() {
+      const formattedFlex = flexValue.padStart(2, '0');
+      const formattedCategory = categoryValue.padStart(3, '0');
+      const formattedProduct = productValue.padStart(3, '0');
+      const formattedWeight = weightValue.padStart(5, '0');
+      return `${formattedFlex}${formattedCategory}${formattedProduct}${formattedWeight}`;
+    }
+    
+    function updateDisplay() {
+      document.getElementById('current-flex').textContent = flexValue.padStart(2, '0');
+      document.getElementById('current-category').textContent = categoryValue.padStart(3, '0');
+      document.getElementById('current-product').textContent = productValue.padStart(3, '0');
+      document.getElementById('current-weight').textContent = weightValue.padStart(5, '0');
+      document.getElementById('current-barcode').textContent = formatBarcodeData();
+    }
+    
+    function generate() {
+      const barcodeData = formatBarcodeData();
+      if (barcodeData.length !== 13) {
         playSound('error');
-      } else if (type === 'success') {
-        status.className = 'mb-4 p-3 rounded-lg bg-green-100 text-green-800 text-center text-sm';
+        showNotification('Please fill all fields with correct digits');
+        return;
+      }
+      
+      JsBarcode("#barcode", barcodeData, {
+        format: "CODE128",
+        displayValue: true,
+        fontSize: 16,
+        height: 50,
+        margin: 10
+      });
+      
+      playSound('success');
+      showNotification('Barcode generated successfully');
+    }
+    
+    // Printer communication functions - Web Serial API
+    async function connectToPrinter() {
+      try {
+        if (!("serial" in navigator)) {
+          playSound('error');
+          showNotification("Browser doesn't support Web Serial API. Use Chrome/Edge.");
+          return false;
+        }
+
+        showNotification("Selecting printer...");
+        
+        // Request serial port
+        port = await navigator.serial.requestPort();
+        showNotification("Opening connection...");
+        
+        // Open the port with baud rate 9600 (standard for many thermal printers)
+        await port.open({ baudRate: 9600 });
+        
+        // Get the writer
+        writer = port.writable.getWriter();
+        
+        updateConnectionStatus(true);
         playSound('success');
-      } else if (type === 'warning') {
-        status.className = 'mb-4 p-3 rounded-lg bg-yellow-100 text-yellow-800 text-center text-sm';
-      } else {
-        status.className = 'mb-4 p-3 rounded-lg bg-blue-100 text-blue-800 text-center text-sm';
+        showNotification('Printer connected successfully!');
+        return true;
+        
+      } catch (error) {
+        console.error("Connection error:", error);
+        if (error.name === 'NotFoundError') {
+          playSound('error');
+          showNotification("No printer selected");
+        } else {
+          playSound('error');
+          showNotification("Failed to connect to printer: " + error.message);
+        }
+        updateConnectionStatus(false);
+        return false;
       }
     }
     
-    // Check if value can accept decimal point
-    function canAddDecimal(value) {
-      if (value.includes('.')) return false;
-      if (value === '0' || value === '') return true;
-      if (value.length >= 20) return false;
-      return true;
-    }
-    
-    // Validate barcode with decimal point
-    function validateBarcodeValue(value) {
-      if (value.startsWith('.') || value.endsWith('.')) return false;
-      const dotCount = (value.match(/\./g) || []).length;
-      if (dotCount > 1) return false;
-      return /^\d+(\.\d+)?$/.test(value);
-    }
-    
-    // Number button click handler
-    document.querySelectorAll('.number-btn').forEach(button => {
-      button.addEventListener('click', function() {
-        // Animation
-        this.classList.add('button-press');
-        setTimeout(() => {
-          this.classList.remove('button-press');
-        }, 100);
-        
-        // Sound effect
-        const value = this.getAttribute('data-value');
-        if (value === '.') {
-          playSound('function');
-        } else {
-          playClickSound();
-        }
-        
-        if (value === '.') {
-          if (canAddDecimal(currentValue)) {
-            if (currentValue === '0') {
-              currentValue = '0.';
-            } else {
-              currentValue += '.';
-            }
-            updateDisplay();
-          } else {
-            playSound('error');
-            showNotification('Titik desimal sudah ada', 1000);
-          }
+    async function printBarcode() {
+      try {
+        if (!productValue || !weightValue) {
+          playSound('error');
+          showNotification('Please fill PRODUCT and WEIGHT first');
           return;
         }
         
-        if (currentValue === '0') {
-          if (currentValue === '0' && !currentValue.includes('.')) {
-            currentValue = value;
-          } else {
-            currentValue += value;
-          }
-        } else {
-          if (currentValue.includes('.')) {
-            const decimalPart = currentValue.split('.')[1];
-            if (decimalPart.length < 3) {
-              currentValue += value;
-            } else {
-              playSound('error');
-              showNotification('Maksimal 3 digit desimal', 1000);
-            }
-          } else {
-            if (currentValue.length < 20) {
-              currentValue += value;
-            } else {
-              playSound('error');
-              showNotification('Maksimal 20 digit', 1000);
-            }
-          }
-        }
-        
-        if (!validateBarcodeValue(currentValue) && currentValue !== '0') {
+        // Generate barcode if not already generated
+        const barcodeData = formatBarcodeData();
+        if (barcodeData.length !== 13) {
           playSound('error');
-          showNotification('Format barcode tidak valid', 1000);
-          currentValue = currentValue.slice(0, -1);
-          if (currentValue === '') currentValue = '0';
+          showNotification('Please fill all fields with correct digits');
+          return;
         }
         
-        updateDisplay();
-      });
-    });
-    
-    // Backspace button
-    document.getElementById('backspace').addEventListener('click', function() {
-      // Animation
-      this.classList.add('button-press');
-      setTimeout(() => {
-        this.classList.remove('button-press');
-      }, 100);
-      
-      // Sound
-      playSound('delete');
-      
-      if (currentValue.length > 1) {
-        currentValue = currentValue.slice(0, -1);
-      } else {
-        currentValue = '0';
-      }
-      
-      updateDisplay();
-    });
-    
-    // Reset button
-    document.getElementById('reset').addEventListener('click', function() {
-      // Animation
-      this.classList.add('button-press');
-      setTimeout(() => {
-        this.classList.remove('button-press');
-      }, 100);
-      
-      // Sound
-      playSound('delete');
-      
-      currentValue = '0';
-      updateDisplay();
-    });
-    
-    // Connect button - Web Serial API
-    document.getElementById('connect').addEventListener('click', async function() {
-      // Animation
-      this.classList.add('button-press');
-      setTimeout(() => {
-        this.classList.remove('button-press');
-      }, 100);
-      
-      // Sound
-      playSound('connect');
-      
-      if (!("serial" in navigator)) {
-        updateStatus("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge versi terbaru.", "error");
-        showNotification("Browser tidak mendukung Web Serial API");
-        return;
-      }
-
-      try {
-        updateStatus("Memilih printer...", "info");
-        port = await navigator.serial.requestPort();
-        updateStatus("Membuka koneksi...", "info");
-        await port.open({ baudRate: 9600 });
-        writer = port.writable.getWriter();
-        updateStatus("✅ Printer terhubung via Serial/USB", "success");
-        showNotification("Printer berhasil terhubung!");
-        
-      } catch (err) {
-        console.error("Connection error:", err);
-        if (err.name === 'NotFoundError') {
-          updateStatus("❌ Tidak ada printer yang dipilih", "error");
-        } else {
-          updateStatus("❌ Gagal terhubung ke printer: " + err.message, "error");
+        // Auto-generate barcode if not already done
+        if (!document.querySelector('#barcode text') || 
+            document.querySelector('#barcode text').textContent !== barcodeData) {
+          generate();
         }
-        showNotification("Gagal terhubung ke printer");
-      }
-    });
-    
-    // Function to generate barcode command ESC/POS
-    function generateBarcodeCommand(value) {
-      const esc = '\x1B';
-      const gs = '\x1D';
-      
-      let cmd = '';
-      cmd += gs + 'h' + '\x50'; // height = 80 dots
-      cmd += gs + 'w' + '\x02'; // width = 2
-      cmd += gs + 'k' + '\x49'; // CODE128
-      cmd += String.fromCharCode(value.length) + value;
-      
-      return cmd;
-    }
-    
-    // Print button - MODIFIED spacing as requested (5 empty lines after barcode)
-    document.getElementById('print').addEventListener('click', async function() {
-      // Animation
-      this.classList.add('button-press');
-      setTimeout(() => {
-        this.classList.remove('button-press');
-      }, 100);
-      
-      // Sound
-      playSound('print');
-      
-      if (currentValue === '0') {
-        playSound('error');
-        showNotification('Tidak ada barcode untuk dicetak');
-        return;
-      }
 
-      if (!writer) {
-        playSound('error');
-        showNotification('Printer belum terhubung. Klik tombol Connect dulu.');
-        return;
-      }
+        if (!writer) {
+          playSound('error');
+          showNotification('Printer not connected. Click CONNECT first.');
+          return;
+        }
 
-      if (!validateBarcodeValue(currentValue) && currentValue !== '0') {
-        playSound('error');
-        showNotification('Format barcode tidak valid untuk dicetak');
-        return;
-      }
-
-      try {
-        updateStatus("Mengirim data ke printer...", "info");
+        showNotification("Sending data to printer...");
         
         // ESC/POS commands
         const esc = '\x1B';
         const gs = '\x1D';
-        const encoder = new TextEncoder();
-        let commands = [];
+        const lf = '\x0A';
         
         // Initialize printer
-        commands.push(0x1B, 0x40); // ESC @
+        let data = esc + '@';
         
-        // Set alignment to center for text
-        commands.push(0x1B, 0x61, 0x01); // ESC a 1 (center)
+        // Set alignment to center for all content
+        data += esc + 'a' + '\x01'; // Center alignment
         
-        // Print the number with normal font size immediately
-        const textBytes = encoder.encode(currentValue);
-        commands = commands.concat(Array.from(textBytes));
+        // Baris 1: [Flex value][kategori value][produk value][berat value]
+        // Format: [FF][KKK][PPP][WWWWW]
+        data += '[' + flexValue.padStart(2, '0') + '][' + 
+                       categoryValue.padStart(3, '0') + '][' + 
+                       productValue.padStart(3, '0') + '][' + 
+                       weightValue.padStart(5, '0') + ']' + lf;
         
-        // Add 1 empty line after the number
-        commands.push(0x0A); // \n (1 baris kosong)
+        // Baris kosong
+        data += lf;
         
         // Set alignment to center for barcode
-        commands.push(0x1B, 0x61, 0x01); // ESC a 1 (center) again for barcode
+        data += esc + 'a' + '\x01'; // Center alignment again for barcode
         
-        // Generate barcode command
-        const barcodeCmd = generateBarcodeCommand(currentValue);
-        const barcodeBytes = encoder.encode(barcodeCmd);
-        commands = commands.concat(Array.from(barcodeBytes));
+        // Print barcode using ESC/POS native barcode commands
+        // Select barcode height
+        data += gs + 'h' + '\x50'; // Height = 80
+        // Select barcode width
+        data += gs + 'w' + '\x02'; // Width = 2
+        // Select CODE128 barcode
+        data += gs + 'k' + '\x49'; // CODE128
+        // Length of data
+        data += String.fromCharCode(barcodeData.length);
+        // Barcode data
+        data += barcodeData;
         
-        // **MODIFIED: Add 5 empty lines after barcode**
-        commands.push(0x0A, 0x0A, 0x0A); // \n \n \n (5 baris kosong)
+        // Tambahkan feed untuk memastikan barcode tercetak
+        data += lf;
         
-        // Cut paper (full cut)
-        commands.push(0x1D, 0x56, 0x41, 0x00); // GS V 41 0
+        // Dua baris kosong setelah barcode
+        data += lf + lf;
         
-        // Send all commands to printer
-        await writer.write(new Uint8Array(commands));
+        // Add cut command (full cut)
+        data += gs + 'V' + '\x41' + '\x00';
         
-        updateStatus("✅ Barcode berhasil dikirim ke printer!", "success");
-        showNotification("Barcode berhasil dicetak!");
+        // Encode and send data
+        const encoder = new TextEncoder();
+        const encodedData = encoder.encode(data);
         
-      } catch (err) {
-        console.error("Print error:", err);
-        updateStatus("❌ Gagal mengirim ke printer: " + err.message, "error");
-        showNotification("Gagal mencetak barcode");
+        await writer.write(encodedData);
         
-        if (err.message.includes("invalid") || err.message.includes("character")) {
-          showNotification("Mencoba format alternatif...");
+        playSound('success');
+        showNotification('Data sent to printer successfully');
+      } catch (error) {
+        console.error("Print error:", error);
+        playSound('error');
+        showNotification("Failed to send to printer: " + error.message);
+        
+        // Coba format alternatif jika gagal
+        if (error.message.includes("invalid") || error.message.includes("character")) {
+          showNotification("Trying alternative format...");
           await tryAlternativePrint();
         }
       }
-    });
+    }
     
-    // Alternative print if format with dot is not supported
+    // Alternatif format cetak
     async function tryAlternativePrint() {
       try {
+        const barcodeData = formatBarcodeData();
+        
+        // ESC/POS commands
         const esc = '\x1B';
         const gs = '\x1D';
-        const encoder = new TextEncoder();
-        let commands = [];
+        const lf = '\x0A';
         
-        commands.push(0x1B, 0x40); // Initialize printer
-        commands.push(0x1B, 0x61, 0x01); // Center align
+        // Initialize printer
+        let data = esc + '@';
+
+        // Baris kosong
+        data += lf;
         
-        // Print the number immediately
-        const textBytes = encoder.encode(currentValue);
-        commands = commands.concat(Array.from(textBytes));
+        // Set alignment to center
+        data += esc + 'a' + '\x01'; // Center alignment
         
-        // Add 1 empty line after the number
-        commands.push(0x0A);
+        // Baris 1: [Flex value][kategori value][produk value][berat value]
+        data += '[' + flexValue.padStart(2, '0') + '][' + 
+                       categoryValue.padStart(3, '0') + '][' + 
+                       productValue.padStart(3, '0') + '][' + 
+                       weightValue.padStart(5, '0') + ']' + lf;
         
-        // If printer doesn't support dot, replace with dash
-        let barcodeForPrint = currentValue;
-        if (currentValue.includes('.')) {
-          barcodeForPrint = currentValue.replace('.', '-');
-          showNotification('Mengganti titik dengan strip (-) untuk barcode');
-        }
+        // Baris kosong
+        //data += lf;
         
-        // Set alignment to center for barcode
-        commands.push(0x1B, 0x61, 0x01); // Center align
+        // Set alignment to center untuk barcode
+        data += esc + 'a' + '\x01'; // Center alignment
         
-        // Set barcode height and width
-        commands.push(0x1D, 0x68, 0x50); // GS h 80 (height)
-        commands.push(0x1D, 0x77, 0x02); // GS w 2 (width)
-        
+        // Alternatif perintah barcode
+        // Set barcode height
+        data += gs + 'h' + '\x50'; // Height = 80
+        // Set barcode width
+        data += gs + 'w' + '\x02'; // Width = 2
         // CODE128 barcode
-        commands.push(0x1D, 0x6B, 0x49); // GS k 73 (CODE128)
-        commands.push(barcodeForPrint.length); // Length
-        const barcodeBytes = encoder.encode(barcodeForPrint);
-        commands = commands.concat(Array.from(barcodeBytes));
+        data += gs + 'k' + '\x49'; // GS k 73 (CODE128)
+        data += barcodeData.length; // Length
+        data += barcodeData; // Data
         
-        // **MODIFIED: Add 5 empty lines after barcode**
-        commands.push(0x0A, 0x0A, 0x0A, 0x0A, 0x0A); // 5 baris kosong
+        // Feed lines
+        data += lf;
         
-        // Cut command
-        commands.push(0x1D, 0x56, 0x41, 0x00); // Full cut
+        // Dua baris kosong
+        data += lf + lf;
         
-        await writer.write(new Uint8Array(commands));
+        // Cut paper
+        data += gs + 'V' + '\x41' + '\x00'; // Full cut
         
-        updateStatus("✅ Barcode berhasil dicetak dengan format alternatif!", "success");
-        showNotification("Barcode berhasil dicetak!");
+        const encoder = new TextEncoder();
+        const encodedData = encoder.encode(data);
         
+        await writer.write(encodedData);
+        
+        playSound('success');
+        showNotification('Printed successfully with alternative format!');
       } catch (error2) {
         console.error("Alternative print error:", error2);
-        showNotification("Gagal mencetak dengan format alternatif");
+        playSound('error');
+        showNotification("Failed to print with alternative format");
       }
     }
     
-    // Keyboard support with sound
-    document.addEventListener('keydown', function(event) {
-      const key = event.key;
+    // UI feedback functions
+    function updateConnectionStatus(connected) {
+      const status = document.getElementById('status');
+      if (connected) {
+        status.textContent = 'Printer: Connected';
+        status.className = 'status-connected';
+      } else {
+        status.textContent = 'Printer: Disconnected';
+        status.className = 'status-disconnected';
+      }
+    }
+    
+    function showNotification(message, duration = 3000) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.style.display = 'block';
       
-      // Play sound for any key press
-      if (key >= '0' && key <= '9') {
-        playClickSound();
-      } else if (key === '.' || key === ',') {
-        playSound('function');
-      } else if (key === 'Backspace' || key === 'Delete' || key === 'Escape') {
+      // Play notification sound
+      playSound('notification');
+      
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, duration);
+    }
+    
+    // Set up event listeners for buttons
+    function setupButtonListeners() {
+      // FLEX button
+      document.getElementById('flex-btn').addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
+        playSound('mode');
+        setInputMode('flex');
+      });
+      
+      // CATEGORY button
+      document.getElementById('category-btn').addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
+        playSound('mode');
+        setInputMode('category');
+      });
+      
+      // PRODUCT button
+      document.getElementById('product-btn').addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
+        playSound('mode');
+        setInputMode('product');
+      });
+      
+      // WEIGHT button
+      document.getElementById('weight-btn').addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
+        playSound('mode');
+        setInputMode('weight');
+      });
+      
+      // Backspace button
+      document.querySelector('.backspace-btn').addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
         playSound('delete');
-      } else if (key === 'Enter') {
+        backspace();
+      });
+      
+      // CLEAR button
+      document.querySelectorAll('.function-row')[1].children[0].addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
+        playSound('delete');
+        clearInput();
+      });
+      
+      // ENTER button
+      document.querySelectorAll('.function-row')[1].children[1].addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
+        playSound('function');
+        generate();
+      });
+      
+      // CONNECT button
+      document.querySelectorAll('.function-row')[1].children[2].addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
+        playSound('connect');
+        connectToPrinter();
+      });
+      
+      // Number buttons (0-9, 00)
+      const numberButtons = document.querySelectorAll('.buttons button:not(.print-btn)');
+      numberButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          createRipple(e);
+          animateButtonPress(this);
+          playSound('number');
+          const value = this.textContent;
+          appendNumber(value);
+        });
+      });
+      
+      // PRINT button
+      document.querySelector('.print-btn').addEventListener('click', function(e) {
+        createRipple(e);
+        animateButtonPress(this);
         playSound('print');
-      } else if (key === 'c' || key === 'C') {
-        if (!event.ctrlKey) {
+        printBarcode();
+      });
+      
+      // Touch events for mobile
+      const allButtons = document.querySelectorAll('button');
+      allButtons.forEach(button => {
+        button.addEventListener('touchstart', function(e) {
+          // Prevent default to avoid double-tap zoom
+          e.preventDefault();
+          createRipple(e);
+          animateButtonPress(this);
+          
+          // Play sound based on button type
+          if (this.classList.contains('backspace-btn')) {
+            playSound('delete');
+          } else if (this.classList.contains('print-btn')) {
+            playSound('print');
+          } else if (this.classList.contains('function-btn') && 
+                     !this.classList.contains('active-mode') && 
+                     !this.id) {
+            // For function buttons that are not mode switchers
+            if (this.textContent === 'CLEAR') {
+              playSound('delete');
+            } else if (this.textContent === 'ENTER') {
+              playSound('function');
+            } else if (this.textContent === 'CONNECT') {
+              playSound('connect');
+            } else {
+              playSound('function');
+            }
+          } else if (this.id === 'flex-btn' || this.id === 'category-btn' || 
+                     this.id === 'product-btn' || this.id === 'weight-btn') {
+            playSound('mode');
+          } else if (this.textContent.match(/^[0-9]{1,2}$/)) {
+            playSound('number');
+          }
+        }, { passive: false });
+        
+        button.addEventListener('touchend', function(e) {
+          // Trigger the click event
+          this.click();
+        });
+      });
+    }
+    
+    // Keyboard support
+    function setupKeyboardListeners() {
+      document.addEventListener('keydown', function(event) {
+        const key = event.key;
+        
+        // Play sound for any key press
+        if (key >= '0' && key <= '9') {
+          playSound('number');
+        } else if (key === 'Backspace') {
+          playSound('delete');
+        } else if (key === 'Enter') {
+          playSound('function');
+        } else if (key === 'c' || key === 'C') {
+          if (event.ctrlKey) return;
           playSound('connect');
+        } else if (key === 'p' || key === 'P') {
+          playSound('print');
         }
-      }
-      
-      // Numbers
-      if (key >= '0' && key <= '9') {
-        const button = document.querySelector(`.number-btn[data-value="${key}"]`);
-        if (button) {
-          button.click();
+        
+        // Numbers
+        if (key >= '0' && key <= '9') {
+          appendNumber(key);
         }
-      }
+        
+        // Special keys
+        switch(key) {
+          case 'Backspace':
+            backspace();
+            break;
+          case 'Delete':
+            clearInput();
+            break;
+          case 'Enter':
+            generate();
+            break;
+          case 'c':
+          case 'C':
+            if (event.ctrlKey) break;
+            connectToPrinter();
+            break;
+          case 'p':
+          case 'P':
+            printBarcode();
+            break;
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+            // Mode switching with number keys
+            if (event.ctrlKey) {
+              event.preventDefault();
+              const modes = ['flex', 'category', 'product', 'weight'];
+              const modeIndex = parseInt(key) - 1;
+              if (modeIndex < modes.length) {
+                setInputMode(modes[modeIndex]);
+              }
+            }
+            break;
+        }
+      });
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDisplay();
       
-      // Decimal point
-      if (key === '.' || key === ',') {
-        decimalBtn.click();
-        event.preventDefault();
-      }
+      // Setup button event listeners
+      setupButtonListeners();
       
-      // Special keys
-      switch(key) {
-        case 'Backspace':
-          document.getElementById('backspace').click();
-          break;
-        case 'Delete':
-        case 'Escape':
-          document.getElementById('reset').click();
-          break;
-        case 'Enter':
-          document.getElementById('print').click();
-          break;
-        case 'c':
-        case 'C':
-          if (event.ctrlKey) break;
-          document.getElementById('connect').click();
-          break;
+      // Setup keyboard listeners
+      setupKeyboardListeners();
+      
+      // Check Web Serial API support
+      if (!("serial" in navigator)) {
+        document.getElementById('status').textContent = 'Web Serial API not supported';
       }
     });
-    
-    // Initial status
-    if (!("serial" in navigator)) {
-      updateStatus("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.", "warning");
-    }
   </script>
 </body>
 </html>
