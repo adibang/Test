@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Barcode Calculator Scale</title>
+  <title>Barcode Weight Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
     * {
@@ -17,50 +17,40 @@
     }
 
     body {
-      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      background: #f0f2f5;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 10px;
       touch-action: manipulation;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     }
 
     .calculator {
       width: 100%;
-      max-width: 420px;
-      background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
-      padding: 25px;
-      border-radius: 35px;
-      box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.15),
-        0 10px 20px rgba(0, 0, 0, 0.1),
-        inset 0 -2px 5px rgba(0, 0, 0, 0.05),
-        inset 0 2px 5px rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      max-width: 400px;
+      background: #2c3e50;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      position: relative;
     }
 
     #display {
-      background: linear-gradient(145deg, #1a1a1a 0%, #000000 100%);
-      padding: 20px;
-      margin-bottom: 25px;
-      border-radius: 25px;
+      background: #bcbcc0;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 5px;
       text-align: center;
-      font-family: 'Courier New', monospace;
+      font-family: monospace;
       font-size: 1em;
-      color: #00ff00;
       user-select: text;
-      box-shadow: 
-        inset 0 4px 8px rgba(0, 0, 0, 0.5),
-        0 2px 4px rgba(0, 0, 0, 0.2);
-      border: 2px solid #333;
     }
 
     .display-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
     }
 
     .display-item {
@@ -69,298 +59,291 @@
     }
 
     .display-label {
-      font-size: 0.75em;
-      color: #888;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      font-weight: 600;
-      margin-bottom: 4px;
+      font-size: 0.8em;
+      color: #7f8c8d;
     }
 
     .display-value {
-      font-size: 1.2em;
-      font-weight: 700;
-      color: #fff;
-      text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-      letter-spacing: 1px;
+      font-size: 1.1em;
+      font-weight: bold;
     }
 
     .buttons {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 15px;
+      gap: 8px;
     }
 
     .function-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 15px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
 
     .small-function-row {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 15px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
 
     button {
-      padding: 18px 12px;
+      padding: 15px 10px;
       border: none;
-      background: linear-gradient(145deg, #2c3e50 0%, #34495e 100%);
+      background: #909096;
       color: white;
-      border-radius: 20px;
+      border-radius: 15px;
       cursor: pointer;
-      font-size: 17px;
-      min-height: 60px;
+      font-size: 16px;
+      min-height: 50px;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       position: relative;
       overflow: hidden;
-      transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.1s ease;
       outline: none;
-      box-shadow: 
-        0 6px 12px rgba(0, 0, 0, 0.15),
-        0 3px 6px rgba(0, 0, 0, 0.1),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
       transform: translateZ(0);
-      will-change: transform, box-shadow;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      will-change: transform, background-color;
     }
 
     button:active, button.active {
-      transform: scale(0.95) translateY(2px) translateZ(0);
-      box-shadow: 
-        0 2px 4px rgba(0, 0, 0, 0.1),
-        inset 0 -1px 2px rgba(0, 0, 0, 0.2),
-        inset 0 1px 2px rgba(255, 255, 255, 0.1);
-      transition: transform 0.05s cubic-bezier(0.4, 0, 0.2, 1);
-      background: linear-gradient(145deg, #1a252f 0%, #2c3e50 100%);
+      background: #2980b9;
+      transform: scale(0.95) translateZ(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: transform 0.05s ease;
     }
 
     .function-btn {
-      background: linear-gradient(145deg, #555 0%, #333 100%);
-      color: white;
+      background: #57575e;
     }
 
     .function-btn:active, .function-btn.active {
-      background: linear-gradient(145deg, #333 0%, #222 100%);
+      background: #d35400;
     }
 
     #barcode {
       width: 100%;
-      margin-top: 25px;
-      padding: 15px;
+      margin-top: 20px;
+      padding: 10px;
       background: white;
-      border-radius: 20px;
-      box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.1),
-        inset 0 1px 3px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e0e0e0;
+      border-radius: 5px;
     }
 
     #status {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 20px;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
       text-align: center;
       color: white;
       font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.1),
-        inset 0 1px 3px rgba(255, 255, 255, 0.1);
-      transition: all 0.3s ease;
     }
 
     .status-connected {
-      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%);
-      box-shadow: 
-        0 4px 8px rgba(39, 174, 96, 0.3),
-        inset 0 1px 3px rgba(255, 255, 255, 0.2);
+      background-color: #27ae60;
     }
 
     .status-disconnected {
-      background: linear-gradient(145deg, #c0392b 0%, #e74c3c 100%);
-      box-shadow: 
-        0 4px 8px rgba(192, 57, 43, 0.3),
-        inset 0 1px 3px rgba(255, 255, 255, 0.1);
+      background-color: #c0392b;
     }
 
     #notification {
       position: fixed;
-      top: 25px;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 16px 24px;
-      border-radius: 20px;
+      padding: 15px;
+      border-radius: 5px;
       display: none;
       color: white;
-      background: linear-gradient(145deg, #2c3e50 0%, #34495e 100%);
+      background-color: #2c3e50;
       max-width: 90%;
       text-align: center;
       z-index: 1000;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      box-shadow: 
-        0 10px 25px rgba(0, 0, 0, 0.2),
-        0 5px 10px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .print-btn {
+      color: #57575e;
       grid-column: span 3;
-      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%) !important;
-      color: white;
+      background: #f0f2f5 !important;
     }
 
     .print-btn:active, .print-btn.active {
-      background: linear-gradient(145deg, #219653 0%, #27ae60 100%) !important;
-      transform: scale(0.95) translateY(2px) translateZ(0);
+      color: #f0f2f5;
+      background: #27ae60 !important;
     }
 
     .backspace-btn {
-      background: linear-gradient(145deg, #c0392b 0%, #e74c3c 100%);
-      color: white;
+      background: #c0392b;
     }
 
     .backspace-btn:active, .backspace-btn.active {
-      background: linear-gradient(145deg, #a93226 0%, #c0392b 100%);
+      background: #a93226;
     }
 
     .active-mode {
-      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%) !important;
-      color: white;
-      box-shadow: 
-        0 6px 12px rgba(39, 174, 96, 0.3),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      background: #27ae60 !important;
     }
 
     .small-btn {
-      padding: 14px 8px;
+      padding: 10px 5px;
       font-size: 14px;
-      min-height: 48px;
-      border-radius: 18px;
+      min-height: 40px;
     }
     
     /* Audio status indicator */
     .audio-status {
       position: fixed;
-      top: 15px;
-      right: 15px;
-      background: linear-gradient(145deg, #27ae60 0%, #2ecc71 100%);
+      top: 10px;
+      right: 10px;
+      background: #4CAF50;
       color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
+      padding: 5px 10px;
+      border-radius: 15px;
       font-size: 12px;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.3s;
       z-index: 1000;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .audio-status.show {
       opacity: 1;
     }
     
-    /* Ripple effect for buttons */
-    .ripple {
+    /* Settings Button */
+    .settings-btn {
       position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #8e44ad !important;
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      padding: 5px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(0);
-      animation: ripple-animation 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: none;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
-    @keyframes ripple-animation {
-      to {
-        transform: scale(4);
-        opacity: 0;
-      }
+    .settings-btn:active, .settings-btn.active {
+      background: #9b59b6 !important;
     }
     
-    /* Title styling */
-    .app-title {
+    /* Settings Modal */
+    .settings-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .settings-content {
+      background: #34495e;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 350px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .settings-title {
+      color: white;
       text-align: center;
       margin-bottom: 20px;
-      color: #2c3e50;
-      font-size: 24px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-size: 1.2em;
     }
     
-    /* Subtle border for calculator */
-    .calculator::before {
-      content: '';
+    .setting-item {
+      margin-bottom: 15px;
+      background: #2c3e50;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    
+    .setting-label {
+      color: #ecf0f1;
+      margin-bottom: 8px;
+      display: block;
+      font-size: 14px;
+    }
+    
+    .setting-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      background: #ecf0f1;
+      font-size: 16px;
+      text-align: center;
+    }
+    
+    .setting-info {
+      color: #bdc3c7;
+      font-size: 12px;
+      margin-top: 5px;
+      text-align: center;
+    }
+    
+    .settings-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .save-btn {
+      background: #27ae60 !important;
+    }
+    
+    .cancel-btn {
+      background: #c0392b !important;
+    }
+    
+    .current-settings {
+      color: #ecf0f1;
+      text-align: center;
+      margin-top: 15px;
+      font-size: 12px;
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    
+    .settings-toggle {
       position: absolute;
-      top: -1px;
-      left: -1px;
-      right: -1px;
-      bottom: -1px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.1));
-      border-radius: 36px;
-      z-index: -1;
+      top: 10px;
+      left: 10px;
+      background: #3498db !important;
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      padding: 5px;
+      border-radius: 50%;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
-    /* Responsive adjustments */
-    @media (max-width: 480px) {
-      .calculator {
-        padding: 20px;
-        border-radius: 30px;
-      }
-      
-      button {
-        padding: 16px 10px;
-        min-height: 55px;
-        border-radius: 18px;
-        font-size: 16px;
-      }
-      
-      .small-btn {
-        padding: 12px 6px;
-        min-height: 44px;
-        font-size: 13px;
-      }
-      
-      #display {
-        padding: 16px;
-        border-radius: 22px;
-      }
-    }
-    
-    @media (max-width: 360px) {
-      .calculator {
-        padding: 15px;
-      }
-      
-      button {
-        padding: 14px 8px;
-        min-height: 50px;
-        font-size: 15px;
-      }
-      
-      .display-value {
-        font-size: 1.1em;
-      }
+    .settings-toggle:active {
+      background: #2980b9 !important;
     }
   </style>
 </head>
 <body>
-  <div class="audio-status" id="audio-status">Audio: Ready</div>
+  <div class="audio-status" id="audio-status">Audio: Load...</div>
   
   <div class="calculator">
-    <div class="app-title">BARCODE SCALE</div>
+    <button class="settings-btn" id="settings-btn">⚙️</button>
     
     <div id="display">
       <div class="display-row">
@@ -369,14 +352,14 @@
           <div class="display-value" id="current-flex">00</div>
         </div>
         <div class="display-item">
-          <div class="display-label">CATEGORY</div>
-          <div class="display-value" id="current-category">000</div>
+          <div class="display-label">CATEGORI</div>
+          <div class="display-value" id="current-category">00</div>
         </div>
       </div>
       <div class="display-row">
         <div class="display-item">
           <div class="display-label">PRODUCT</div>
-          <div class="display-value" id="current-product">000</div>
+          <div class="display-value" id="current-product">0000</div>
         </div>
         <div class="display-item">
           <div class="display-label">WEIGHT</div>
@@ -392,12 +375,12 @@
     </div>
     
     <div class="small-function-row">
-      <button id="flex-btn" class="function-btn small-btn active-mode">FLEX</button>
-      <button id="category-btn" class="function-btn small-btn">CATEGORY</button>
+      <button id="flex-btn" class="function-btn small-btn">FLEX</button>
+      <button id="category-btn" class="function-btn small-btn">CATEGORI</button>
     </div>
     
     <div class="function-row">
-      <button id="product-btn" class="function-btn">PRODUCT</button>
+      <button id="product-btn" class="function-btn active-mode">PRODUCT</button>
       <button id="weight-btn" class="function-btn">WEIGHT</button>
       <button class="backspace-btn">⌫</button>
     </div>
@@ -430,6 +413,47 @@
     <svg id="barcode"></svg>
     <div id="status" class="status-disconnected">Printer: Disconnected</div>
   </div>
+  
+  <!-- Settings Modal -->
+  <div class="settings-modal" id="settings-modal">
+    <div class="settings-content">
+      <div class="settings-title">PENGATURAN DIGIT</div>
+      
+      <div class="setting-item">
+        <label class="setting-label">Digit FLEX:</label>
+        <input type="number" id="flex-digits" class="setting-input" min="1" max="5" value="2">
+        <div class="setting-info">Jumlah digit untuk kode flex (default: 2)</div>
+      </div>
+      
+      <div class="setting-item">
+        <label class="setting-label">Digit KATEGORI:</label>
+        <input type="number" id="category-digits" class="setting-input" min="1" max="5" value="2">
+        <div class="setting-info">Jumlah digit untuk kode kategori (default: 2)</div>
+      </div>
+      
+      <div class="setting-item">
+        <label class="setting-label">Digit PRODUK:</label>
+        <input type="number" id="product-digits" class="setting-input" min="1" max="5" value="4">
+        <div class="setting-info">Jumlah digit untuk kode produk (default: 4)</div>
+      </div>
+      
+      <div class="setting-item">
+        <label class="setting-label">Digit BERAT:</label>
+        <input type="number" id="weight-digits" class="setting-input" min="1" max="5" value="5">
+        <div class="setting-info">Jumlah digit untuk berat (default: 5)</div>
+      </div>
+      
+      <div class="current-settings" id="total-digits-info">
+        Total digit barcode: 13
+      </div>
+      
+      <div class="settings-buttons">
+        <button class="save-btn function-btn" id="save-settings">SIMPAN</button>
+        <button class="cancel-btn function-btn" id="cancel-settings">BATAL</button>
+      </div>
+    </div>
+  </div>
+  
   <div id="notification"></div>
 
   <script>
@@ -438,30 +462,113 @@
     let isAudioInitialized = false;
     const audioStatus = document.getElementById('audio-status');
     
+    // Digit configuration with defaults
+    let digitConfig = {
+      flex: 2,
+      category: 2,
+      product: 4,
+      weight: 5
+    };
+    
+    // Load configuration from localStorage
+    function loadConfig() {
+      const savedConfig = localStorage.getItem('barcodeDigitConfig');
+      if (savedConfig) {
+        digitConfig = JSON.parse(savedConfig);
+        updateTotalDigitsInfo();
+      }
+    }
+    
+    // Save configuration to localStorage
+    function saveConfig() {
+      localStorage.setItem('barcodeDigitConfig', JSON.stringify(digitConfig));
+      updateTotalDigitsInfo();
+    }
+    
+    // Update total digits display in settings
+    function updateTotalDigitsInfo() {
+      const total = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+      document.getElementById('total-digits-info').innerHTML = 
+        `Total digit barcode: ${total}<br>${total === 13 ? '✓ Valid' : '⚠ Harus 13 digit!'}`;
+      
+      // Change color based on validity
+      const infoElement = document.getElementById('total-digits-info');
+      if (total === 13) {
+        infoElement.style.color = '#2ecc71';
+      } else {
+        infoElement.style.color = '#e74c3c';
+      }
+    }
+    
+    // Update settings modal inputs with current config
+    function updateSettingsModal() {
+      document.getElementById('flex-digits').value = digitConfig.flex;
+      document.getElementById('category-digits').value = digitConfig.category;
+      document.getElementById('product-digits').value = digitConfig.product;
+      document.getElementById('weight-digits').value = digitConfig.weight;
+      updateTotalDigitsInfo();
+    }
+    
+    // Show settings modal
+    function showSettings() {
+      updateSettingsModal();
+      document.getElementById('settings-modal').style.display = 'flex';
+    }
+    
+    // Hide settings modal
+    function hideSettings() {
+      document.getElementById('settings-modal').style.display = 'none';
+    }
+    
+    // Save settings from modal
+    function saveSettingsFromModal() {
+      const flexDigits = parseInt(document.getElementById('flex-digits').value) || 2;
+      const categoryDigits = parseInt(document.getElementById('category-digits').value) || 2;
+      const productDigits = parseInt(document.getElementById('product-digits').value) || 4;
+      const weightDigits = parseInt(document.getElementById('weight-digits').value) || 5;
+      
+      const totalDigits = flexDigits + categoryDigits + productDigits + weightDigits;
+      
+      if (totalDigits !== 13) {
+        showNotification(`Total digit harus 13! Saat ini: ${totalDigits} digit`, 4000);
+        return;
+      }
+      
+      // Update configuration
+      digitConfig.flex = flexDigits;
+      digitConfig.category = categoryDigits;
+      digitConfig.product = productDigits;
+      digitConfig.weight = weightDigits;
+      
+      saveConfig();
+      hideSettings();
+      
+      // Reset current values to match new digit lengths
+      resetValuesForNewConfig();
+      showNotification('Pengaturan berhasil disimpan!');
+    }
+    
+    // Reset current values when config changes
+    function resetValuesForNewConfig() {
+      // Truncate or pad values to match new digit lengths
+      flexValue = flexValue.slice(0, digitConfig.flex);
+      categoryValue = categoryValue.slice(0, digitConfig.category);
+      productValue = productValue.slice(0, digitConfig.product);
+      weightValue = weightValue.slice(0, digitConfig.weight);
+      
+      updateDisplay();
+    }
+    
     // Initialize audio
     function initAudio() {
       try {
         if (window.AudioContext || window.webkitAudioContext) {
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          
-          // Create a simple test tone to verify audio works
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-          
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-          
-          gainNode.gain.value = 0.001; // Very quiet test
-          oscillator.frequency.value = 440;
-          oscillator.start();
-          oscillator.stop(audioContext.currentTime + 0.01);
-          
           isAudioInitialized = true;
           audioStatus.textContent = "Audio: Ready";
           setTimeout(() => {
             audioStatus.classList.remove('show');
           }, 2000);
-          
           console.log("Audio initialized successfully");
         } else {
           audioStatus.textContent = "Audio: Not Supported";
@@ -481,8 +588,8 @@
     // Show audio status
     audioStatus.classList.add('show');
     
-    // Play sound function
-    function playSound(type = 'number', frequency = 600, duration = 0.1, volume = 0.2) {
+    // Play simple TIT sound
+    function playTitSound() {
       if (!isAudioInitialized) {
         initAudio();
         if (!isAudioInitialized) return;
@@ -500,58 +607,15 @@
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        // Set parameters based on sound type
-        switch(type) {
-          case 'number':
-            frequency = 600 + Math.random() * 100;
-            volume = 0.15;
-            break;
-          case 'delete':
-            frequency = 350;
-            volume = 0.2;
-            duration = 0.08;
-            break;
-          case 'mode':
-            frequency = 700;
-            volume = 0.18;
-            break;
-          case 'function':
-            frequency = 900;
-            volume = 0.18;
-            duration = 0.12;
-            break;
-          case 'print':
-            frequency = 1100;
-            duration = 0.15;
-            volume = 0.22;
-            break;
-          case 'connect':
-            frequency = 800;
-            duration = 0.18;
-            volume = 0.2;
-            break;
-          case 'success':
-            frequency = 1000;
-            duration = 0.25;
-            volume = 0.25;
-            break;
-          case 'error':
-            frequency = 300;
-            duration = 0.15;
-            volume = 0.25;
-            break;
-          case 'notification':
-            frequency = 1200;
-            duration = 0.15;
-            volume = 0.2;
-            break;
-        }
-        
+        // Simple TIT sound
         oscillator.type = 'sine';
-        oscillator.frequency.value = frequency;
+        oscillator.frequency.value = 800; // Fixed frequency for TIT sound
         
-        // Set envelope for smooth sound
+        // Set envelope for short TIT sound
         const now = audioContext.currentTime;
+        const duration = 0.08; // Very short duration for TIT
+        const volume = 0.65; // Good volume level
+        
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
@@ -568,14 +632,9 @@
         console.log("Sound error:", error);
       }
     }
-    
-    // Play click sound
-    function playClickSound() {
-      playSound('number');
-    }
 
     // Global variables
-    let currentInputMode = 'flex';
+    let currentInputMode = 'product'; // Mulai dengan mode PRODUK
     let flexValue = '';
     let categoryValue = '';
     let productValue = '';
@@ -590,27 +649,6 @@
       }
       document.removeEventListener('click', initAudioOnInteraction);
     }, { once: true });
-    
-    // Button ripple effect
-    function createRipple(event) {
-      const button = event.currentTarget;
-      const circle = document.createElement("span");
-      const diameter = Math.max(button.clientWidth, button.clientHeight);
-      const radius = diameter / 2;
-      
-      circle.style.width = circle.style.height = `${diameter}px`;
-      circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
-      circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
-      circle.classList.add("ripple");
-      
-      const ripple = button.getElementsByClassName("ripple")[0];
-      
-      if (ripple) {
-        ripple.remove();
-      }
-      
-      button.appendChild(circle);
-    }
     
     // Button press animation
     function animateButtonPress(button) {
@@ -636,31 +674,31 @@
           if (flexValue.length === 0) {
             flexValue = '00';
           }
-        } else if (flexValue.length < 2) {
+        } else if (flexValue.length < digitConfig.flex) {
           flexValue += num;
         }
       } else if (currentInputMode === 'category') {
         if (num === '00') {
-          if (categoryValue.length <= 1) {
-            categoryValue += '00';
+          if (categoryValue.length <= 0) {
+            categoryValue = '00';
           }
-        } else if (categoryValue.length < 3) {
+        } else if (categoryValue.length < digitConfig.category) {
           categoryValue += num;
         }
       } else if (currentInputMode === 'product') {
         if (num === '00') {
-          if (productValue.length <= 1) {
+          if (productValue.length <= digitConfig.product - 2) {
             productValue += '00';
           }
-        } else if (productValue.length < 3) {
+        } else if (productValue.length < digitConfig.product) {
           productValue += num;
         }
       } else if (currentInputMode === 'weight') {
         if (num === '00') {
-          if (weightValue.length <= 3) {
+          if (weightValue.length <= digitConfig.weight - 2) {
             weightValue += '00';
           }
-        } else if (weightValue.length < 5) {
+        } else if (weightValue.length < digitConfig.weight) {
           weightValue += num;
         }
       }
@@ -681,35 +719,41 @@
     }
     
     function clearInput() {
+      // Reset kolom produk dan berat
       productValue = '';
       weightValue = '';
+      
+      // Kembali ke mode PRODUK
+      setInputMode('product');
+      
       updateDisplay();
       JsBarcode("#barcode", "", { displayValue: false });
-      showNotification('Product and weight code has been reset');
+      showNotification('Kolom produk dan berat telah direset, kembali ke mode PRODUK');
     }
     
     // Display and formatting functions
     function formatBarcodeData() {
-      const formattedFlex = flexValue.padStart(2, '0');
-      const formattedCategory = categoryValue.padStart(3, '0');
-      const formattedProduct = productValue.padStart(3, '0');
-      const formattedWeight = weightValue.padStart(5, '0');
+      const formattedFlex = flexValue.padStart(digitConfig.flex, '0');
+      const formattedCategory = categoryValue.padStart(digitConfig.category, '0');
+      const formattedProduct = productValue.padStart(digitConfig.product, '0');
+      const formattedWeight = weightValue.padStart(digitConfig.weight, '0');
       return `${formattedFlex}${formattedCategory}${formattedProduct}${formattedWeight}`;
     }
     
     function updateDisplay() {
-      document.getElementById('current-flex').textContent = flexValue.padStart(2, '0');
-      document.getElementById('current-category').textContent = categoryValue.padStart(3, '0');
-      document.getElementById('current-product').textContent = productValue.padStart(3, '0');
-      document.getElementById('current-weight').textContent = weightValue.padStart(5, '0');
+      document.getElementById('current-flex').textContent = flexValue.padStart(digitConfig.flex, '0');
+      document.getElementById('current-category').textContent = categoryValue.padStart(digitConfig.category, '0');
+      document.getElementById('current-product').textContent = productValue.padStart(digitConfig.product, '0');
+      document.getElementById('current-weight').textContent = weightValue.padStart(digitConfig.weight, '0');
       document.getElementById('current-barcode').textContent = formatBarcodeData();
     }
     
     function generate() {
       const barcodeData = formatBarcodeData();
-      if (barcodeData.length !== 13) {
-        playSound('error');
-        showNotification('Please fill all fields with correct digits');
+      const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+      
+      if (barcodeData.length !== totalDigits) {
+        showNotification(`Pastikan semua field terisi dengan digit yang benar. Total harus ${totalDigits} digit`);
         return;
       }
       
@@ -721,24 +765,22 @@
         margin: 10
       });
       
-      playSound('success');
-      showNotification('Barcode generated successfully');
+      showNotification('Barcode berhasil digenerate');
     }
     
     // Printer communication functions - Web Serial API
     async function connectToPrinter() {
       try {
         if (!("serial" in navigator)) {
-          playSound('error');
-          showNotification("Browser doesn't support Web Serial API. Use Chrome/Edge.");
+          showNotification("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.");
           return false;
         }
 
-        showNotification("Selecting printer...");
+        showNotification("Memilih printer...");
         
         // Request serial port
         port = await navigator.serial.requestPort();
-        showNotification("Opening connection...");
+        showNotification("Membuka koneksi...");
         
         // Open the port with baud rate 9600 (standard for many thermal printers)
         await port.open({ baudRate: 9600 });
@@ -747,18 +789,15 @@
         writer = port.writable.getWriter();
         
         updateConnectionStatus(true);
-        playSound('success');
-        showNotification('Printer connected successfully!');
+        showNotification('Printer Connected!');
         return true;
         
       } catch (error) {
         console.error("Connection error:", error);
         if (error.name === 'NotFoundError') {
-          playSound('error');
-          showNotification("No printer selected");
+          showNotification("Tidak ada printer yang dipilih");
         } else {
-          playSound('error');
-          showNotification("Failed to connect to printer: " + error.message);
+          showNotification("Gagal terhubung ke printer: " + error.message);
         }
         updateConnectionStatus(false);
         return false;
@@ -768,32 +807,31 @@
     async function printBarcode() {
       try {
         if (!productValue || !weightValue) {
-          playSound('error');
-          showNotification('Please fill PRODUCT and WEIGHT first');
+          showNotification('Harap isi PRODUK dan BERAT terlebih dahulu');
           return;
         }
         
-        // Generate barcode if not already generated
+        // Generate barcode jika belum digenerate
         const barcodeData = formatBarcodeData();
-        if (barcodeData.length !== 13) {
-          playSound('error');
-          showNotification('Please fill all fields with correct digits');
+        const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+        
+        if (barcodeData.length !== totalDigits) {
+          showNotification(`Pastikan semua field terisi dengan digit yang benar. Total harus ${totalDigits} digit`);
           return;
         }
         
         // Auto-generate barcode if not already done
         if (!document.querySelector('#barcode text') || 
             document.querySelector('#barcode text').textContent !== barcodeData) {
-          generate();
+          generate(); // Generate barcode terlebih dahulu
         }
 
         if (!writer) {
-          playSound('error');
-          showNotification('Printer not connected. Click CONNECT first.');
+          showNotification('Printer belum terhubung. Klik tombol CONNECT dulu.');
           return;
         }
 
-        showNotification("Sending data to printer...");
+        showNotification("Mengirim data ke printer...");
         
         // ESC/POS commands
         const esc = '\x1B';
@@ -807,11 +845,10 @@
         data += esc + 'a' + '\x01'; // Center alignment
         
         // Baris 1: [Flex value][kategori value][produk value][berat value]
-        // Format: [FF][KKK][PPP][WWWWW]
-        data += '[' + flexValue.padStart(2, '0') + '][' + 
-                       categoryValue.padStart(3, '0') + '][' + 
-                       productValue.padStart(3, '0') + '][' + 
-                       weightValue.padStart(5, '0') + ']' + lf;
+        data += '[' + flexValue.padStart(digitConfig.flex, '0') + '][' + 
+                       categoryValue.padStart(digitConfig.category, '0') + '][' + 
+                       productValue.padStart(digitConfig.product, '0') + '][' + 
+                       weightValue.padStart(digitConfig.weight, '0') + ']' + lf;
         
         // Baris kosong
         data += lf;
@@ -846,16 +883,14 @@
         
         await writer.write(encodedData);
         
-        playSound('success');
-        showNotification('Data sent to printer successfully');
+        showNotification('Data berhasil dikirim ke printer');
       } catch (error) {
         console.error("Print error:", error);
-        playSound('error');
-        showNotification("Failed to send to printer: " + error.message);
+        showNotification("Gagal mengirim ke printer: " + error.message);
         
         // Coba format alternatif jika gagal
         if (error.message.includes("invalid") || error.message.includes("character")) {
-          showNotification("Trying alternative format...");
+          showNotification("Mencoba format alternatif...");
           await tryAlternativePrint();
         }
       }
@@ -881,13 +916,10 @@
         data += esc + 'a' + '\x01'; // Center alignment
         
         // Baris 1: [Flex value][kategori value][produk value][berat value]
-        data += '[' + flexValue.padStart(2, '0') + '][' + 
-                       categoryValue.padStart(3, '0') + '][' + 
-                       productValue.padStart(3, '0') + '][' + 
-                       weightValue.padStart(5, '0') + ']' + lf;
-        
-        // Baris kosong
-        //data += lf;
+        data += '[' + flexValue.padStart(digitConfig.flex, '0') + '][' + 
+                       categoryValue.padStart(digitConfig.category, '0') + '][' + 
+                       productValue.padStart(digitConfig.product, '0') + '][' + 
+                       weightValue.padStart(digitConfig.weight, '0') + ']' + lf;
         
         // Set alignment to center untuk barcode
         data += esc + 'a' + '\x01'; // Center alignment
@@ -916,12 +948,10 @@
         
         await writer.write(encodedData);
         
-        playSound('success');
-        showNotification('Printed successfully with alternative format!');
+        showNotification('Berhasil dicetak dengan format alternatif!');
       } catch (error2) {
         console.error("Alternative print error:", error2);
-        playSound('error');
-        showNotification("Failed to print with alternative format");
+        showNotification("Gagal mencetak dengan format alternatif");
       }
     }
     
@@ -929,10 +959,10 @@
     function updateConnectionStatus(connected) {
       const status = document.getElementById('status');
       if (connected) {
-        status.textContent = 'Printer: Connected';
+        status.textContent = 'Printer: Terkoneksi';
         status.className = 'status-connected';
       } else {
-        status.textContent = 'Printer: Disconnected';
+        status.textContent = 'Printer: Tidak Terkoneksi';
         status.className = 'status-disconnected';
       }
     }
@@ -942,9 +972,6 @@
       notification.textContent = message;
       notification.style.display = 'block';
       
-      // Play notification sound
-      playSound('notification');
-      
       setTimeout(() => {
         notification.style.display = 'none';
       }, duration);
@@ -952,87 +979,105 @@
     
     // Set up event listeners for buttons
     function setupButtonListeners() {
-      // FLEX button
-      document.getElementById('flex-btn').addEventListener('click', function(e) {
-        createRipple(e);
+      // SETTINGS button
+      document.getElementById('settings-btn').addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('mode');
+        playTitSound();
+        showSettings();
+      });
+      
+      // Save settings button
+      document.getElementById('save-settings').addEventListener('click', function() {
+        animateButtonPress(this);
+        playTitSound();
+        saveSettingsFromModal();
+      });
+      
+      // Cancel settings button
+      document.getElementById('cancel-settings').addEventListener('click', function() {
+        animateButtonPress(this);
+        playTitSound();
+        hideSettings();
+      });
+      
+      // Close modal when clicking outside
+      document.getElementById('settings-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          hideSettings();
+        }
+      });
+      
+      // FLEX button
+      document.getElementById('flex-btn').addEventListener('click', function() {
+        animateButtonPress(this);
+        playTitSound();
         setInputMode('flex');
       });
       
-      // CATEGORY button
-      document.getElementById('category-btn').addEventListener('click', function(e) {
-        createRipple(e);
+      // KATEGORI button
+      document.getElementById('category-btn').addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('mode');
+        playTitSound();
         setInputMode('category');
       });
       
-      // PRODUCT button
-      document.getElementById('product-btn').addEventListener('click', function(e) {
-        createRipple(e);
+      // PRODUK button
+      document.getElementById('product-btn').addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('mode');
+        playTitSound();
         setInputMode('product');
       });
       
-      // WEIGHT button
-      document.getElementById('weight-btn').addEventListener('click', function(e) {
-        createRipple(e);
+      // BERAT button
+      document.getElementById('weight-btn').addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('mode');
+        playTitSound();
         setInputMode('weight');
       });
       
       // Backspace button
-      document.querySelector('.backspace-btn').addEventListener('click', function(e) {
-        createRipple(e);
+      document.querySelector('.backspace-btn').addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('delete');
+        playTitSound();
         backspace();
       });
       
       // CLEAR button
-      document.querySelectorAll('.function-row')[1].children[0].addEventListener('click', function(e) {
-        createRipple(e);
+      document.querySelectorAll('.function-row')[1].children[0].addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('delete');
+        playTitSound();
         clearInput();
       });
       
       // ENTER button
-      document.querySelectorAll('.function-row')[1].children[1].addEventListener('click', function(e) {
-        createRipple(e);
+      document.querySelectorAll('.function-row')[1].children[1].addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('function');
+        playTitSound();
         generate();
       });
       
       // CONNECT button
-      document.querySelectorAll('.function-row')[1].children[2].addEventListener('click', function(e) {
-        createRipple(e);
+      document.querySelectorAll('.function-row')[1].children[2].addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('connect');
+        playTitSound();
         connectToPrinter();
       });
       
       // Number buttons (0-9, 00)
       const numberButtons = document.querySelectorAll('.buttons button:not(.print-btn)');
       numberButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-          createRipple(e);
+        button.addEventListener('click', function() {
           animateButtonPress(this);
-          playSound('number');
+          playTitSound();
           const value = this.textContent;
           appendNumber(value);
         });
       });
       
       // PRINT button
-      document.querySelector('.print-btn').addEventListener('click', function(e) {
-        createRipple(e);
+      document.querySelector('.print-btn').addEventListener('click', function() {
         animateButtonPress(this);
-        playSound('print');
+        playTitSound();
         printBarcode();
       });
       
@@ -1042,33 +1087,8 @@
         button.addEventListener('touchstart', function(e) {
           // Prevent default to avoid double-tap zoom
           e.preventDefault();
-          createRipple(e);
           animateButtonPress(this);
-          
-          // Play sound based on button type
-          if (this.classList.contains('backspace-btn')) {
-            playSound('delete');
-          } else if (this.classList.contains('print-btn')) {
-            playSound('print');
-          } else if (this.classList.contains('function-btn') && 
-                     !this.classList.contains('active-mode') && 
-                     !this.id) {
-            // For function buttons that are not mode switchers
-            if (this.textContent === 'CLEAR') {
-              playSound('delete');
-            } else if (this.textContent === 'ENTER') {
-              playSound('function');
-            } else if (this.textContent === 'CONNECT') {
-              playSound('connect');
-            } else {
-              playSound('function');
-            }
-          } else if (this.id === 'flex-btn' || this.id === 'category-btn' || 
-                     this.id === 'product-btn' || this.id === 'weight-btn') {
-            playSound('mode');
-          } else if (this.textContent.match(/^[0-9]{1,2}$/)) {
-            playSound('number');
-          }
+          playTitSound();
         }, { passive: false });
         
         button.addEventListener('touchend', function(e) {
@@ -1084,18 +1104,7 @@
         const key = event.key;
         
         // Play sound for any key press
-        if (key >= '0' && key <= '9') {
-          playSound('number');
-        } else if (key === 'Backspace') {
-          playSound('delete');
-        } else if (key === 'Enter') {
-          playSound('function');
-        } else if (key === 'c' || key === 'C') {
-          if (event.ctrlKey) return;
-          playSound('connect');
-        } else if (key === 'p' || key === 'P') {
-          playSound('print');
-        }
+        playTitSound();
         
         // Numbers
         if (key >= '0' && key <= '9') {
@@ -1122,6 +1131,13 @@
           case 'P':
             printBarcode();
             break;
+          case 's':
+          case 'S':
+            if (event.ctrlKey) {
+              event.preventDefault();
+              showSettings();
+            }
+            break;
           case '1':
           case '2':
           case '3':
@@ -1142,6 +1158,9 @@
     
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
+      // Load configuration from localStorage
+      loadConfig();
+      
       updateDisplay();
       
       // Setup button event listeners
@@ -1152,7 +1171,7 @@
       
       // Check Web Serial API support
       if (!("serial" in navigator)) {
-        document.getElementById('status').textContent = 'Web Serial API not supported';
+        document.getElementById('status').textContent = 'Browser tidak mendukung Web Serial API';
       }
     });
   </script>
