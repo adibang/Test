@@ -148,6 +148,10 @@
       background-color: #c0392b;
     }
 
+    .status-connecting {
+      background-color: #f39c12;
+    }
+
     #notification {
       position: fixed;
       top: 20px;
@@ -318,24 +322,39 @@
       border-radius: 5px;
     }
     
-    .settings-toggle {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: #3498db !important;
-      width: 40px;
-      height: 40px;
-      min-height: 40px;
-      padding: 5px;
-      border-radius: 50%;
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* New: Reset Flex & Category Button */
+    .reset-values-btn {
+      background: #e67e22 !important;
+      margin-top: 10px;
     }
     
-    .settings-toggle:active {
-      background: #2980b9 !important;
+    .reset-values-btn:active {
+      background: #d35400 !important;
+    }
+    
+    .stored-values-info {
+      color: #ecf0f1;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 12px;
+      background: rgba(0,0,0,0.2);
+      padding: 8px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .stored-values-info span {
+      flex: 1;
+    }
+    
+    /* Disconnect button */
+    .disconnect-btn {
+      background: #e74c3c !important;
+    }
+    
+    .disconnect-btn:active {
+      background: #c0392b !important;
     }
   </style>
 </head>
@@ -388,7 +407,7 @@
     <div class="function-row">
       <button class="function-btn">CLEAR</button>
       <button class="function-btn">ENTER</button>
-      <button class="function-btn">CONNECT</button>
+      <button class="function-btn" id="connect-btn">CONNECT</button>
     </div>
     
     <div class="buttons">
@@ -447,10 +466,18 @@
         Total digit barcode: 13
       </div>
       
+      <!-- Informasi nilai yang tersimpan -->
+      <div class="stored-values-info">
+        <span>Flex: <span id="stored-flex-value">00</span></span>
+        <span>Kategori: <span id="stored-category-value">00</span></span>
+      </div>
+      
       <div class="settings-buttons">
         <button class="save-btn function-btn" id="save-settings">SIMPAN</button>
         <button class="cancel-btn function-btn" id="cancel-settings">BATAL</button>
       </div>
+      
+      <button class="reset-values-btn function-btn" id="reset-values-btn">RESET NILAI FLEX & KATEGORI</button>
     </div>
   </div>
   
@@ -470,6 +497,18 @@
       weight: 5
     };
     
+    // Global variables untuk nilai flex dan kategori
+    let flexValue = '';
+    let categoryValue = '';
+    let productValue = '';
+    let weightValue = '';
+    let currentInputMode = 'product';
+    let port = null;
+    let writer = null;
+    
+    // Variabel untuk menyimpan port yang dipilih
+    let savedPortInfo = null;
+    
     // Load configuration from localStorage
     function loadConfig() {
       const savedConfig = localStorage.getItem('barcodeDigitConfig');
@@ -477,6 +516,61 @@
         digitConfig = JSON.parse(savedConfig);
         updateTotalDigitsInfo();
       }
+    }
+    
+    // Load stored values from localStorage
+    function loadStoredValues() {
+      const savedFlex = localStorage.getItem('barcodeFlexValue');
+      const savedCategory = localStorage.getItem('barcodeCategoryValue');
+      
+      if (savedFlex !== null) {
+        flexValue = savedFlex;
+        // Potong jika nilai lebih panjang dari digit yang diizinkan
+        if (flexValue.length > digitConfig.flex) {
+          flexValue = flexValue.substring(0, digitConfig.flex);
+          saveFlexValue();
+        }
+      }
+      
+      if (savedCategory !== null) {
+        categoryValue = savedCategory;
+        // Potong jika nilai lebih panjang dari digit yang diizinkan
+        if (categoryValue.length > digitConfig.category) {
+          categoryValue = categoryValue.substring(0, digitConfig.category);
+          saveCategoryValue();
+        }
+      }
+      
+      // Update tampilan nilai yang tersimpan di settings modal
+      updateStoredValuesInfo();
+    }
+    
+    // Save flex value to localStorage
+    function saveFlexValue() {
+      localStorage.setItem('barcodeFlexValue', flexValue);
+      updateStoredValuesInfo();
+    }
+    
+    // Save category value to localStorage
+    function saveCategoryValue() {
+      localStorage.setItem('barcodeCategoryValue', categoryValue);
+      updateStoredValuesInfo();
+    }
+    
+    // Reset flex and category values
+    function resetFlexCategoryValues() {
+      flexValue = '';
+      categoryValue = '';
+      saveFlexValue();
+      saveCategoryValue();
+      updateDisplay();
+      showNotification('Nilai flex dan kategori telah direset');
+    }
+    
+    // Update stored values info in settings modal
+    function updateStoredValuesInfo() {
+      document.getElementById('stored-flex-value').textContent = flexValue.padStart(digitConfig.flex, '0') || '00';
+      document.getElementById('stored-category-value').textContent = categoryValue.padStart(digitConfig.category, '0') || '00';
     }
     
     // Save configuration to localStorage
@@ -507,6 +601,7 @@
       document.getElementById('product-digits').value = digitConfig.product;
       document.getElementById('weight-digits').value = digitConfig.weight;
       updateTotalDigitsInfo();
+      updateStoredValuesInfo();
     }
     
     // Show settings modal
@@ -541,22 +636,21 @@
       digitConfig.weight = weightDigits;
       
       saveConfig();
+      
+      // Potong nilai flex dan kategori jika lebih panjang dari digit baru
+      if (flexValue.length > flexDigits) {
+        flexValue = flexValue.substring(0, flexDigits);
+        saveFlexValue();
+      }
+      
+      if (categoryValue.length > categoryDigits) {
+        categoryValue = categoryValue.substring(0, categoryDigits);
+        saveCategoryValue();
+      }
+      
       hideSettings();
-      
-      // Reset current values to match new digit lengths
-      resetValuesForNewConfig();
-      showNotification('Pengaturan berhasil disimpan!');
-    }
-    
-    // Reset current values when config changes
-    function resetValuesForNewConfig() {
-      // Truncate or pad values to match new digit lengths
-      flexValue = flexValue.slice(0, digitConfig.flex);
-      categoryValue = categoryValue.slice(0, digitConfig.category);
-      productValue = productValue.slice(0, digitConfig.product);
-      weightValue = weightValue.slice(0, digitConfig.weight);
-      
       updateDisplay();
+      showNotification('Pengaturan berhasil disimpan!');
     }
     
     // Initialize audio
@@ -633,15 +727,6 @@
       }
     }
 
-    // Global variables
-    let currentInputMode = 'product'; // Mulai dengan mode PRODUK
-    let flexValue = '';
-    let categoryValue = '';
-    let productValue = '';
-    let weightValue = '';
-    let port = null;
-    let writer = null;
-    
     // Initialize audio on first user interaction
     document.addEventListener('click', function initAudioOnInteraction() {
       if (!isAudioInitialized) {
@@ -673,17 +758,21 @@
         if (num === '00') {
           if (flexValue.length === 0) {
             flexValue = '00';
+            saveFlexValue();
           }
         } else if (flexValue.length < digitConfig.flex) {
           flexValue += num;
+          saveFlexValue();
         }
       } else if (currentInputMode === 'category') {
         if (num === '00') {
           if (categoryValue.length <= 0) {
             categoryValue = '00';
+            saveCategoryValue();
           }
         } else if (categoryValue.length < digitConfig.category) {
           categoryValue += num;
+          saveCategoryValue();
         }
       } else if (currentInputMode === 'product') {
         if (num === '00') {
@@ -708,8 +797,10 @@
     function backspace() {
       if (currentInputMode === 'flex' && flexValue.length > 0) {
         flexValue = flexValue.slice(0, -1);
+        saveFlexValue();
       } else if (currentInputMode === 'category' && categoryValue.length > 0) {
         categoryValue = categoryValue.slice(0, -1);
+        saveCategoryValue();
       } else if (currentInputMode === 'product' && productValue.length > 0) {
         productValue = productValue.slice(0, -1);
       } else if (currentInputMode === 'weight' && weightValue.length > 0) {
@@ -719,7 +810,7 @@
     }
     
     function clearInput() {
-      // Reset kolom produk dan berat
+      // Reset hanya kolom produk dan berat
       productValue = '';
       weightValue = '';
       
@@ -777,10 +868,18 @@
         }
 
         showNotification("Memilih printer...");
+        updateConnectionStatus('connecting');
         
         // Request serial port
         port = await navigator.serial.requestPort();
         showNotification("Membuka koneksi...");
+        
+        // Save port info for reconnection
+        savedPortInfo = {
+          vendorId: port.getInfo().usbVendorId,
+          productId: port.getInfo().usbProductId
+        };
+        localStorage.setItem('printerPortInfo', JSON.stringify(savedPortInfo));
         
         // Open the port with baud rate 9600 (standard for many thermal printers)
         await port.open({ baudRate: 9600 });
@@ -788,8 +887,15 @@
         // Get the writer
         writer = port.writable.getWriter();
         
+        // Save connection state
+        localStorage.setItem('printerConnected', 'true');
+        
         updateConnectionStatus(true);
         showNotification('Printer Connected!');
+        
+        // Update connect button text
+        updateConnectButton(true);
+        
         return true;
         
       } catch (error) {
@@ -800,7 +906,117 @@
           showNotification("Gagal terhubung ke printer: " + error.message);
         }
         updateConnectionStatus(false);
+        localStorage.setItem('printerConnected', 'false');
+        updateConnectButton(false);
         return false;
+      }
+    }
+    
+    // Function to disconnect printer
+    async function disconnectPrinter() {
+      try {
+        if (writer) {
+          await writer.close();
+          writer = null;
+        }
+        
+        if (port) {
+          await port.close();
+          port = null;
+        }
+        
+        // Clear saved connection state
+        localStorage.setItem('printerConnected', 'false');
+        
+        updateConnectionStatus(false);
+        updateConnectButton(false);
+        showNotification('Printer disconnected');
+      } catch (error) {
+        console.error("Disconnection error:", error);
+        showNotification("Error disconnecting printer: " + error.message);
+      }
+    }
+    
+    // Function to reconnect to printer
+    async function reconnectToPrinter() {
+      try {
+        if (!("serial" in navigator)) {
+          return false;
+        }
+
+        // Check if we have saved port info
+        const savedPortInfoStr = localStorage.getItem('printerPortInfo');
+        if (!savedPortInfoStr) {
+          return false;
+        }
+
+        updateConnectionStatus('connecting');
+        
+        // Get previously authorized ports
+        const ports = await navigator.serial.getPorts();
+        
+        if (ports.length === 0) {
+          updateConnectionStatus(false);
+          updateConnectButton(false);
+          return false;
+        }
+
+        // Try to find our saved port
+        const savedPortInfo = JSON.parse(savedPortInfoStr);
+        let targetPort = ports[0]; // Default to first port
+        
+        // Try to find the exact port that was previously connected
+        for (const p of ports) {
+          const info = p.getInfo();
+          if (info.usbVendorId === savedPortInfo.vendorId && 
+              info.usbProductId === savedPortInfo.productId) {
+            targetPort = p;
+            break;
+          }
+        }
+
+        // Open the port
+        port = targetPort;
+        await port.open({ baudRate: 9600 });
+        
+        // Get the writer
+        writer = port.writable.getWriter();
+        
+        updateConnectionStatus(true);
+        updateConnectButton(true);
+        showNotification('Printer reconnected successfully!', 2000);
+        
+        return true;
+      } catch (error) {
+        console.error("Reconnection error:", error);
+        updateConnectionStatus(false);
+        updateConnectButton(false);
+        return false;
+      }
+    }
+    
+    // Update connect button based on connection state
+    function updateConnectButton(connected) {
+      const connectBtn = document.getElementById('connect-btn');
+      if (connected) {
+        connectBtn.textContent = 'DISCONNECT';
+        connectBtn.classList.remove('function-btn');
+        connectBtn.classList.add('disconnect-btn');
+      } else {
+        connectBtn.textContent = 'CONNECT';
+        connectBtn.classList.remove('disconnect-btn');
+        connectBtn.classList.add('function-btn');
+      }
+    }
+    
+    // Handle connect/disconnect button click
+    async function handleConnectClick() {
+      const isConnected = localStorage.getItem('printerConnected') === 'true';
+      
+      if (isConnected && port) {
+        await disconnectPrinter();
+      } else {
+        await connectToPrinter();
       }
     }
     
@@ -826,9 +1042,15 @@
           generate(); // Generate barcode terlebih dahulu
         }
 
-        if (!writer) {
-          showNotification('Printer belum terhubung. Klik tombol CONNECT dulu.');
-          return;
+        // Check if printer is connected
+        const isConnected = localStorage.getItem('printerConnected') === 'true';
+        if (!isConnected || !writer) {
+          // Try to reconnect automatically
+          const reconnected = await reconnectToPrinter();
+          if (!reconnected) {
+            showNotification('Printer belum terhubung. Klik tombol CONNECT dulu.');
+            return;
+          }
         }
 
         showNotification("Mengirim data ke printer...");
@@ -887,6 +1109,13 @@
       } catch (error) {
         console.error("Print error:", error);
         showNotification("Gagal mengirim ke printer: " + error.message);
+        
+        // If error is due to disconnected printer, update status
+        if (error.message.includes("closed") || error.message.includes("disconnected")) {
+          updateConnectionStatus(false);
+          localStorage.setItem('printerConnected', 'false');
+          updateConnectButton(false);
+        }
         
         // Coba format alternatif jika gagal
         if (error.message.includes("invalid") || error.message.includes("character")) {
@@ -956,14 +1185,17 @@
     }
     
     // UI feedback functions
-    function updateConnectionStatus(connected) {
-      const status = document.getElementById('status');
-      if (connected) {
-        status.textContent = 'Printer: Terkoneksi';
-        status.className = 'status-connected';
+    function updateConnectionStatus(status) {
+      const statusElement = document.getElementById('status');
+      if (status === true) {
+        statusElement.textContent = 'Printer: Terkoneksi';
+        statusElement.className = 'status-connected';
+      } else if (status === 'connecting') {
+        statusElement.textContent = 'Printer: Menyambungkan...';
+        statusElement.className = 'status-connecting';
       } else {
-        status.textContent = 'Printer: Tidak Terkoneksi';
-        status.className = 'status-disconnected';
+        statusElement.textContent = 'Printer: Tidak Terkoneksi';
+        statusElement.className = 'status-disconnected';
       }
     }
     
@@ -997,6 +1229,14 @@
       document.getElementById('cancel-settings').addEventListener('click', function() {
         animateButtonPress(this);
         playTitSound();
+        hideSettings();
+      });
+      
+      // Reset values button
+      document.getElementById('reset-values-btn').addEventListener('click', function() {
+        animateButtonPress(this);
+        playTitSound();
+        resetFlexCategoryValues();
         hideSettings();
       });
       
@@ -1056,11 +1296,11 @@
         generate();
       });
       
-      // CONNECT button
-      document.querySelectorAll('.function-row')[1].children[2].addEventListener('click', function() {
+      // CONNECT/DISCONNECT button
+      document.getElementById('connect-btn').addEventListener('click', function() {
         animateButtonPress(this);
         playTitSound();
-        connectToPrinter();
+        handleConnectClick();
       });
       
       // Number buttons (0-9, 00)
@@ -1125,7 +1365,7 @@
           case 'c':
           case 'C':
             if (event.ctrlKey) break;
-            connectToPrinter();
+            handleConnectClick();
             break;
           case 'p':
           case 'P':
@@ -1136,6 +1376,13 @@
             if (event.ctrlKey) {
               event.preventDefault();
               showSettings();
+            }
+            break;
+          case 'r':
+          case 'R':
+            if (event.ctrlKey && event.altKey) {
+              event.preventDefault();
+              resetFlexCategoryValues();
             }
             break;
           case '1':
@@ -1156,10 +1403,27 @@
       });
     }
     
+    // Initialize printer connection on page load
+    async function initializePrinterConnection() {
+      // Check if printer was previously connected
+      const wasConnected = localStorage.getItem('printerConnected') === 'true';
+      
+      if (wasConnected) {
+        // Try to reconnect automatically
+        await reconnectToPrinter();
+      } else {
+        updateConnectionStatus(false);
+        updateConnectButton(false);
+      }
+    }
+    
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       // Load configuration from localStorage
       loadConfig();
+      
+      // Load stored values from localStorage
+      loadStoredValues();
       
       updateDisplay();
       
@@ -1169,9 +1433,13 @@
       // Setup keyboard listeners
       setupKeyboardListeners();
       
+      // Initialize printer connection
+      initializePrinterConnection();
+      
       // Check Web Serial API support
       if (!("serial" in navigator)) {
         document.getElementById('status').textContent = 'Browser tidak mendukung Web Serial API';
+        updateConnectButton(false);
       }
     });
   </script>
