@@ -1,865 +1,1217 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Barcode Weight Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS Barcode Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
+    /* Reset & Base */
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
     }
-
+    
     body {
-      background: #f0f2f5;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      background: #f5f5f5;
       min-height: 100vh;
+      color: #333;
+    }
+    
+    /* Header */
+    .app-header {
+      background: #2c3e50;
+      color: white;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .app-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    /* Main Content */
+    .main-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Category Tabs */
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 0 5px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    
+    .category-tab {
+      padding: 8px 16px;
+      background: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      border: 1px solid #dee2e6;
+      color: #495057;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    
+    .category-tab:hover {
+      border-color: #e67e22;
+      color: #e67e22;
+    }
+    
+    .category-tab.active {
+      background: #e67e22;
+      color: white;
+      border-color: #e67e22;
+    }
+    
+    /* Products Grid - TINGGI DITINGKATKAN */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+    }
+    
+    /* Product Card - TINGGI DITINGKATKAN */
+    .product-card {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+      border: 1px solid #e9ecef;
+      position: relative;
+      height: 260px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      border-color: #e67e22;
+    }
+    
+    .product-card.selected {
+      border: 2px solid #27ae60;
+    }
+    
+    /* Product Image - TINGGI DITINGKATKAN */
+    .product-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      flex-shrink: 0;
+    }
+    
+    /* Product Info */
+    .product-info {
+      padding: 12px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    
+    .product-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #2c3e50;
+      margin-bottom: 5px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      height: 34px;
+      line-height: 1.4;
+    }
+    
+    .product-code {
+      font-size: 0.8rem;
+      color: #6c757d;
+      font-family: monospace;
+      background: #f8f9fa;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    
+    /* Product Actions */
+    .product-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .product-card:hover .product-actions {
+      opacity: 1;
+    }
+    
+    .action-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 10px;
-      touch-action: manipulation;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
     }
-
-    .calculator {
-      width: 100%;
-      max-width: 400px;
-      background: #2c3e50;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      position: relative;
-    }
-
-    #display {
-      background: #bcbcc0;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 5px;
-      text-align: center;
-      font-family: monospace;
-      font-size: 1em;
-      user-select: text;
-    }
-
-    .display-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 5px;
-    }
-
-    .display-item {
-      text-align: center;
-      flex: 1;
-    }
-
-    .display-label {
-      font-size: 0.8em;
-      color: #7f8c8d;
-    }
-
-    .display-value {
-      font-size: 1.1em;
-      font-weight: bold;
-    }
-
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .function-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .small-function-row {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    button {
-      padding: 15px 10px;
-      border: none;
-      background: #909096;
+    
+    .edit-btn {
+      background: #f39c12;
       color: white;
+    }
+    
+    .edit-btn:hover {
+      background: #e67e22;
+    }
+    
+    .delete-btn {
+      background: #e74c3c;
+      color: white;
+    }
+    
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+    
+    /* Add Product Card */
+    .add-product-card {
+      background: white;
       border-radius: 15px;
       cursor: pointer;
-      font-size: 16px;
-      min-height: 50px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.1s ease;
-      outline: none;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-      transform: translateZ(0);
-      will-change: transform, background-color;
+      transition: all 0.2s;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+      border: 2px dashed #adb5bd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 260px;
     }
-
-    button:active, button.active {
-      background: #2980b9;
-      transform: scale(0.95) translateZ(0);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      transition: transform 0.05s ease;
+    
+    .add-product-card:hover {
+      border-color: #e67e22;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
     }
-
-    .function-btn {
-      background: #57575e;
+    
+    .add-product-content {
+      text-align: center;
+      padding: 20px;
     }
-
-    .function-btn:active, .function-btn.active {
-      background: #d35400;
+    
+    .add-icon {
+      font-size: 32px;
+      color: #e67e22;
+      margin-bottom: 10px;
     }
-
-    #barcode {
+    
+    .add-text {
+      color: #e67e22;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+    
+    /* Modal Content */
+    .modal-content {
+      background: #e67e22;
+      border-radius: 25px;
       width: 100%;
-      margin-top: 20px;
-      padding: 10px;
-      background: white;
-      border-radius: 5px;
+      max-width: 450px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      animation: modalSlideIn 0.2s ease;
     }
-
-    #status {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 5px;
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-header {
+      padding: 20px 25px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    
+    .close-modal {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+    
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .modal-body {
+      padding: 0 25px 25px;
+      max-height: calc(90vh - 80px);
+      overflow-y: auto;
+    }
+    
+    /* Display Section */
+    .display-section {
+      background: #f0f0f0;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 20px;
+      text-align: right;
+      font-family: monospace;
+      font-size: 1.1em;
+    }
+    
+    .display-row {
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .display-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    /* Product Info Compact */
+    .product-info-section {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 15px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: white;
+    }
+    
+    .product-thumbnail {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: white;
+    }
+    
+    .product-details h4 {
+      color: white;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    
+    .product-details .code {
+      color: rgba(255, 255, 255, 0.8);
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    
+    /* Printer Status */
+    .printer-status {
+      padding: 8px;
+      border-radius: 15px;
       text-align: center;
       color: white;
-      font-size: 14px;
+      font-size: 13px;
+      margin-bottom: 15px;
+      background: rgba(0, 0, 0, 0.2);
     }
-
-    .status-connected {
-      background-color: #27ae60;
+    
+    .status-connected { 
+      background-color: #27ae60; 
     }
-
-    .status-disconnected {
-      background-color: #c0392b;
+    
+    .status-disconnected { 
+      background-color: #c0392b; 
     }
-
-    .status-connecting {
-      background-color: #f39c12;
+    
+    /* Buttons Grid */
+    .function-row, .buttons {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 8px;
     }
-
+    
+    .function-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .buttons {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    button {
+      padding: 14px 8px;
+      border: none;
+      background: #ffffff;
+      color: #333;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      min-height: 48px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: box-shadow 0.15s ease;
+      font-weight: 600;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+      box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+    }
+    
+    .function-btn {
+      background: #ffffff;
+    }
+    
+    .function-btn:active {
+      background: #d35400;
+      color: white;
+    }
+    
+    .backspace-btn {
+      background: #c0392b;
+      color: white;
+    }
+    
+    .backspace-btn:active {
+      background: #a93226;
+    }
+    
+    .print-btn {
+      grid-column: span 3;
+      background: #ffffff !important;
+    }
+    
+    .print-btn:active {
+      background: #27ae60 !important;
+      color: white;
+    }
+    
+    .active-mode {
+      background: #27ae60 !important;
+      color: white;
+    }
+    
+    /* Barcode Preview */
+    .barcode-preview {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 20px;
+      margin-top: 15px;
+      text-align: center;
+      font-size: 12px;
+      color: #555;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .barcode-container {
+      width: 100%;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 10px;
+      margin: 10px 0;
+      padding: 10px;
+      overflow: hidden;
+    }
+    
+    #barcode-svg {
+      width: 100%;
+      height: 80px;
+    }
+    
+    .barcode-info {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 5px;
+      font-family: monospace;
+      word-break: break-all;
+      background: white;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    
+    /* Settings Modal */
+    .settings-modal .modal-content {
+      background: white;
+      max-width: 400px;
+    }
+    
+    .settings-modal .modal-header {
+      background: #2c3e50;
+    }
+    
+    .settings-content {
+      padding: 20px;
+    }
+    
+    .setting-group {
+      margin-bottom: 15px;
+    }
+    
+    .setting-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    
+    .setting-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 1rem;
+      text-align: center;
+    }
+    
+    .digit-summary {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      margin: 20px 0;
+      border: 2px solid #e9ecef;
+    }
+    
+    /* Notification */
     #notification {
       position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 15px;
+      padding: 12px 20px;
       border-radius: 5px;
       display: none;
       color: white;
       background-color: #2c3e50;
       max-width: 90%;
       text-align: center;
-      z-index: 1000;
-    }
-
-    .print-btn {
-      color: #57575e;
-      grid-column: span 3;
-      background: #f0f2f5 !important;
-    }
-
-    .print-btn:active, .print-btn.active {
-      color: #f0f2f5;
-      background: #27ae60 !important;
-    }
-
-    .backspace-btn {
-      background: #c0392b;
-    }
-
-    .backspace-btn:active, .backspace-btn.active {
-      background: #a93226;
-    }
-
-    .active-mode {
-      background: #27ae60 !important;
-    }
-
-    .small-btn {
-      padding: 10px 5px;
+      z-index: 1001;
       font-size: 14px;
-      min-height: 40px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
     
-    /* Audio status indicator */
-    .audio-status {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: #4CAF50;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 15px;
-      font-size: 12px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 1000;
-    }
-    .audio-status.show {
-      opacity: 1;
+    /* CSS untuk Dropdown */
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px !important;
+      cursor: pointer;
     }
     
-    /* Settings Button */
-    .settings-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #8e44ad !important;
-      width: 40px;
-      height: 40px;
-      min-height: 40px;
-      padding: 5px;
-      border-radius: 50%;
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    select:focus {
+      outline: none;
+      border-color: #e67e22;
+      box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
     }
     
-    .settings-btn:active, .settings-btn.active {
-      background: #9b59b6 !important;
+    /* Responsive Grid untuk Tablet */
+    @media (max-width: 768px) {
+      .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+      }
+      
+      .product-card {
+        height: 240px;
+      }
+      
+      .product-image {
+        height: 140px;
+      }
+      
+      .modal-content {
+        max-width: 95%;
+      }
+      
+      button {
+        padding: 12px 6px;
+        font-size: 14px;
+        min-height: 44px;
+      }
     }
     
-    /* Settings Modal */
-    .settings-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .settings-content {
-      background: #34495e;
-      padding: 20px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 350px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .settings-title {
-      color: white;
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.2em;
-    }
-    
-    .setting-item {
-      margin-bottom: 15px;
-      background: #2c3e50;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    
-    .setting-label {
-      color: #ecf0f1;
-      margin-bottom: 8px;
-      display: block;
-      font-size: 14px;
-    }
-    
-    .setting-input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      background: #ecf0f1;
-      font-size: 16px;
-      text-align: center;
-    }
-    
-    .setting-info {
-      color: #bdc3c7;
-      font-size: 12px;
-      margin-top: 5px;
-      text-align: center;
-    }
-    
-    .settings-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    
-    .save-btn {
-      background: #27ae60 !important;
-    }
-    
-    .cancel-btn {
-      background: #c0392b !important;
-    }
-    
-    .current-settings {
-      color: #ecf0f1;
-      text-align: center;
-      margin-top: 15px;
-      font-size: 12px;
-      background: rgba(0,0,0,0.2);
-      padding: 10px;
-      border-radius: 5px;
-    }
-    
-    /* New: Reset Flex & Category Button */
-    .reset-values-btn {
-      background: #e67e22 !important;
-      margin-top: 10px;
-    }
-    
-    .reset-values-btn:active {
-      background: #d35400 !important;
-    }
-    
-    .stored-values-info {
-      color: #ecf0f1;
-      text-align: center;
-      margin-top: 10px;
-      font-size: 12px;
-      background: rgba(0,0,0,0.2);
-      padding: 8px;
-      border-radius: 5px;
-      display: flex;
-      justify-content: space-between;
-    }
-    
-    .stored-values-info span {
-      flex: 1;
-    }
-    
-    /* Disconnect button */
-    .disconnect-btn {
-      background: #e74c3c !important;
-    }
-    
-    .disconnect-btn:active {
-      background: #c0392b !important;
+    /* Responsive Grid untuk Mobile */
+    @media (max-width: 480px) {
+      .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+      }
+      
+      .product-card {
+        height: 220px;
+      }
+      
+      .product-image {
+        height: 130px;
+      }
+      
+      button {
+        padding: 10px 4px;
+        font-size: 13px;
+        min-height: 40px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="audio-status" id="audio-status">Audio: Load...</div>
-  
-  <div class="calculator">
-    <button class="settings-btn" id="settings-btn">⚙️</button>
-    
-    <div id="display">
-      <div class="display-row">
-        <div class="display-item">
-          <div class="display-label">FLEX</div>
-          <div class="display-value" id="current-flex">00</div>
-        </div>
-        <div class="display-item">
-          <div class="display-label">CATEGORI</div>
-          <div class="display-value" id="current-category">00</div>
-        </div>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="app-title">
+        <span>📦</span>
+        POS Barcode Generator
       </div>
-      <div class="display-row">
-        <div class="display-item">
-          <div class="display-label">PRODUCT</div>
-          <div class="display-value" id="current-product">0000</div>
-        </div>
-        <div class="display-item">
-          <div class="display-label">WEIGHT</div>
-          <div class="display-value" id="current-weight">00000</div>
-        </div>
-      </div>
-      <div class="display-row">
-        <div class="display-item" style="flex: 2;">
-          <div class="display-label">BARCODE</div>
-          <div class="display-value" id="current-barcode">0000000000000</div>
-        </div>
+      <div class="header-actions">
+        <button onclick="showSettingsModal()" style="background:#2c3e50;color:white;padding:8px 12px;border-radius:25px;border:none;font-size:14px;">
+          ⚙️ Settings
+        </button>
       </div>
     </div>
-    
-    <div class="small-function-row">
-      <button id="flex-btn" class="function-btn small-btn">FLEX</button>
-      <button id="category-btn" class="function-btn small-btn">CATEGORI</button>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Category Tabs -->
+    <div class="category-tabs" id="category-tabs">
+      <!-- Categories will be loaded here -->
     </div>
     
-    <div class="function-row">
-      <button id="product-btn" class="function-btn active-mode">PRODUCT</button>
-      <button id="weight-btn" class="function-btn">WEIGHT</button>
-      <button class="backspace-btn">⌫</button>
+    <!-- Products Grid -->
+    <div class="products-grid" id="products-grid">
+      <!-- Products will be loaded here -->
     </div>
-    
-    <div class="function-row">
-      <button class="function-btn">CLEAR</button>
-      <button class="function-btn">ENTER</button>
-      <button class="function-btn" id="connect-btn">CONNECT</button>
+  </main>
+
+  <!-- Weight Input Modal -->
+  <div class="modal-overlay" id="weight-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">⚖️ Input Berat</h2>
+        <button class="close-modal" onclick="closeWeightModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Product Info -->
+        <div class="product-info-section" id="selected-product-info">
+          <!-- Product info will be loaded here -->
+        </div>
+        
+        <!-- Display -->
+        <div class="display-section">
+          <div class="display-row">
+            <span>PRODUK:</span>
+            <span id="display-product-code">-</span>
+          </div>
+          <div class="display-row">
+            <span>BERAT:</span>
+            <span id="display-weight">0</span> <span style="font-size:0.9em">gram</span>
+          </div>
+          <div class="display-row">
+            <span>BARCODE:</span>
+            <span id="display-barcode">-</span>
+          </div>
+        </div>
+        
+        <!-- Printer Status -->
+        <div id="status" class="printer-status status-disconnected">Printer: Tidak Terkoneksi</div>
+        
+        <!-- Function Row -->
+        <div class="function-row">
+          <button id="clear-btn" class="function-btn" onclick="clearWeight()">CLEAR</button>
+          <button id="generate-btn" class="function-btn" onclick="generateBarcode()">GENERATE</button>
+          <button id="connect-btn" class="function-btn" onclick="connectToPrinter()">CONNECT</button>
+        </div>
+        
+        <!-- Number Buttons -->
+        <div class="buttons">
+          <button onclick="appendNumber('7')">7</button>
+          <button onclick="appendNumber('8')">8</button>
+          <button onclick="appendNumber('9')">9</button>
+          
+          <button onclick="appendNumber('4')">4</button>
+          <button onclick="appendNumber('5')">5</button>
+          <button onclick="appendNumber('6')">6</button>
+          
+          <button onclick="appendNumber('1')">1</button>
+          <button onclick="appendNumber('2')">2</button>
+          <button onclick="appendNumber('3')">3</button>
+          
+          <button onclick="appendNumber('0')">0</button>
+          <button onclick="appendNumber('00')">00</button>
+          <button class="backspace-btn" onclick="backspaceWeight()">⌫</button>
+          
+          <button class="print-btn function-btn" onclick="printBarcode()">PRINT</button>
+        </div>
+        
+        <!-- Barcode Preview -->
+        <div class="barcode-preview">
+          <div style="font-weight:600;color:#333;margin-bottom:10px;">PREVIEW BARCODE</div>
+          <div class="barcode-container">
+            <svg id="barcode-svg"></svg>
+          </div>
+          <div class="barcode-info" id="current-barcode">Klik GENERATE untuk membuat barcode</div>
+        </div>
+      </div>
     </div>
-    
-    <div class="buttons">
-      <button>7</button>
-      <button>8</button>
-      <button>9</button>
-      
-      <button>4</button>
-      <button>5</button>
-      <button>6</button>
-      
-      <button>1</button>
-      <button>2</button>
-      <button>3</button>
-      
-      <button>0</button>
-      <button>00</button>
-      
-      <button class="print-btn function-btn">PRINT</button>
-    </div>
-    
-    <svg id="barcode"></svg>
-    <div id="status" class="status-disconnected">Printer: Disconnected</div>
   </div>
-  
+
+  <!-- Add/Edit Product Modal -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal-content" style="background:white;">
+      <div class="modal-header" style="background:#2c3e50;">
+        <h2 class="modal-title" id="product-modal-title">➕ Tambah Produk</h2>
+        <button class="close-modal" onclick="closeProductModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="product-form-content">
+          <!-- Form will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings Modal -->
-  <div class="settings-modal" id="settings-modal">
-    <div class="settings-content">
-      <div class="settings-title">PENGATURAN DIGIT</div>
-      
-      <div class="setting-item">
-        <label class="setting-label">Digit FLEX:</label>
-        <input type="number" id="flex-digits" class="setting-input" min="1" max="5" value="2">
-        <div class="setting-info">Jumlah digit untuk kode flex (default: 2)</div>
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-content" style="background:white;">
+      <div class="modal-header" style="background:#2c3e50;">
+        <h2 class="modal-title">⚙️ Pengaturan</h2>
+        <button class="close-modal" onclick="closeSettingsModal()">×</button>
       </div>
-      
-      <div class="setting-item">
-        <label class="setting-label">Digit KATEGORI:</label>
-        <input type="number" id="category-digits" class="setting-input" min="1" max="5" value="2">
-        <div class="setting-info">Jumlah digit untuk kode kategori (default: 2)</div>
+      <div class="modal-body">
+        <div id="settings-content">
+          <!-- Settings will be loaded here -->
+        </div>
       </div>
-      
-      <div class="setting-item">
-        <label class="setting-label">Digit PRODUK:</label>
-        <input type="number" id="product-digits" class="setting-input" min="1" max="5" value="4">
-        <div class="setting-info">Jumlah digit untuk kode produk (default: 4)</div>
-      </div>
-      
-      <div class="setting-item">
-        <label class="setting-label">Digit BERAT:</label>
-        <input type="number" id="weight-digits" class="setting-input" min="1" max="5" value="5">
-        <div class="setting-info">Jumlah digit untuk berat (default: 5)</div>
-      </div>
-      
-      <div class="current-settings" id="total-digits-info">
-        Total digit barcode: 13
-      </div>
-      
-      <!-- Informasi nilai yang tersimpan -->
-      <div class="stored-values-info">
-        <span>Flex: <span id="stored-flex-value">00</span></span>
-        <span>Kategori: <span id="stored-category-value">00</span></span>
-      </div>
-      
-      <div class="settings-buttons">
-        <button class="save-btn function-btn" id="save-settings">SIMPAN</button>
-        <button class="cancel-btn function-btn" id="cancel-settings">BATAL</button>
-      </div>
-      
-      <button class="reset-values-btn function-btn" id="reset-values-btn">RESET NILAI FLEX & KATEGORI</button>
     </div>
   </div>
-  
+
+  <!-- Notification -->
   <div id="notification"></div>
 
   <script>
-    // Audio system
-    let audioContext = null;
-    let isAudioInitialized = false;
-    const audioStatus = document.getElementById('audio-status');
-    
-    // Digit configuration with defaults
-    let digitConfig = {
-      flex: 2,
-      category: 2,
-      product: 4,
-      weight: 5
-    };
-    
-    // Global variables untuk nilai flex dan kategori
-    let flexValue = '';
-    let categoryValue = '';
-    let productValue = '';
+    // Global Variables
+    let products = [];
+    let categories = [];
+    let currentProduct = null;
     let weightValue = '';
-    let currentInputMode = 'product';
+    let digitConfig = { flex: 2, category: 2, product: 4, weight: 5 };
+    let selectedCategory = 'all';
+    let editingProductId = null;
     let port = null;
     let writer = null;
-    
-    // Variabel untuk menyimpan port yang dipilih
-    let savedPortInfo = null;
-    
-    // Load configuration from localStorage
-    function loadConfig() {
-      const savedConfig = localStorage.getItem('barcodeDigitConfig');
+    let isPrinterConnected = false;
+    let currentBarcodeData = '';
+
+    // Initialize App
+    function initApp() {
+      loadSettings();
+      loadProducts();
+      loadCategories();
+      renderCategories();
+      renderProducts();
+      checkPrinterConnection();
+    }
+
+    // Load Settings
+    function loadSettings() {
+      const savedConfig = localStorage.getItem('barcodeConfig');
       if (savedConfig) {
         digitConfig = JSON.parse(savedConfig);
-        updateTotalDigitsInfo();
-      }
-    }
-    
-    // Load stored values from localStorage
-    function loadStoredValues() {
-      const savedFlex = localStorage.getItem('barcodeFlexValue');
-      const savedCategory = localStorage.getItem('barcodeCategoryValue');
-      
-      if (savedFlex !== null) {
-        flexValue = savedFlex;
-        // Potong jika nilai lebih panjang dari digit yang diizinkan
-        if (flexValue.length > digitConfig.flex) {
-          flexValue = flexValue.substring(0, digitConfig.flex);
-          saveFlexValue();
-        }
-      }
-      
-      if (savedCategory !== null) {
-        categoryValue = savedCategory;
-        // Potong jika nilai lebih panjang dari digit yang diizinkan
-        if (categoryValue.length > digitConfig.category) {
-          categoryValue = categoryValue.substring(0, digitConfig.category);
-          saveCategoryValue();
-        }
-      }
-      
-      // Update tampilan nilai yang tersimpan di settings modal
-      updateStoredValuesInfo();
-    }
-    
-    // Save flex value to localStorage
-    function saveFlexValue() {
-      localStorage.setItem('barcodeFlexValue', flexValue);
-      updateStoredValuesInfo();
-    }
-    
-    // Save category value to localStorage
-    function saveCategoryValue() {
-      localStorage.setItem('barcodeCategoryValue', categoryValue);
-      updateStoredValuesInfo();
-    }
-    
-    // Reset flex and category values
-    function resetFlexCategoryValues() {
-      flexValue = '';
-      categoryValue = '';
-      saveFlexValue();
-      saveCategoryValue();
-      updateDisplay();
-      showNotification('Nilai flex dan kategori telah direset');
-    }
-    
-    // Update stored values info in settings modal
-    function updateStoredValuesInfo() {
-      document.getElementById('stored-flex-value').textContent = flexValue.padStart(digitConfig.flex, '0') || '00';
-      document.getElementById('stored-category-value').textContent = categoryValue.padStart(digitConfig.category, '0') || '00';
-    }
-    
-    // Save configuration to localStorage
-    function saveConfig() {
-      localStorage.setItem('barcodeDigitConfig', JSON.stringify(digitConfig));
-      updateTotalDigitsInfo();
-    }
-    
-    // Update total digits display in settings
-    function updateTotalDigitsInfo() {
-      const total = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
-      document.getElementById('total-digits-info').innerHTML = 
-        `Total digit barcode: ${total}<br>${total === 13 ? '✓ Valid' : '⚠ Harus 13 digit!'}`;
-      
-      // Change color based on validity
-      const infoElement = document.getElementById('total-digits-info');
-      if (total === 13) {
-        infoElement.style.color = '#2ecc71';
-      } else {
-        infoElement.style.color = '#e74c3c';
-      }
-    }
-    
-    // Update settings modal inputs with current config
-    function updateSettingsModal() {
-      document.getElementById('flex-digits').value = digitConfig.flex;
-      document.getElementById('category-digits').value = digitConfig.category;
-      document.getElementById('product-digits').value = digitConfig.product;
-      document.getElementById('weight-digits').value = digitConfig.weight;
-      updateTotalDigitsInfo();
-      updateStoredValuesInfo();
-    }
-    
-    // Show settings modal
-    function showSettings() {
-      updateSettingsModal();
-      document.getElementById('settings-modal').style.display = 'flex';
-    }
-    
-    // Hide settings modal
-    function hideSettings() {
-      document.getElementById('settings-modal').style.display = 'none';
-    }
-    
-    // Save settings from modal
-    function saveSettingsFromModal() {
-      const flexDigits = parseInt(document.getElementById('flex-digits').value) || 2;
-      const categoryDigits = parseInt(document.getElementById('category-digits').value) || 2;
-      const productDigits = parseInt(document.getElementById('product-digits').value) || 4;
-      const weightDigits = parseInt(document.getElementById('weight-digits').value) || 5;
-      
-      const totalDigits = flexDigits + categoryDigits + productDigits + weightDigits;
-      
-      if (totalDigits !== 13) {
-        showNotification(`Total digit harus 13! Saat ini: ${totalDigits} digit`, 4000);
-        return;
-      }
-      
-      // Update configuration
-      digitConfig.flex = flexDigits;
-      digitConfig.category = categoryDigits;
-      digitConfig.product = productDigits;
-      digitConfig.weight = weightDigits;
-      
-      saveConfig();
-      
-      // Potong nilai flex dan kategori jika lebih panjang dari digit baru
-      if (flexValue.length > flexDigits) {
-        flexValue = flexValue.substring(0, flexDigits);
-        saveFlexValue();
-      }
-      
-      if (categoryValue.length > categoryDigits) {
-        categoryValue = categoryValue.substring(0, categoryDigits);
-        saveCategoryValue();
-      }
-      
-      hideSettings();
-      updateDisplay();
-      showNotification('Pengaturan berhasil disimpan!');
-    }
-    
-    // Initialize audio
-    function initAudio() {
-      try {
-        if (window.AudioContext || window.webkitAudioContext) {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          isAudioInitialized = true;
-          audioStatus.textContent = "Audio: Ready";
-          setTimeout(() => {
-            audioStatus.classList.remove('show');
-          }, 2000);
-          console.log("Audio initialized successfully");
-        } else {
-          audioStatus.textContent = "Audio: Not Supported";
-          setTimeout(() => {
-            audioStatus.classList.remove('show');
-          }, 2000);
-        }
-      } catch (error) {
-        console.log("Audio initialization error:", error);
-        audioStatus.textContent = "Audio: Error";
-        setTimeout(() => {
-          audioStatus.classList.remove('show');
-        }, 2000);
-      }
-    }
-    
-    // Show audio status
-    audioStatus.classList.add('show');
-    
-    // Play simple TIT sound
-    function playTitSound() {
-      if (!isAudioInitialized) {
-        initAudio();
-        if (!isAudioInitialized) return;
-      }
-      
-      try {
-        // Resume audio context if suspended
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
-        
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        // Simple TIT sound
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 800; // Fixed frequency for TIT sound
-        
-        // Set envelope for short TIT sound
-        const now = audioContext.currentTime;
-        const duration = 0.08; // Very short duration for TIT
-        const volume = 0.65; // Good volume level
-        
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        
-        oscillator.start(now);
-        oscillator.stop(now + duration);
-        
-        // Cleanup
-        oscillator.onended = () => {
-          oscillator.disconnect();
-          gainNode.disconnect();
-        };
-      } catch (error) {
-        console.log("Sound error:", error);
       }
     }
 
-    // Initialize audio on first user interaction
-    document.addEventListener('click', function initAudioOnInteraction() {
-      if (!isAudioInitialized) {
-        initAudio();
+    // Save Settings
+    function saveSettings() {
+      localStorage.setItem('barcodeConfig', JSON.stringify(digitConfig));
+    }
+
+    // Load Products
+    function loadProducts() {
+      const saved = localStorage.getItem('posProducts');
+      if (saved) {
+        products = JSON.parse(saved);
+      } else {
+        // Sample products
+        products = [
+          {
+            id: 1,
+            name: "Beras Premium 5kg",
+            code: "0001",
+            category: "Sembako",
+            flex: "01",
+            catcode: "01",
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%23f39c12'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23e67e22'/%3E%3C/svg%3E"
+          },
+          {
+            id: 2,
+            name: "Gula Pasir 1kg",
+            code: "0002",
+            category: "Sembako",
+            flex: "01",
+            catcode: "01",
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%23f39c12' stroke-width='2'/%3E%3C/svg%3E"
+          },
+          {
+            id: 3,
+            name: "Minyak Goreng 2L",
+            code: "0003",
+            category: "Sembako",
+            flex: "01",
+            catcode: "02",
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23f1c40f'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%23f39c12'/%3E%3C/svg%3E"
+          }
+        ];
+        saveProducts();
       }
-      document.removeEventListener('click', initAudioOnInteraction);
-    }, { once: true });
-    
-    // Button press animation
-    function animateButtonPress(button) {
-      button.classList.add('active');
-      setTimeout(() => {
-        button.classList.remove('active');
-      }, 150);
     }
-    
-    // Input handling functions
-    function setInputMode(mode) {
-      currentInputMode = mode;
-      // Update visual indicator
-      document.getElementById('flex-btn').classList.toggle('active-mode', mode === 'flex');
-      document.getElementById('category-btn').classList.toggle('active-mode', mode === 'category');
-      document.getElementById('product-btn').classList.toggle('active-mode', mode === 'product');
-      document.getElementById('weight-btn').classList.toggle('active-mode', mode === 'weight');
+
+    // Load Categories
+    function loadCategories() {
+      const allCategories = ['all', ...new Set(products.map(p => p.category).filter(c => c))];
+      categories = allCategories.filter(cat => cat);
     }
-    
-    function appendNumber(num) {
-      if (currentInputMode === 'flex') {
-        if (num === '00') {
-          if (flexValue.length === 0) {
-            flexValue = '00';
-            saveFlexValue();
-          }
-        } else if (flexValue.length < digitConfig.flex) {
-          flexValue += num;
-          saveFlexValue();
-        }
-      } else if (currentInputMode === 'category') {
-        if (num === '00') {
-          if (categoryValue.length <= 0) {
-            categoryValue = '00';
-            saveCategoryValue();
-          }
-        } else if (categoryValue.length < digitConfig.category) {
-          categoryValue += num;
-          saveCategoryValue();
-        }
-      } else if (currentInputMode === 'product') {
-        if (num === '00') {
-          if (productValue.length <= digitConfig.product - 2) {
-            productValue += '00';
-          }
-        } else if (productValue.length < digitConfig.product) {
-          productValue += num;
-        }
-      } else if (currentInputMode === 'weight') {
-        if (num === '00') {
-          if (weightValue.length <= digitConfig.weight - 2) {
-            weightValue += '00';
-          }
-        } else if (weightValue.length < digitConfig.weight) {
-          weightValue += num;
-        }
+
+    // Save Products
+    function saveProducts() {
+      localStorage.setItem('posProducts', JSON.stringify(products));
+      loadCategories();
+      renderCategories();
+      renderProducts();
+    }
+
+    // Render Categories
+    function renderCategories() {
+      const container = document.getElementById('category-tabs');
+      container.innerHTML = '';
+      
+      categories.forEach(category => {
+        const tab = document.createElement('div');
+        tab.className = `category-tab ${selectedCategory === category ? 'active' : ''}`;
+        tab.textContent = category === 'all' ? 'Semua Produk' : category;
+        tab.onclick = () => {
+          selectedCategory = category;
+          renderCategories();
+          renderProducts();
+        };
+        container.appendChild(tab);
+      });
+    }
+
+    // Render Products
+    function renderProducts() {
+      const container = document.getElementById('products-grid');
+      container.innerHTML = '';
+      
+      const filteredProducts = selectedCategory === 'all' 
+        ? products 
+        : products.filter(p => p.category === selectedCategory);
+      
+      filteredProducts.forEach(product => {
+        const card = document.createElement('div');
+        card.className = `product-card ${currentProduct?.id === product.id ? 'selected' : ''}`;
+        card.innerHTML = `
+          <img src="${product.image}" alt="${product.name}" class="product-image">
+          <div class="product-actions">
+            <button class="action-btn edit-btn" onclick="editProduct(${product.id}, event)">✏️</button>
+            <button class="action-btn delete-btn" onclick="deleteProduct(${product.id}, event)">🗑️</button>
+          </div>
+          <div class="product-info">
+            <div class="product-name">${product.name}</div>
+            <div class="product-code">${product.code}</div>
+          </div>
+        `;
+        card.onclick = () => {
+          currentProduct = product;
+          showWeightModal();
+        };
+        container.appendChild(card);
+      });
+      
+      const addCard = document.createElement('div');
+      addCard.className = 'add-product-card';
+      addCard.innerHTML = `
+        <div class="add-product-content">
+          <div class="add-icon">＋</div>
+          <div class="add-text">Tambah Produk</div>
+        </div>
+      `;
+      addCard.onclick = () => showProductModal();
+      container.appendChild(addCard);
+    }
+
+    // Edit Product
+    function editProduct(productId, event) {
+      event.stopPropagation();
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+      
+      editingProductId = productId;
+      showProductModal(product);
+    }
+
+    // Delete Product
+    function deleteProduct(productId, event) {
+      event.stopPropagation();
+      if (!confirm('Hapus produk ini?')) return;
+      
+      products = products.filter(p => p.id !== productId);
+      saveProducts();
+      showNotification('Produk dihapus!');
+      
+      if (currentProduct && currentProduct.id === productId) {
+        currentProduct = null;
       }
-      updateDisplay();
     }
-    
-    function backspace() {
-      if (currentInputMode === 'flex' && flexValue.length > 0) {
-        flexValue = flexValue.slice(0, -1);
-        saveFlexValue();
-      } else if (currentInputMode === 'category' && categoryValue.length > 0) {
-        categoryValue = categoryValue.slice(0, -1);
-        saveCategoryValue();
-      } else if (currentInputMode === 'product' && productValue.length > 0) {
-        productValue = productValue.slice(0, -1);
-      } else if (currentInputMode === 'weight' && weightValue.length > 0) {
-        weightValue = weightValue.slice(0, -1);
+
+    // Show Product Modal (Add/Edit)
+    function showProductModal(product = null) {
+      const isEdit = !!product;
+      const modalTitle = document.getElementById('product-modal-title');
+      modalTitle.textContent = isEdit ? '✏️ Edit Produk' : '➕ Tambah Produk';
+      
+      const existingCategories = [...new Set(products.map(p => p.category).filter(c => c))];
+      let categoryOptions = '';
+      existingCategories.forEach(cat => {
+        const selected = product && product.category === cat ? 'selected' : '';
+        categoryOptions += `<option value="${cat}" ${selected}>${cat}</option>`;
+      });
+      
+      const formContent = document.getElementById('product-form-content');
+      formContent.innerHTML = `
+        <div style="margin-bottom:15px;">
+          <div style="color:#333;margin-bottom:5px;font-weight:500;">Gambar Produk</div>
+          <div style="border:2px dashed #ddd;border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:#f8f9fa;"
+               onclick="document.getElementById('product-image-input').click()" id="image-upload-area">
+            ${product && product.image ? 
+              `<img src="${product.image}" style="max-width:100%;max-height:140px;border-radius:5px;object-fit:cover;" id="image-preview">` :
+              `<div style="color:#666;">
+                <div style="font-size:36px;margin-bottom:5px;">📷</div>
+                <div>Klik untuk upload gambar</div>
+                <div style="font-size:12px;margin-top:5px;color:#999;">Rekomendasi: 300x300px</div>
+              </div>`
+            }
+          </div>
+          <input type="file" id="product-image-input" accept="image/*" style="display:none">
+        </div>
+        
+        <div style="margin-bottom:15px;">
+          <div style="color:#333;margin-bottom:5px;font-weight:500;">Nama Produk</div>
+          <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:1rem;" 
+                 id="product-name-input" value="${product ? product.name : ''}" placeholder="Nama produk" required>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+          <div style="color:#333;margin-bottom:5px;font-weight:500;">Kode Produk (4 digit)</div>
+          <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:1rem;" 
+                 id="product-code-input" value="${product ? product.code : ''}" placeholder="0001" maxlength="4" required>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+          <div style="color:#333;margin-bottom:5px;font-weight:500;">Kategori</div>
+          <div style="display:flex;gap:10px;">
+            <select style="flex:1;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:1rem;background:white;" 
+                    id="product-category-select" onchange="handleCategorySelect()">
+              <option value="">-- Pilih Kategori --</option>
+              ${categoryOptions}
+              <option value="_new">➕ Tambah Kategori Baru</option>
+            </select>
+          </div>
+          <div id="new-category-input" style="margin-top:10px;display:none;">
+            <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:1rem;" 
+                   id="product-category-new" placeholder="Nama kategori baru">
+          </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+          <div>
+            <div style="color:#333;margin-bottom:5px;font-weight:500;">Flex Code (2 digit)</div>
+            <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:1rem;" 
+                   id="product-flex-input" value="${product ? product.flex : '01'}" placeholder="01" maxlength="2">
+          </div>
+          <div>
+            <div style="color:#333;margin-bottom:5px;font-weight:500;">Kategori Code (2 digit)</div>
+            <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:1rem;" 
+                   id="product-catcode-input" value="${product ? product.catcode : '01'}" placeholder="01" maxlength="2">
+          </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button style="padding:14px;border:none;border-radius:25px;background:#666;color:white;font-weight:600;cursor:pointer;" onclick="closeProductModal()">BATAL</button>
+          <button style="padding:14px;border:none;border-radius:25px;background:#e67e22;color:white;font-weight:600;cursor:pointer;" onclick="saveProduct()">${isEdit ? 'UPDATE' : 'SIMPAN'}</button>
+        </div>
+      `;
+      
+      const imageInput = document.getElementById('product-image-input');
+      const imageUploadArea = document.getElementById('image-upload-area');
+      
+      imageInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (!file.type.match('image.*')) {
+          showNotification('File harus gambar!', 'error');
+          return;
+        }
+        
+        if (file.size > 2 * 1024 * 1024) {
+          showNotification('Maksimal 2MB!', 'error');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          imageUploadArea.innerHTML = `<img src="${event.target.result}" style="max-width:100%;max-height:140px;border-radius:5px;object-fit:cover;" id="image-preview">`;
+        };
+        reader.readAsDataURL(file);
+      };
+      
+      if (product && product.category) {
+        setTimeout(() => {
+          const select = document.getElementById('product-category-select');
+          if (select) select.value = product.category;
+        }, 10);
       }
-      updateDisplay();
-    }
-    
-    function clearInput() {
-      // Reset hanya kolom produk dan berat
-      productValue = '';
-      weightValue = '';
       
-      // Kembali ke mode PRODUK
-      setInputMode('product');
+      document.getElementById('product-modal').style.display = 'flex';
+    }
+
+    // Handle category selection
+    function handleCategorySelect() {
+      const select = document.getElementById('product-category-select');
+      const newCategoryDiv = document.getElementById('new-category-input');
       
-      updateDisplay();
-      JsBarcode("#barcode", "", { displayValue: false });
-      showNotification('Kolom produk dan berat telah direset, kembali ke mode PRODUK');
+      if (select.value === '_new') {
+        newCategoryDiv.style.display = 'block';
+        if (document.getElementById('product-category-new')) {
+          document.getElementById('product-category-new').focus();
+        }
+      } else {
+        newCategoryDiv.style.display = 'none';
+      }
     }
-    
-    // Display and formatting functions
-    function formatBarcodeData() {
-      const formattedFlex = flexValue.padStart(digitConfig.flex, '0');
-      const formattedCategory = categoryValue.padStart(digitConfig.category, '0');
-      const formattedProduct = productValue.padStart(digitConfig.product, '0');
-      const formattedWeight = weightValue.padStart(digitConfig.weight, '0');
-      return `${formattedFlex}${formattedCategory}${formattedProduct}${formattedWeight}`;
-    }
-    
-    function updateDisplay() {
-      document.getElementById('current-flex').textContent = flexValue.padStart(digitConfig.flex, '0');
-      document.getElementById('current-category').textContent = categoryValue.padStart(digitConfig.category, '0');
-      document.getElementById('current-product').textContent = productValue.padStart(digitConfig.product, '0');
-      document.getElementById('current-weight').textContent = weightValue.padStart(digitConfig.weight, '0');
-      document.getElementById('current-barcode').textContent = formatBarcodeData();
-    }
-    
-    function generate() {
-      const barcodeData = formatBarcodeData();
-      const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+
+    // Save Product
+    function saveProduct() {
+      const name = document.getElementById('product-name-input').value.trim();
+      const code = document.getElementById('product-code-input').value.trim();
       
-      if (barcodeData.length !== totalDigits) {
-        showNotification(`Pastikan semua field terisi dengan digit yang benar. Total harus ${totalDigits} digit`);
+      const categorySelect = document.getElementById('product-category-select');
+      let category = categorySelect.value;
+      
+      if (category === '_new') {
+        category = document.getElementById('product-category-new').value.trim();
+      }
+      
+      const flex = document.getElementById('product-flex-input').value.trim();
+      const catcode = document.getElementById('product-catcode-input').value.trim();
+      const imagePreview = document.getElementById('image-preview');
+      
+      if (!name || !code || !category) {
+        showNotification('Isi nama, kode, dan kategori!', 'error');
         return;
       }
       
-      JsBarcode("#barcode", barcodeData, {
-        format: "CODE128",
-        displayValue: true,
-        fontSize: 16,
-        height: 50,
-        margin: 10
-      });
+      if (code.length !== 4) {
+        showNotification('Kode harus 4 digit!', 'error');
+        return;
+      }
       
-      showNotification('Barcode berhasil digenerate');
+      let imageData = '';
+      if (imagePreview && imagePreview.src) {
+        imageData = imagePreview.src;
+      } else if (editingProductId) {
+        const existingProduct = products.find(p => p.id === editingProductId);
+        imageData = existingProduct ? existingProduct.image : '';
+      } else {
+        imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f8f9fa'/%3E%3Crect x='50' y='80' width='200' height='140' fill='%23e67e22' rx='10'/%3E%3Ccircle cx='150' cy='150' r='50' fill='%232c3e50'/%3E%3Cpath d='M130 140 L150 160 L180 120' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
+      }
+      
+      const productData = {
+        id: editingProductId || Date.now(),
+        name,
+        code: code.padStart(4, '0'),
+        category,
+        flex: flex.padStart(2, '0'),
+        catcode: catcode.padStart(2, '0'),
+        image: imageData
+      };
+      
+      if (editingProductId) {
+        const index = products.findIndex(p => p.id === editingProductId);
+        if (index !== -1) {
+          products[index] = productData;
+        }
+      } else {
+        products.push(productData);
+      }
+      
+      saveProducts();
+      showNotification(editingProductId ? 'Produk diperbarui!' : 'Produk ditambahkan!');
+      closeProductModal();
     }
-    
-    // Printer communication functions - Web Serial API
+
+    // Close Product Modal
+    function closeProductModal() {
+      document.getElementById('product-modal').style.display = 'none';
+      editingProductId = null;
+    }
+
+    // Show Weight Modal
+    function showWeightModal() {
+      if (!currentProduct) return;
+      
+      const productInfo = document.getElementById('selected-product-info');
+      productInfo.innerHTML = `
+        <img src="${currentProduct.image}" alt="${currentProduct.name}" class="product-thumbnail">
+        <div class="product-details">
+          <h4>${currentProduct.name}</h4>
+          <div class="code">${currentProduct.code} | ${currentProduct.category}</div>
+        </div>
+      `;
+      
+      document.getElementById('display-product-code').textContent = currentProduct.code;
+      
+      weightValue = '';
+      document.getElementById('display-weight').textContent = '0';
+      document.getElementById('display-barcode').textContent = '-';
+      
+      const barcodeSvg = document.getElementById('barcode-svg');
+      barcodeSvg.innerHTML = '';
+      document.getElementById('current-barcode').textContent = 'Klik GENERATE untuk membuat barcode';
+      currentBarcodeData = '';
+      
+      updateConnectionStatus();
+      
+      document.getElementById('weight-modal').style.display = 'flex';
+    }
+
+    // Close Weight Modal
+    function closeWeightModal() {
+      document.getElementById('weight-modal').style.display = 'none';
+      currentProduct = null;
+      weightValue = '';
+      
+      document.querySelectorAll('.product-card.selected').forEach(c => {
+        c.classList.remove('selected');
+      });
+    }
+
+    // Number Pad Functions
+    function appendNumber(num) {
+      if (num === '00') {
+        if (weightValue.length <= digitConfig.weight - 2) {
+          weightValue += '00';
+        }
+      } else if (weightValue.length < digitConfig.weight) {
+        weightValue += num;
+      }
+      
+      const displayWeight = weightValue || '0';
+      document.getElementById('display-weight').textContent = displayWeight;
+    }
+
+    function clearWeight() {
+      weightValue = '';
+      document.getElementById('display-weight').textContent = '0';
+    }
+
+    function backspaceWeight() {
+      if (weightValue.length > 0) {
+        weightValue = weightValue.slice(0, -1);
+      }
+      const displayWeight = weightValue || '0';
+      document.getElementById('display-weight').textContent = displayWeight;
+    }
+
+    // Printer Functions
     async function connectToPrinter() {
       try {
         if (!("serial" in navigator)) {
@@ -868,33 +1220,17 @@
         }
 
         showNotification("Memilih printer...");
-        updateConnectionStatus('connecting');
         
-        // Request serial port
         port = await navigator.serial.requestPort();
         showNotification("Membuka koneksi...");
         
-        // Save port info for reconnection
-        savedPortInfo = {
-          vendorId: port.getInfo().usbVendorId,
-          productId: port.getInfo().usbProductId
-        };
-        localStorage.setItem('printerPortInfo', JSON.stringify(savedPortInfo));
-        
-        // Open the port with baud rate 9600 (standard for many thermal printers)
         await port.open({ baudRate: 9600 });
         
-        // Get the writer
         writer = port.writable.getWriter();
         
-        // Save connection state
-        localStorage.setItem('printerConnected', 'true');
-        
+        isPrinterConnected = true;
         updateConnectionStatus(true);
         showNotification('Printer Connected!');
-        
-        // Update connect button text
-        updateConnectButton(true);
         
         return true;
         
@@ -906,542 +1242,423 @@
           showNotification("Gagal terhubung ke printer: " + error.message);
         }
         updateConnectionStatus(false);
-        localStorage.setItem('printerConnected', 'false');
-        updateConnectButton(false);
         return false;
       }
     }
-    
-    // Function to disconnect printer
-    async function disconnectPrinter() {
-      try {
-        if (writer) {
-          await writer.close();
-          writer = null;
-        }
-        
-        if (port) {
-          await port.close();
-          port = null;
-        }
-        
-        // Clear saved connection state
-        localStorage.setItem('printerConnected', 'false');
-        
-        updateConnectionStatus(false);
-        updateConnectButton(false);
-        showNotification('Printer disconnected');
-      } catch (error) {
-        console.error("Disconnection error:", error);
-        showNotification("Error disconnecting printer: " + error.message);
-      }
-    }
-    
-    // Function to reconnect to printer
-    async function reconnectToPrinter() {
-      try {
-        if (!("serial" in navigator)) {
-          return false;
-        }
 
-        // Check if we have saved port info
-        const savedPortInfoStr = localStorage.getItem('printerPortInfo');
-        if (!savedPortInfoStr) {
-          return false;
-        }
-
-        updateConnectionStatus('connecting');
-        
-        // Get previously authorized ports
-        const ports = await navigator.serial.getPorts();
-        
-        if (ports.length === 0) {
-          updateConnectionStatus(false);
-          updateConnectButton(false);
-          return false;
-        }
-
-        // Try to find our saved port
-        const savedPortInfo = JSON.parse(savedPortInfoStr);
-        let targetPort = ports[0]; // Default to first port
-        
-        // Try to find the exact port that was previously connected
-        for (const p of ports) {
-          const info = p.getInfo();
-          if (info.usbVendorId === savedPortInfo.vendorId && 
-              info.usbProductId === savedPortInfo.productId) {
-            targetPort = p;
-            break;
-          }
-        }
-
-        // Open the port
-        port = targetPort;
-        await port.open({ baudRate: 9600 });
-        
-        // Get the writer
-        writer = port.writable.getWriter();
-        
-        updateConnectionStatus(true);
-        updateConnectButton(true);
-        showNotification('Printer reconnected successfully!', 2000);
-        
-        return true;
-      } catch (error) {
-        console.error("Reconnection error:", error);
-        updateConnectionStatus(false);
-        updateConnectButton(false);
-        return false;
-      }
-    }
-    
-    // Update connect button based on connection state
-    function updateConnectButton(connected) {
-      const connectBtn = document.getElementById('connect-btn');
-      if (connected) {
-        connectBtn.textContent = 'DISCONNECT';
-        connectBtn.classList.remove('function-btn');
-        connectBtn.classList.add('disconnect-btn');
+    function updateConnectionStatus(connected) {
+      const statusElement = document.getElementById('status');
+      if (connected === true) {
+        statusElement.textContent = 'Printer: Terkoneksi';
+        statusElement.className = 'printer-status status-connected';
       } else {
-        connectBtn.textContent = 'CONNECT';
-        connectBtn.classList.remove('disconnect-btn');
-        connectBtn.classList.add('function-btn');
+        statusElement.textContent = 'Printer: Tidak Terkoneksi';
+        statusElement.className = 'printer-status status-disconnected';
       }
     }
-    
-    // Handle connect/disconnect button click
-    async function handleConnectClick() {
-      const isConnected = localStorage.getItem('printerConnected') === 'true';
+
+    function checkPrinterConnection() {
+      updateConnectionStatus(false);
+    }
+
+    // Generate Barcode
+    function generateBarcode() {
+      if (!currentProduct) {
+        showNotification('Pilih produk terlebih dahulu!');
+        return;
+      }
       
-      if (isConnected && port) {
-        await disconnectPrinter();
-      } else {
-        await connectToPrinter();
+      if (!weightValue || weightValue === '0') {
+        showNotification('Masukkan berat terlebih dahulu!');
+        return;
+      }
+      
+      currentBarcodeData = 
+        currentProduct.flex.padStart(digitConfig.flex, '0') +
+        currentProduct.catcode.padStart(digitConfig.category, '0') +
+        currentProduct.code.padStart(digitConfig.product, '0') +
+        weightValue.padStart(digitConfig.weight, '0');
+      
+      const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+      
+      if (currentBarcodeData.length !== totalDigits) {
+        showNotification(`Pastikan semua field terisi. Total harus ${totalDigits} digit`);
+        return;
+      }
+      
+      const barcodeSvg = document.getElementById('barcode-svg');
+      barcodeSvg.innerHTML = '';
+      
+      try {
+        JsBarcode("#barcode-svg", currentBarcodeData, {
+          format: "CODE128",
+          displayValue: true,
+          fontSize: 16,
+          height: 60,
+          margin: 10,
+          background: "white",
+          lineColor: "#000000",
+          width: 2
+        });
+        
+        document.getElementById('display-barcode').textContent = currentBarcodeData;
+        document.getElementById('current-barcode').textContent = currentBarcodeData;
+        
+        showNotification('Barcode berhasil digenerate!');
+      } catch (error) {
+        console.error("Barcode generation error:", error);
+        showNotification('Gagal membuat barcode: ' + error.message, 'error');
       }
     }
-    
+
+    // Print Barcode
     async function printBarcode() {
       try {
-        if (!productValue || !weightValue) {
-          showNotification('Harap isi PRODUK dan BERAT terlebih dahulu');
+        if (!currentProduct || !weightValue) {
+          showNotification('Harap isi berat terlebih dahulu dan generate barcode');
           return;
         }
         
-        // Generate barcode jika belum digenerate
-        const barcodeData = formatBarcodeData();
-        const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
-        
-        if (barcodeData.length !== totalDigits) {
-          showNotification(`Pastikan semua field terisi dengan digit yang benar. Total harus ${totalDigits} digit`);
+        if (!currentBarcodeData) {
+          showNotification('Generate barcode terlebih dahulu!');
           return;
         }
         
-        // Auto-generate barcode if not already done
-        if (!document.querySelector('#barcode text') || 
-            document.querySelector('#barcode text').textContent !== barcodeData) {
-          generate(); // Generate barcode terlebih dahulu
-        }
-
-        // Check if printer is connected
-        const isConnected = localStorage.getItem('printerConnected') === 'true';
-        if (!isConnected || !writer) {
-          // Try to reconnect automatically
-          const reconnected = await reconnectToPrinter();
-          if (!reconnected) {
-            showNotification('Printer belum terhubung. Klik tombol CONNECT dulu.');
-            return;
-          }
+        if (!isPrinterConnected || !writer) {
+          showNotification('Printer belum terhubung. Klik CONNECT dulu.');
+          return;
         }
 
         showNotification("Mengirim data ke printer...");
         
-        // ESC/POS commands
         const esc = '\x1B';
         const gs = '\x1D';
         const lf = '\x0A';
         
-        // Initialize printer
         let data = esc + '@';
         
-        // Set alignment to center for all content
-        data += esc + 'a' + '\x01'; // Center alignment
+        data += esc + 'a' + '\x01';
         
-        // Baris 1: [Flex value][kategori value][produk value][berat value]
-        data += '[' + flexValue.padStart(digitConfig.flex, '0') + '][' + 
-                       categoryValue.padStart(digitConfig.category, '0') + '][' + 
-                       productValue.padStart(digitConfig.product, '0') + '][' + 
-                       weightValue.padStart(digitConfig.weight, '0') + ']' + lf;
+        data += `[${currentProduct.flex.padStart(digitConfig.flex, '0')}][${currentProduct.catcode.padStart(digitConfig.category, '0')}]` +
+                `[${currentProduct.code.padStart(digitConfig.product, '0')}][${weightValue.padStart(digitConfig.weight, '0')}]${lf}`;
         
-        // Baris kosong
         data += lf;
         
-        // Set alignment to center for barcode
-        data += esc + 'a' + '\x01'; // Center alignment again for barcode
+        data += esc + 'a' + '\x01';
         
-        // Print barcode using ESC/POS native barcode commands
-        // Select barcode height
-        data += gs + 'h' + '\x50'; // Height = 80
-        // Select barcode width
-        data += gs + 'w' + '\x02'; // Width = 2
-        // Select CODE128 barcode
-        data += gs + 'k' + '\x49'; // CODE128
-        // Length of data
-        data += String.fromCharCode(barcodeData.length);
-        // Barcode data
-        data += barcodeData;
+        data += gs + 'h' + '\x50';
+        data += gs + 'w' + '\x02';
+        data += gs + 'k' + '\x49';
+        data += String.fromCharCode(currentBarcodeData.length);
+        data += currentBarcodeData;
         
-        // Tambahkan feed untuk memastikan barcode tercetak
         data += lf;
         
-        // Dua baris kosong setelah barcode
         data += lf + lf;
         
-        // Add cut command (full cut)
         data += gs + 'V' + '\x41' + '\x00';
         
-        // Encode and send data
         const encoder = new TextEncoder();
         const encodedData = encoder.encode(data);
         
         await writer.write(encodedData);
         
-        showNotification('Data berhasil dikirim ke printer');
+        showNotification('Barcode berhasil dicetak!');
       } catch (error) {
         console.error("Print error:", error);
         showNotification("Gagal mengirim ke printer: " + error.message);
         
-        // If error is due to disconnected printer, update status
         if (error.message.includes("closed") || error.message.includes("disconnected")) {
+          isPrinterConnected = false;
           updateConnectionStatus(false);
-          localStorage.setItem('printerConnected', 'false');
-          updateConnectButton(false);
-        }
-        
-        // Coba format alternatif jika gagal
-        if (error.message.includes("invalid") || error.message.includes("character")) {
-          showNotification("Mencoba format alternatif...");
-          await tryAlternativePrint();
         }
       }
     }
-    
-    // Alternatif format cetak
-    async function tryAlternativePrint() {
-      try {
-        const barcodeData = formatBarcodeData();
-        
-        // ESC/POS commands
-        const esc = '\x1B';
-        const gs = '\x1D';
-        const lf = '\x0A';
-        
-        // Initialize printer
-        let data = esc + '@';
 
-        // Baris kosong
-        data += lf;
-        
-        // Set alignment to center
-        data += esc + 'a' + '\x01'; // Center alignment
-        
-        // Baris 1: [Flex value][kategori value][produk value][berat value]
-        data += '[' + flexValue.padStart(digitConfig.flex, '0') + '][' + 
-                       categoryValue.padStart(digitConfig.category, '0') + '][' + 
-                       productValue.padStart(digitConfig.product, '0') + '][' + 
-                       weightValue.padStart(digitConfig.weight, '0') + ']' + lf;
-        
-        // Set alignment to center untuk barcode
-        data += esc + 'a' + '\x01'; // Center alignment
-        
-        // Alternatif perintah barcode
-        // Set barcode height
-        data += gs + 'h' + '\x50'; // Height = 80
-        // Set barcode width
-        data += gs + 'w' + '\x02'; // Width = 2
-        // CODE128 barcode
-        data += gs + 'k' + '\x49'; // GS k 73 (CODE128)
-        data += barcodeData.length; // Length
-        data += barcodeData; // Data
-        
-        // Feed lines
-        data += lf;
-        
-        // Dua baris kosong
-        data += lf + lf;
-        
-        // Cut paper
-        data += gs + 'V' + '\x41' + '\x00'; // Full cut
-        
-        const encoder = new TextEncoder();
-        const encodedData = encoder.encode(data);
-        
-        await writer.write(encodedData);
-        
-        showNotification('Berhasil dicetak dengan format alternatif!');
-      } catch (error2) {
-        console.error("Alternative print error:", error2);
-        showNotification("Gagal mencetak dengan format alternatif");
-      }
-    }
-    
-    // UI feedback functions
-    function updateConnectionStatus(status) {
-      const statusElement = document.getElementById('status');
-      if (status === true) {
-        statusElement.textContent = 'Printer: Terkoneksi';
-        statusElement.className = 'status-connected';
-      } else if (status === 'connecting') {
-        statusElement.textContent = 'Printer: Menyambungkan...';
-        statusElement.className = 'status-connecting';
+    // Settings Modal - DIPERBAIKI
+    function showSettingsModal() {
+      const settingsContent = document.getElementById('settings-content');
+      
+      const uniqueCategories = [];
+      products.forEach(p => {
+        if (p.category && p.category !== 'all' && !uniqueCategories.includes(p.category)) {
+          uniqueCategories.push(p.category);
+        }
+      });
+      
+      const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+      const isValid = totalDigits === 13;
+      
+      let categoryListHTML = '';
+      if (uniqueCategories.length > 0) {
+        uniqueCategories.forEach(cat => {
+          categoryListHTML += `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee;">
+              <span>${cat}</span>
+              <button style="padding:5px 10px;border:none;border-radius:5px;background:#e74c3c;color:white;font-size:12px;cursor:pointer;" 
+                      onclick="deleteCategory('${cat}')">Hapus</button>
+            </div>
+          `;
+        });
       } else {
-        statusElement.textContent = 'Printer: Tidak Terkoneksi';
-        statusElement.className = 'status-disconnected';
+        categoryListHTML = '<div style="text-align:center;color:#999;padding:10px;">Belum ada kategori</div>';
+      }
+      
+      settingsContent.innerHTML = `
+        <div style="margin-bottom:20px;">
+          <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;">Konfigurasi Digit Barcode</div>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
+            <div>
+              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Flex</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;text-align:center;" 
+                     id="flex-digits" value="${digitConfig.flex}" min="1" max="5">
+            </div>
+            <div>
+              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Kategori</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;text-align:center;" 
+                     id="category-digits" value="${digitConfig.category}" min="1" max="5">
+            </div>
+            <div>
+              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Produk</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;text-align:center;" 
+                     id="product-digits" value="${digitConfig.product}" min="1" max="5">
+            </div>
+            <div>
+              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Berat</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;text-align:center;" 
+                     id="weight-digits" value="${digitConfig.weight}" min="1" max="5">
+            </div>
+          </div>
+          
+          <div class="digit-summary" style="background:${isValid ? '#e8f4f8' : '#f8d7da'};border-color:${isValid ? '#b3e0f2' : '#f5c6cb'};">
+            <div style="font-weight:600;margin-bottom:5px;color:${isValid ? '#155724' : '#721c24'}">
+              Total Digit: ${totalDigits}
+            </div>
+            <div style="font-size:0.9rem;color:${isValid ? '#155724' : '#721c24'}">
+              ${isValid ? '✓ Format barcode valid (13 digit)' : '⚠ Harus tepat 13 digit!'}
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+          <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;">Manajemen Kategori</div>
+          <div style="background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:10px;">
+            <div style="display:flex;gap:10px;margin-bottom:10px;">
+              <input type="text" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;" 
+                     id="new-category-input" placeholder="Nama kategori baru">
+              <button style="padding:10px 15px;border:none;border-radius:8px;background:#e67e22;color:white;font-weight:600;cursor:pointer;" 
+                      onclick="addNewCategory()">➕ Tambah</button>
+            </div>
+            
+            <div style="max-height:200px;overflow-y:auto;" id="categories-list">
+              ${categoryListHTML}
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+          <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;">Manajemen Data</div>
+          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#3498db;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;" 
+                  onclick="exportData()">
+            📤 Export Data Produk
+          </button>
+          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#3498db;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;" 
+                  onclick="importData()">
+            📥 Import Data Produk
+          </button>
+          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#e74c3c;color:white;font-weight:600;cursor:pointer;" 
+                  onclick="clearAllData()">
+            🗑️ Hapus Semua Data
+          </button>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button style="padding:14px;border:none;border-radius:25px;background:#666;color:white;font-weight:600;cursor:pointer;" 
+                  onclick="closeSettingsModal()">BATAL</button>
+          <button style="padding:14px;border:none;border-radius:25px;background:#e67e22;color:white;font-weight:600;cursor:pointer;" 
+                  onclick="saveSettingsConfig()">SIMPAN</button>
+        </div>
+      `;
+      
+      const inputs = ['flex-digits', 'category-digits', 'product-digits', 'weight-digits'];
+      inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateDigitSummary);
+      });
+      
+      document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    function updateDigitSummary() {
+      const flex = parseInt(document.getElementById('flex-digits').value) || 0;
+      const category = parseInt(document.getElementById('category-digits').value) || 0;
+      const product = parseInt(document.getElementById('product-digits').value) || 0;
+      const weight = parseInt(document.getElementById('weight-digits').value) || 0;
+      
+      const total = flex + category + product + weight;
+      const isValid = total === 13;
+      const summary = document.querySelector('.digit-summary');
+      
+      if (summary) {
+        summary.innerHTML = `
+          <div style="font-weight:600;margin-bottom:5px;color:${isValid ? '#155724' : '#721c24'}">
+            Total Digit: ${total}
+          </div>
+          <div style="font-size:0.9rem;color:${isValid ? '#155724' : '#721c24'}">
+            ${isValid ? '✓ Format barcode valid (13 digit)' : '⚠ Harus tepat 13 digit!'}
+          </div>
+        `;
+        summary.style.background = isValid ? '#e8f4f8' : '#f8d7da';
+        summary.style.borderColor = isValid ? '#b3e0f2' : '#f5c6cb';
       }
     }
-    
-    function showNotification(message, duration = 3000) {
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    function saveSettingsConfig() {
+      const flex = parseInt(document.getElementById('flex-digits').value) || 2;
+      const category = parseInt(document.getElementById('category-digits').value) || 2;
+      const product = parseInt(document.getElementById('product-digits').value) || 4;
+      const weight = parseInt(document.getElementById('weight-digits').value) || 5;
+      
+      const total = flex + category + product + weight;
+      
+      if (total !== 13) {
+        showNotification('Total digit harus 13!', 'error');
+        return;
+      }
+      
+      digitConfig = { flex, category, product, weight };
+      saveSettings();
+      
+      showNotification('Pengaturan berhasil disimpan!');
+      closeSettingsModal();
+    }
+
+    // Fungsi tambah kategori baru
+    function addNewCategory() {
+      const input = document.getElementById('new-category-input');
+      const category = input.value.trim();
+      
+      if (!category) {
+        showNotification('Masukkan nama kategori!', 'error');
+        return;
+      }
+      
+      const existingCategories = [...new Set(products.map(p => p.category))];
+      if (existingCategories.includes(category)) {
+        showNotification('Kategori sudah ada!', 'error');
+        return;
+      }
+      
+      loadCategories();
+      renderCategories();
+      showNotification(`Kategori "${category}" ditambahkan!`);
+      input.value = '';
+      
+      showSettingsModal();
+    }
+
+    // Fungsi hapus kategori
+    function deleteCategory(category) {
+      if (!confirm(`Hapus kategori "${category}"?\n\nProduk dengan kategori ini akan tetap ada, tapi kategori tidak akan muncul di dropdown.`)) {
+        return;
+      }
+      
+      showNotification(`Kategori "${category}" dihapus dari daftar!`);
+      
+      showSettingsModal();
+    }
+
+    // Data Management
+    function exportData() {
+      const dataStr = JSON.stringify(products, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `produk-data-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      showNotification('Data berhasil diexport!');
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          try {
+            const importedData = JSON.parse(event.target.result);
+            if (!Array.isArray(importedData)) {
+              throw new Error('Format data tidak valid');
+            }
+            
+            products = importedData;
+            saveProducts();
+            showNotification('Data berhasil diimport!');
+          } catch (error) {
+            showNotification('Gagal mengimport data: ' + error.message, 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+      
+      input.click();
+    }
+
+    function clearAllData() {
+      if (confirm('Apakah Anda yakin ingin menghapus SEMUA data produk?')) {
+        products = [];
+        saveProducts();
+        showNotification('Semua data berhasil dihapus!');
+        closeSettingsModal();
+      }
+    }
+
+    // Notification System
+    function showNotification(message, type = 'success') {
       const notification = document.getElementById('notification');
       notification.textContent = message;
+      notification.style.background = type === 'error' ? '#c0392b' : '#2c3e50';
       notification.style.display = 'block';
       
       setTimeout(() => {
         notification.style.display = 'none';
-      }, duration);
+      }, 3000);
     }
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', initApp);
     
-    // Set up event listeners for buttons
-    function setupButtonListeners() {
-      // SETTINGS button
-      document.getElementById('settings-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        showSettings();
-      });
-      
-      // Save settings button
-      document.getElementById('save-settings').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        saveSettingsFromModal();
-      });
-      
-      // Cancel settings button
-      document.getElementById('cancel-settings').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        hideSettings();
-      });
-      
-      // Reset values button
-      document.getElementById('reset-values-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        resetFlexCategoryValues();
-        hideSettings();
-      });
-      
-      // Close modal when clicking outside
-      document.getElementById('settings-modal').addEventListener('click', function(e) {
-        if (e.target === this) {
-          hideSettings();
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal-overlay')) {
+        event.target.style.display = 'none';
+        if (event.target.id === 'weight-modal') {
+          currentProduct = null;
+          weightValue = '';
+          document.querySelectorAll('.product-card.selected').forEach(c => {
+            c.classList.remove('selected');
+          });
+        } else if (event.target.id === 'product-modal') {
+          editingProductId = null;
+        } else if (event.target.id === 'settings-modal') {
+          // Nothing special for settings
         }
-      });
-      
-      // FLEX button
-      document.getElementById('flex-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        setInputMode('flex');
-      });
-      
-      // KATEGORI button
-      document.getElementById('category-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        setInputMode('category');
-      });
-      
-      // PRODUK button
-      document.getElementById('product-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        setInputMode('product');
-      });
-      
-      // BERAT button
-      document.getElementById('weight-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        setInputMode('weight');
-      });
-      
-      // Backspace button
-      document.querySelector('.backspace-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        backspace();
-      });
-      
-      // CLEAR button
-      document.querySelectorAll('.function-row')[1].children[0].addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        clearInput();
-      });
-      
-      // ENTER button
-      document.querySelectorAll('.function-row')[1].children[1].addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        generate();
-      });
-      
-      // CONNECT/DISCONNECT button
-      document.getElementById('connect-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        handleConnectClick();
-      });
-      
-      // Number buttons (0-9, 00)
-      const numberButtons = document.querySelectorAll('.buttons button:not(.print-btn)');
-      numberButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          animateButtonPress(this);
-          playTitSound();
-          const value = this.textContent;
-          appendNumber(value);
-        });
-      });
-      
-      // PRINT button
-      document.querySelector('.print-btn').addEventListener('click', function() {
-        animateButtonPress(this);
-        playTitSound();
-        printBarcode();
-      });
-      
-      // Touch events for mobile
-      const allButtons = document.querySelectorAll('button');
-      allButtons.forEach(button => {
-        button.addEventListener('touchstart', function(e) {
-          // Prevent default to avoid double-tap zoom
-          e.preventDefault();
-          animateButtonPress(this);
-          playTitSound();
-        }, { passive: false });
-        
-        button.addEventListener('touchend', function(e) {
-          // Trigger the click event
-          this.click();
-        });
-      });
-    }
-    
-    // Keyboard support
-    function setupKeyboardListeners() {
-      document.addEventListener('keydown', function(event) {
-        const key = event.key;
-        
-        // Play sound for any key press
-        playTitSound();
-        
-        // Numbers
-        if (key >= '0' && key <= '9') {
-          appendNumber(key);
-        }
-        
-        // Special keys
-        switch(key) {
-          case 'Backspace':
-            backspace();
-            break;
-          case 'Delete':
-            clearInput();
-            break;
-          case 'Enter':
-            generate();
-            break;
-          case 'c':
-          case 'C':
-            if (event.ctrlKey) break;
-            handleConnectClick();
-            break;
-          case 'p':
-          case 'P':
-            printBarcode();
-            break;
-          case 's':
-          case 'S':
-            if (event.ctrlKey) {
-              event.preventDefault();
-              showSettings();
-            }
-            break;
-          case 'r':
-          case 'R':
-            if (event.ctrlKey && event.altKey) {
-              event.preventDefault();
-              resetFlexCategoryValues();
-            }
-            break;
-          case '1':
-          case '2':
-          case '3':
-          case '4':
-            // Mode switching with number keys
-            if (event.ctrlKey) {
-              event.preventDefault();
-              const modes = ['flex', 'category', 'product', 'weight'];
-              const modeIndex = parseInt(key) - 1;
-              if (modeIndex < modes.length) {
-                setInputMode(modes[modeIndex]);
-              }
-            }
-            break;
-        }
-      });
-    }
-    
-    // Initialize printer connection on page load
-    async function initializePrinterConnection() {
-      // Check if printer was previously connected
-      const wasConnected = localStorage.getItem('printerConnected') === 'true';
-      
-      if (wasConnected) {
-        // Try to reconnect automatically
-        await reconnectToPrinter();
-      } else {
-        updateConnectionStatus(false);
-        updateConnectButton(false);
       }
-    }
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-      // Load configuration from localStorage
-      loadConfig();
-      
-      // Load stored values from localStorage
-      loadStoredValues();
-      
-      updateDisplay();
-      
-      // Setup button event listeners
-      setupButtonListeners();
-      
-      // Setup keyboard listeners
-      setupKeyboardListeners();
-      
-      // Initialize printer connection
-      initializePrinterConnection();
-      
-      // Check Web Serial API support
-      if (!("serial" in navigator)) {
-        document.getElementById('status').textContent = 'Browser tidak mendukung Web Serial API';
-        updateConnectButton(false);
-      }
-    });
+    };
   </script>
 </body>
 </html>
