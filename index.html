@@ -12,18 +12,19 @@
       padding: 0;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
-      background: #f5f5f5;
+      background: #DAE8F2;
       min-height: 100vh;
       color: #333;
     }
     
     /* Header */
     .app-header {
-      background: #2c3e50;
+      background: #1D9BF0;
       color: white;
       padding: 16px 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -68,6 +69,7 @@
       padding: 0 5px;
       overflow-x: auto;
       white-space: nowrap;
+      position: relative;
     }
     
     .category-tab {
@@ -81,27 +83,29 @@
       color: #495057;
       font-weight: 500;
       flex-shrink: 0;
+      position: relative;
+      touch-action: manipulation;
     }
     
     .category-tab:hover {
-      border-color: #e67e22;
-      color: #e67e22;
+      border-color: #1D9BF0;
+      color: #1D9BF0;
     }
     
     .category-tab.active {
-      background: #e67e22;
+      background: #1D9BF0;
       color: white;
-      border-color: #e67e22;
+      border-color: #1D9BF0;
     }
     
-    /* Products Grid - TINGGI DITINGKATKAN */
+    /* Products Grid */
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 20px;
     }
     
-    /* Product Card - TINGGI DITINGKATKAN */
+    /* Product Card */
     .product-card {
       background: white;
       border-radius: 15px;
@@ -119,14 +123,14 @@
     .product-card:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-      border-color: #e67e22;
+      border-color: #1D9BF0;
     }
     
     .product-card.selected {
-      border: 2px solid #27ae60;
+      border: 2px solid #1D9BF0;
     }
     
-    /* Product Image - TINGGI DITINGKATKAN */
+    /* Product Image */
     .product-image {
       width: 100%;
       height: 160px;
@@ -197,21 +201,21 @@
     }
     
     .edit-btn {
-      background: #f39c12;
+      background: #1D9BF0;
       color: white;
     }
     
     .edit-btn:hover {
-      background: #e67e22;
+      background: #0d8de0;
     }
     
     .delete-btn {
-      background: #e74c3c;
+      background: #ff6b6b;
       color: white;
     }
     
     .delete-btn:hover {
-      background: #c0392b;
+      background: #ff5252;
     }
     
     /* Add Product Card */
@@ -221,7 +225,7 @@
       cursor: pointer;
       transition: all 0.2s;
       box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-      border: 2px dashed #adb5bd;
+      border: 2px dashed #A3D5D9;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -230,7 +234,7 @@
     }
     
     .add-product-card:hover {
-      border-color: #e67e22;
+      border-color: #1D9BF0;
       transform: translateY(-3px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.12);
     }
@@ -242,12 +246,12 @@
     
     .add-icon {
       font-size: 32px;
-      color: #e67e22;
+      color: #1D9BF0;
       margin-bottom: 10px;
     }
     
     .add-text {
-      color: #e67e22;
+      color: #1D9BF0;
       font-weight: 600;
       font-size: 0.85rem;
     }
@@ -269,7 +273,7 @@
     
     /* Modal Content */
     .modal-content {
-      background: #e67e22;
+      background: #1D9BF0;
       border-radius: 25px;
       width: 100%;
       max-width: 450px;
@@ -290,53 +294,46 @@
       }
     }
     
+    /* Modal Header */
     .modal-header {
-      padding: 20px 25px;
+      padding: 12px 20px;
       color: white;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
     }
     
     .modal-title {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     
     .close-modal {
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: background 0.2s;
-    }
-    
-    .close-modal:hover {
-      background: rgba(255, 255, 255, 0.3);
+      display: none;
     }
     
     .modal-body {
-      padding: 0 25px 25px;
-      max-height: calc(90vh - 80px);
+      padding: 0 20px 20px;
+      max-height: calc(90vh - 60px);
       overflow-y: auto;
     }
     
     /* Display Section */
     .display-section {
-      background: #f0f0f0;
+      background: #A3D5D9;
       padding: 12px;
       margin-bottom: 15px;
       border-radius: 20px;
       text-align: right;
       font-family: monospace;
       font-size: 1.1em;
+      color: #333;
     }
     
     .display-row {
@@ -394,11 +391,11 @@
     }
     
     .status-connected { 
-      background-color: #27ae60; 
+      background-color: #28a745; 
     }
     
     .status-disconnected { 
-      background-color: #c0392b; 
+      background-color: #dc3545; 
     }
     
     /* Buttons Grid */
@@ -427,57 +424,62 @@
       min-height: 48px;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      transition: box-shadow 0.15s ease;
+      transition: all 0.2s;
       font-weight: 600;
     }
     
     button:active {
       transform: scale(0.98);
-      box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+      box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.3);
     }
     
+    /* Function Buttons */
     .function-btn {
       background: #ffffff;
+      color: #1D9BF0;
+      font-weight: 600;
     }
     
     .function-btn:active {
-      background: #d35400;
+      background: #1D9BF0;
       color: white;
     }
     
     .backspace-btn {
-      background: #c0392b;
+      background: #ff6b6b;
       color: white;
     }
     
     .backspace-btn:active {
-      background: #a93226;
+      background: #ff5252;
     }
     
     .print-btn {
       grid-column: span 3;
       background: #ffffff !important;
+      color: #1D9BF0;
+      font-weight: 600;
     }
     
     .print-btn:active {
-      background: #27ae60 !important;
+      background: #1D9BF0 !important;
       color: white;
     }
     
     .active-mode {
-      background: #27ae60 !important;
+      background: #1D9BF0 !important;
       color: white;
     }
     
     /* Barcode Preview */
     .barcode-preview {
-      background: #f0f0f0;
+      background: #A3D5D9;
       padding: 15px;
       border-radius: 20px;
       margin-top: 15px;
       text-align: center;
       font-size: 12px;
-      color: #555;
+      color: #333;
       min-height: 140px;
       display: flex;
       flex-direction: column;
@@ -504,7 +506,7 @@
     
     .barcode-info {
       font-size: 0.9rem;
-      color: #666;
+      color: #333;
       margin-top: 5px;
       font-family: monospace;
       word-break: break-all;
@@ -520,7 +522,7 @@
     }
     
     .settings-modal .modal-header {
-      background: #2c3e50;
+      background: #1D9BF0;
     }
     
     .settings-content {
@@ -549,12 +551,76 @@
     }
     
     .digit-summary {
-      background: #f8f9fa;
+      background: #DAE8F2;
       padding: 15px;
       border-radius: 10px;
       text-align: center;
       margin: 20px 0;
-      border: 2px solid #e9ecef;
+      border: 2px solid #A3D5D9;
+    }
+    
+    /* Category Management */
+    .category-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .category-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .category-actions {
+      display: flex;
+      gap: 5px;
+    }
+    
+    /* Category Context Menu */
+    .category-context-menu {
+      position: fixed;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      z-index: 1001;
+      min-width: 180px;
+      overflow: hidden;
+      animation: fadeIn 0.2s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .context-menu-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.2s;
+      border-bottom: 1px solid #f1f3f5;
+    }
+    
+    .context-menu-item:last-child {
+      border-bottom: none;
+    }
+    
+    .context-menu-item:hover {
+      background: #f8f9fa;
+    }
+    
+    .context-menu-item.edit {
+      color: #1D9BF0;
+    }
+    
+    .context-menu-item.delete {
+      color: #ff6b6b;
     }
     
     /* Notification */
@@ -567,7 +633,7 @@
       border-radius: 5px;
       display: none;
       color: white;
-      background-color: #2c3e50;
+      background-color: #1D9BF0;
       max-width: 90%;
       text-align: center;
       z-index: 1001;
@@ -580,7 +646,7 @@
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%231D9BF0' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
       padding-right: 40px !important;
@@ -589,8 +655,25 @@
     
     select:focus {
       outline: none;
-      border-color: #e67e22;
-      box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
+      border-color: #1D9BF0;
+      box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.1);
+    }
+    
+    /* Tombol Settings di Header */
+    .header-actions button {
+      background: white;
+      color: #1D9BF0;
+      padding: 8px 12px;
+      border-radius: 25px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .header-actions button:hover {
+      background: #0d8de0;
+      color: white;
     }
     
     /* Responsive Grid untuk Tablet */
@@ -610,6 +693,14 @@
       
       .modal-content {
         max-width: 95%;
+      }
+      
+      .modal-header {
+        padding: 10px 15px;
+      }
+      
+      .modal-body {
+        padding: 0 15px 15px;
       }
       
       button {
@@ -634,11 +725,68 @@
         height: 130px;
       }
       
+      .modal-header {
+        padding: 8px 12px;
+      }
+      
+      .modal-title {
+        font-size: 0.95rem;
+      }
+      
+      .modal-body {
+        padding: 0 12px 12px;
+      }
+      
       button {
         padding: 10px 4px;
         font-size: 13px;
         min-height: 40px;
       }
+    }
+    
+    /* Warna untuk input focus */
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #1D9BF0;
+      box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.1);
+    }
+    
+    /* Warna untuk tombol dalam form */
+    .form-button-primary {
+      background: #1D9BF0;
+      color: white;
+    }
+    
+    .form-button-primary:hover {
+      background: #0d8de0;
+    }
+    
+    .form-button-secondary {
+      background: #A3D5D9;
+      color: #333;
+    }
+    
+    .form-button-secondary:hover {
+      background: #93c5c9;
+    }
+    
+    /* Long Press Indicator */
+    .long-press-indicator {
+      position: fixed;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      z-index: 9999;
+      pointer-events: none;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
   </style>
 </head>
@@ -651,7 +799,7 @@
         POS Barcode Generator
       </div>
       <div class="header-actions">
-        <button onclick="showSettingsModal()" style="background:#2c3e50;color:white;padding:8px 12px;border-radius:25px;border:none;font-size:14px;">
+        <button onclick="showSettingsModal()">
           ⚙️ Settings
         </button>
       </div>
@@ -676,7 +824,6 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title">⚖️ Input Berat</h2>
-        <button class="close-modal" onclick="closeWeightModal()">×</button>
       </div>
       <div class="modal-body">
         <!-- Product Info -->
@@ -746,9 +893,8 @@
   <!-- Add/Edit Product Modal -->
   <div class="modal-overlay" id="product-modal">
     <div class="modal-content" style="background:white;">
-      <div class="modal-header" style="background:#2c3e50;">
+      <div class="modal-header" style="background:#1D9BF0;">
         <h2 class="modal-title" id="product-modal-title">➕ Tambah Produk</h2>
-        <button class="close-modal" onclick="closeProductModal()">×</button>
       </div>
       <div class="modal-body">
         <div id="product-form-content">
@@ -761,9 +907,8 @@
   <!-- Settings Modal -->
   <div class="modal-overlay" id="settings-modal">
     <div class="modal-content" style="background:white;">
-      <div class="modal-header" style="background:#2c3e50;">
+      <div class="modal-header" style="background:#1D9BF0;">
         <h2 class="modal-title">⚙️ Pengaturan</h2>
-        <button class="close-modal" onclick="closeSettingsModal()">×</button>
       </div>
       <div class="modal-body">
         <div id="settings-content">
@@ -772,6 +917,12 @@
       </div>
     </div>
   </div>
+
+  <!-- Category Context Menu -->
+  <div id="category-context-menu" class="category-context-menu" style="display:none;"></div>
+
+  <!-- Long Press Indicator -->
+  <div id="long-press-indicator" class="long-press-indicator" style="display:none;">Tahan untuk edit/hapus</div>
 
   <!-- Notification -->
   <div id="notification"></div>
@@ -789,6 +940,11 @@
     let writer = null;
     let isPrinterConnected = false;
     let currentBarcodeData = '';
+    
+    // Variables for long press handling
+    let longPressTimer = null;
+    let longPressCategory = null;
+    let isLongPress = false;
 
     // Initialize App
     function initApp() {
@@ -798,6 +954,18 @@
       renderCategories();
       renderProducts();
       checkPrinterConnection();
+      
+      // Initialize long press events
+      initLongPressEvents();
+    }
+
+    // Initialize long press events
+    function initLongPressEvents() {
+      document.addEventListener('touchstart', handleTouchStart, { passive: true });
+      document.addEventListener('touchend', handleTouchEnd);
+      document.addEventListener('touchcancel', handleTouchEnd);
+      document.addEventListener('mousedown', handleMouseDown);
+      document.addEventListener('mouseup', handleMouseUp);
     }
 
     // Load Settings
@@ -828,7 +996,7 @@
             category: "Sembako",
             flex: "01",
             catcode: "01",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%23f39c12'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23e67e22'/%3E%3C/svg%3E"
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DAE8F2'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%231D9BF0'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23A3D5D9'/%3E%3C/svg%3E"
           },
           {
             id: 2,
@@ -837,7 +1005,7 @@
             category: "Sembako",
             flex: "01",
             catcode: "01",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%23f39c12' stroke-width='2'/%3E%3C/svg%3E"
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DAE8F2'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%231D9BF0' stroke-width='2'/%3E%3C/svg%3E"
           },
           {
             id: 3,
@@ -846,7 +1014,7 @@
             category: "Sembako",
             flex: "01",
             catcode: "02",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23f1c40f'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%23f39c12'/%3E%3C/svg%3E"
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DAE8F2'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23A3D5D9'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%231D9BF0'/%3E%3C/svg%3E"
           }
         ];
         saveProducts();
@@ -855,8 +1023,25 @@
 
     // Load Categories
     function loadCategories() {
-      const allCategories = ['all', ...new Set(products.map(p => p.category).filter(c => c))];
-      categories = allCategories.filter(cat => cat);
+      const saved = localStorage.getItem('posCategories');
+      if (saved) {
+        categories = JSON.parse(saved);
+      } else {
+        // Extract unique categories from products and add "all"
+        const allCategories = ['all'];
+        products.forEach(product => {
+          if (product.category && !allCategories.includes(product.category)) {
+            allCategories.push(product.category);
+          }
+        });
+        categories = allCategories;
+        saveCategories();
+      }
+    }
+
+    // Save Categories
+    function saveCategories() {
+      localStorage.setItem('posCategories', JSON.stringify(categories));
     }
 
     // Save Products
@@ -867,7 +1052,7 @@
       renderProducts();
     }
 
-    // Render Categories
+    // Render Categories with long press support
     function renderCategories() {
       const container = document.getElementById('category-tabs');
       container.innerHTML = '';
@@ -876,13 +1061,185 @@
         const tab = document.createElement('div');
         tab.className = `category-tab ${selectedCategory === category ? 'active' : ''}`;
         tab.textContent = category === 'all' ? 'Semua Produk' : category;
+        tab.dataset.category = category;
+        
+        // Regular click for category selection
         tab.onclick = () => {
-          selectedCategory = category;
-          renderCategories();
-          renderProducts();
+          if (!isLongPress) {
+            selectedCategory = category;
+            renderCategories();
+            renderProducts();
+          }
+          isLongPress = false;
         };
+        
         container.appendChild(tab);
       });
+    }
+
+    // Handle touch start for long press
+    function handleTouchStart(e) {
+      const categoryTab = e.target.closest('.category-tab');
+      if (categoryTab && categoryTab.dataset.category !== 'all') {
+        longPressCategory = categoryTab.dataset.category;
+        
+        // Show indicator
+        const indicator = document.getElementById('long-press-indicator');
+        indicator.style.display = 'block';
+        indicator.style.left = e.touches[0].clientX + 'px';
+        indicator.style.top = e.touches[0].clientY + 'px';
+        
+        // Start long press timer
+        longPressTimer = setTimeout(() => {
+          isLongPress = true;
+          showCategoryContextMenu(longPressCategory, e.touches[0].clientX, e.touches[0].clientY);
+          indicator.style.display = 'none';
+        }, 800); // 800ms for long press
+        
+        e.preventDefault();
+      }
+    }
+
+    // Handle touch end
+    function handleTouchEnd() {
+      clearTimeout(longPressTimer);
+      document.getElementById('long-press-indicator').style.display = 'none';
+    }
+
+    // Handle mouse down for long press
+    function handleMouseDown(e) {
+      if (e.button !== 0) return; // Only left click
+      
+      const categoryTab = e.target.closest('.category-tab');
+      if (categoryTab && categoryTab.dataset.category !== 'all') {
+        longPressCategory = categoryTab.dataset.category;
+        
+        // Show indicator
+        const indicator = document.getElementById('long-press-indicator');
+        indicator.style.display = 'block';
+        indicator.style.left = e.clientX + 'px';
+        indicator.style.top = e.clientY + 'px';
+        
+        // Start long press timer
+        longPressTimer = setTimeout(() => {
+          isLongPress = true;
+          showCategoryContextMenu(longPressCategory, e.clientX, e.clientY);
+          indicator.style.display = 'none';
+        }, 800);
+      }
+    }
+
+    // Handle mouse up
+    function handleMouseUp() {
+      clearTimeout(longPressTimer);
+      document.getElementById('long-press-indicator').style.display = 'none';
+    }
+
+    // Show category context menu
+    function showCategoryContextMenu(category, x, y) {
+      const menu = document.getElementById('category-context-menu');
+      menu.innerHTML = '';
+      
+      const editItem = document.createElement('div');
+      editItem.className = 'context-menu-item edit';
+      editItem.innerHTML = '✏️ Edit Kategori';
+      editItem.onclick = () => {
+        editCategory(category);
+        menu.style.display = 'none';
+      };
+      
+      const deleteItem = document.createElement('div');
+      deleteItem.className = 'context-menu-item delete';
+      deleteItem.innerHTML = '🗑️ Hapus Kategori';
+      deleteItem.onclick = () => {
+        deleteCategory(category);
+        menu.style.display = 'none';
+      };
+      
+      menu.appendChild(editItem);
+      menu.appendChild(deleteItem);
+      
+      // Position menu
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+      menu.style.display = 'block';
+      
+      // Close menu when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+          if (!menu.contains(e.target)) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+          }
+        });
+      }, 100);
+    }
+
+    // Edit category
+    function editCategory(oldCategory) {
+      if (oldCategory === 'all') return;
+      
+      const newCategory = prompt('Edit nama kategori:', oldCategory);
+      if (newCategory && newCategory.trim() && newCategory !== oldCategory) {
+        // Update category in categories array
+        const index = categories.indexOf(oldCategory);
+        if (index !== -1) {
+          categories[index] = newCategory;
+        }
+        
+        // Update category in all products
+        products.forEach(product => {
+          if (product.category === oldCategory) {
+            product.category = newCategory;
+          }
+        });
+        
+        // Update selected category if it's the edited one
+        if (selectedCategory === oldCategory) {
+          selectedCategory = newCategory;
+        }
+        
+        saveCategories();
+        saveProducts();
+        renderCategories();
+        renderProducts();
+        showNotification('Kategori berhasil diubah!');
+      }
+    }
+
+    // Delete category
+    function deleteCategory(category) {
+      if (category === 'all') return;
+      
+      if (!confirm(`Hapus kategori "${category}"?\n\nProduk dalam kategori ini akan dipindahkan ke kategori "Semua Produk".`)) {
+        return;
+      }
+      
+      // Move products to default category or uncategorized
+      products.forEach(product => {
+        if (product.category === category) {
+          product.category = "Lainnya";
+        }
+      });
+      
+      // Remove category from categories array
+      categories = categories.filter(cat => cat !== category);
+      
+      // Add "Lainnya" category if it doesn't exist
+      if (!categories.includes("Lainnya")) {
+        categories.push("Lainnya");
+      }
+      
+      // Update selected category if it's the deleted one
+      if (selectedCategory === category) {
+        selectedCategory = 'all';
+      }
+      
+      saveCategories();
+      saveProducts();
+      renderCategories();
+      renderProducts();
+      showNotification('Kategori berhasil dihapus!');
     }
 
     // Render Products
@@ -951,24 +1308,25 @@
       }
     }
 
-    // Show Product Modal (Add/Edit)
+    // Show Product Modal (Add/Edit) - FIXED CATEGORY HANDLING
     function showProductModal(product = null) {
       const isEdit = !!product;
       const modalTitle = document.getElementById('product-modal-title');
       modalTitle.textContent = isEdit ? '✏️ Edit Produk' : '➕ Tambah Produk';
       
-      const existingCategories = [...new Set(products.map(p => p.category).filter(c => c))];
-      let categoryOptions = '';
-      existingCategories.forEach(cat => {
+      // Get existing categories (excluding "all")
+      const existingCategories = categories.filter(cat => cat !== 'all');
+      
+      let categoryOptions = existingCategories.map(cat => {
         const selected = product && product.category === cat ? 'selected' : '';
-        categoryOptions += `<option value="${cat}" ${selected}>${cat}</option>`;
-      });
+        return `<option value="${cat}" ${selected}>${cat}</option>`;
+      }).join('');
       
       const formContent = document.getElementById('product-form-content');
       formContent.innerHTML = `
         <div style="margin-bottom:15px;">
           <div style="color:#333;margin-bottom:5px;font-weight:500;">Gambar Produk</div>
-          <div style="border:2px dashed #ddd;border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:#f8f9fa;"
+          <div style="border:2px dashed #A3D5D9;border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:#DAE8F2;"
                onclick="document.getElementById('product-image-input').click()" id="image-upload-area">
             ${product && product.image ? 
               `<img src="${product.image}" style="max-width:100%;max-height:140px;border-radius:5px;object-fit:cover;" id="image-preview">` :
@@ -1024,8 +1382,8 @@
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button style="padding:14px;border:none;border-radius:25px;background:#666;color:white;font-weight:600;cursor:pointer;" onclick="closeProductModal()">BATAL</button>
-          <button style="padding:14px;border:none;border-radius:25px;background:#e67e22;color:white;font-weight:600;cursor:pointer;" onclick="saveProduct()">${isEdit ? 'UPDATE' : 'SIMPAN'}</button>
+          <button style="padding:14px;border:none;border-radius:25px;background:#A3D5D9;color:#333;font-weight:600;cursor:pointer;" onclick="closeProductModal()">BATAL</button>
+          <button style="padding:14px;border:none;border-radius:25px;background:#1D9BF0;color:white;font-weight:600;cursor:pointer;" onclick="saveProduct()">${isEdit ? 'UPDATE' : 'SIMPAN'}</button>
         </div>
       `;
       
@@ -1078,7 +1436,7 @@
       }
     }
 
-    // Save Product
+    // Save Product - FIXED CATEGORY SAVING
     function saveProduct() {
       const name = document.getElementById('product-name-input').value.trim();
       const code = document.getElementById('product-code-input').value.trim();
@@ -1088,6 +1446,11 @@
       
       if (category === '_new') {
         category = document.getElementById('product-category-new').value.trim();
+        // Add new category to categories array if it doesn't exist
+        if (category && !categories.includes(category) && category !== 'all') {
+          categories.push(category);
+          saveCategories();
+        }
       }
       
       const flex = document.getElementById('product-flex-input').value.trim();
@@ -1111,7 +1474,7 @@
         const existingProduct = products.find(p => p.id === editingProductId);
         imageData = existingProduct ? existingProduct.image : '';
       } else {
-        imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f8f9fa'/%3E%3Crect x='50' y='80' width='200' height='140' fill='%23e67e22' rx='10'/%3E%3Ccircle cx='150' cy='150' r='50' fill='%232c3e50'/%3E%3Cpath d='M130 140 L150 160 L180 120' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
+        imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23DAE8F2'/%3E%3Crect x='50' y='80' width='200' height='140' fill='%231D9BF0' rx='10'/%3E%3Ccircle cx='150' cy='150' r='50' fill='%23A3D5D9'/%3E%3Cpath d='M130 140 L150 160 L180 120' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
       }
       
       const productData = {
@@ -1375,16 +1738,11 @@
       }
     }
 
-    // Settings Modal - DIPERBAIKI
+    // Settings Modal - IMPROVED CATEGORY MANAGEMENT
     function showSettingsModal() {
       const settingsContent = document.getElementById('settings-content');
       
-      const uniqueCategories = [];
-      products.forEach(p => {
-        if (p.category && p.category !== 'all' && !uniqueCategories.includes(p.category)) {
-          uniqueCategories.push(p.category);
-        }
-      });
+      const uniqueCategories = categories.filter(c => c !== 'all');
       
       const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
       const isValid = totalDigits === 13;
@@ -1393,10 +1751,14 @@
       if (uniqueCategories.length > 0) {
         uniqueCategories.forEach(cat => {
           categoryListHTML += `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee;">
-              <span>${cat}</span>
-              <button style="padding:5px 10px;border:none;border-radius:5px;background:#e74c3c;color:white;font-size:12px;cursor:pointer;" 
-                      onclick="deleteCategory('${cat}')">Hapus</button>
+            <div class="category-item">
+              <span style="font-weight:500;">${cat}</span>
+              <div class="category-actions">
+                <button style="padding:5px 10px;border:none;border-radius:5px;background:#1D9BF0;color:white;font-size:12px;cursor:pointer;" 
+                        onclick="editCategory('${cat}')">Edit</button>
+                <button style="padding:5px 10px;border:none;border-radius:5px;background:#ff6b6b;color:white;font-size:12px;cursor:pointer;" 
+                        onclick="deleteCategory('${cat}')">Hapus</button>
+              </div>
             </div>
           `;
         });
@@ -1431,7 +1793,7 @@
             </div>
           </div>
           
-          <div class="digit-summary" style="background:${isValid ? '#e8f4f8' : '#f8d7da'};border-color:${isValid ? '#b3e0f2' : '#f5c6cb'};">
+          <div class="digit-summary" style="background:${isValid ? '#DAE8F2' : '#ffe6e6'};border-color:${isValid ? '#A3D5D9' : '#ffcccc'};">
             <div style="font-weight:600;margin-bottom:5px;color:${isValid ? '#155724' : '#721c24'}">
               Total Digit: ${totalDigits}
             </div>
@@ -1443,15 +1805,15 @@
         
         <div style="margin-bottom:20px;">
           <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;">Manajemen Kategori</div>
-          <div style="background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:10px;">
+          <div style="background:#DAE8F2;padding:15px;border-radius:10px;margin-bottom:10px;">
             <div style="display:flex;gap:10px;margin-bottom:10px;">
               <input type="text" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;" 
-                     id="new-category-input" placeholder="Nama kategori baru">
-              <button style="padding:10px 15px;border:none;border-radius:8px;background:#e67e22;color:white;font-weight:600;cursor:pointer;" 
-                      onclick="addNewCategory()">➕ Tambah</button>
+                     id="new-category-input-settings" placeholder="Nama kategori baru">
+              <button style="padding:10px 15px;border:none;border-radius:8px;background:#1D9BF0;color:white;font-weight:600;cursor:pointer;" 
+                      onclick="addNewCategoryFromSettings()">➕ Tambah</button>
             </div>
             
-            <div style="max-height:200px;overflow-y:auto;" id="categories-list">
+            <div style="max-height:200px;overflow-y:auto;margin-top:10px;" id="categories-list">
               ${categoryListHTML}
             </div>
           </div>
@@ -1459,24 +1821,24 @@
         
         <div style="margin-bottom:20px;">
           <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;">Manajemen Data</div>
-          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#3498db;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;" 
+          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#1D9BF0;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;" 
                   onclick="exportData()">
             📤 Export Data Produk
           </button>
-          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#3498db;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;" 
+          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#1D9BF0;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;" 
                   onclick="importData()">
             📥 Import Data Produk
           </button>
-          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#e74c3c;color:white;font-weight:600;cursor:pointer;" 
+          <button style="width:100%;padding:12px;border:none;border-radius:25px;background:#ff6b6b;color:white;font-weight:600;cursor:pointer;" 
                   onclick="clearAllData()">
             🗑️ Hapus Semua Data
           </button>
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button style="padding:14px;border:none;border-radius:25px;background:#666;color:white;font-weight:600;cursor:pointer;" 
+          <button style="padding:14px;border:none;border-radius:25px;background:#A3D5D9;color:#333;font-weight:600;cursor:pointer;" 
                   onclick="closeSettingsModal()">BATAL</button>
-          <button style="padding:14px;border:none;border-radius:25px;background:#e67e22;color:white;font-weight:600;cursor:pointer;" 
+          <button style="padding:14px;border:none;border-radius:25px;background:#1D9BF0;color:white;font-weight:600;cursor:pointer;" 
                   onclick="saveSettingsConfig()">SIMPAN</button>
         </div>
       `;
@@ -1488,6 +1850,31 @@
       });
       
       document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    // Add new category from settings
+    function addNewCategoryFromSettings() {
+      const input = document.getElementById('new-category-input-settings');
+      const category = input.value.trim();
+      
+      if (!category) {
+        showNotification('Masukkan nama kategori!', 'error');
+        return;
+      }
+      
+      if (categories.includes(category)) {
+        showNotification('Kategori sudah ada!', 'error');
+        return;
+      }
+      
+      categories.push(category);
+      saveCategories();
+      renderCategories();
+      showNotification(`Kategori "${category}" ditambahkan!`);
+      input.value = '';
+      
+      // Refresh settings modal
+      showSettingsModal();
     }
 
     function updateDigitSummary() {
@@ -1509,8 +1896,8 @@
             ${isValid ? '✓ Format barcode valid (13 digit)' : '⚠ Harus tepat 13 digit!'}
           </div>
         `;
-        summary.style.background = isValid ? '#e8f4f8' : '#f8d7da';
-        summary.style.borderColor = isValid ? '#b3e0f2' : '#f5c6cb';
+        summary.style.background = isValid ? '#DAE8F2' : '#ffe6e6';
+        summary.style.borderColor = isValid ? '#A3D5D9' : '#ffcccc';
       }
     }
 
@@ -1536,41 +1923,6 @@
       
       showNotification('Pengaturan berhasil disimpan!');
       closeSettingsModal();
-    }
-
-    // Fungsi tambah kategori baru
-    function addNewCategory() {
-      const input = document.getElementById('new-category-input');
-      const category = input.value.trim();
-      
-      if (!category) {
-        showNotification('Masukkan nama kategori!', 'error');
-        return;
-      }
-      
-      const existingCategories = [...new Set(products.map(p => p.category))];
-      if (existingCategories.includes(category)) {
-        showNotification('Kategori sudah ada!', 'error');
-        return;
-      }
-      
-      loadCategories();
-      renderCategories();
-      showNotification(`Kategori "${category}" ditambahkan!`);
-      input.value = '';
-      
-      showSettingsModal();
-    }
-
-    // Fungsi hapus kategori
-    function deleteCategory(category) {
-      if (!confirm(`Hapus kategori "${category}"?\n\nProduk dengan kategori ini akan tetap ada, tapi kategori tidak akan muncul di dropdown.`)) {
-        return;
-      }
-      
-      showNotification(`Kategori "${category}" dihapus dari daftar!`);
-      
-      showSettingsModal();
     }
 
     // Data Management
@@ -1621,7 +1973,12 @@
     function clearAllData() {
       if (confirm('Apakah Anda yakin ingin menghapus SEMUA data produk?')) {
         products = [];
+        categories = ['all'];
         saveProducts();
+        saveCategories();
+        selectedCategory = 'all';
+        renderCategories();
+        renderProducts();
         showNotification('Semua data berhasil dihapus!');
         closeSettingsModal();
       }
@@ -1631,7 +1988,7 @@
     function showNotification(message, type = 'success') {
       const notification = document.getElementById('notification');
       notification.textContent = message;
-      notification.style.background = type === 'error' ? '#c0392b' : '#2c3e50';
+      notification.style.background = type === 'error' ? '#ff6b6b' : '#1D9BF0';
       notification.style.display = 'block';
       
       setTimeout(() => {
