@@ -1671,7 +1671,7 @@
         <div style="margin-bottom:15px;">
           <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
             ${icons.camera}
-            Product Pictures
+            Foto Produk
           </div>
           <div style="border:2px dashed #d9d9d9;border-radius:15px;padding:20px;text-align:center;cursor:pointer;background:#f5f5f5;"
                onclick="document.getElementById('product-image-input').click()" id="image-upload-area">
@@ -1698,7 +1698,7 @@
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
-            Product Name
+            Nama Produk
           </div>
           <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                  id="product-name-input" value="${product ? product.name : ''}" placeholder="Nama produk" required>
@@ -1709,7 +1709,7 @@
             <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
             </svg>
-            Product Code (4 digit)
+            Kode Produk (4 digit)
           </div>
           <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                  id="product-code-input" value="${product ? product.code : ''}" placeholder="0001" maxlength="4" required>
@@ -1721,7 +1721,7 @@
               <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
               <path d="M10 2v20"/>
             </svg>
-            Categori
+            Kategori
           </div>
           <div style="display:flex;gap:10px;">
             <select style="flex:1;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
@@ -1745,7 +1745,7 @@
                 <line x1="9" y1="9" x2="15" y2="15"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
               </svg>
-              Flex Code (2 digit)
+              Kode Flex (2 digit)
             </div>
             <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                    id="product-flex-input" value="${product ? product.flex : '01'}" placeholder="01" maxlength="2">
@@ -1755,7 +1755,7 @@
               <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
               </svg>
-              Cat Code (2 digit)
+              Kode Ktgr (2 digit)
             </div>
             <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                    id="product-catcode-input" value="${product ? product.catcode : '01'}" placeholder="01" maxlength="2">
@@ -1768,7 +1768,7 @@
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
-            CANCEL
+            BATAL
           </button>
           <button style="padding:14px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" onclick="saveProduct()">
             <svg class="icon icon-sm icon-white" viewBox="0 0 24 24">
@@ -1776,7 +1776,7 @@
               <polyline points="17 21 17 13 7 13 7 21"/>
               <polyline points="7 3 7 8 15 8"/>
             </svg>
-            ${isEdit ? 'UPDATE' : 'SAVE'}
+            ${isEdit ? 'UPDATE' : 'SIMPAN'}
           </button>
         </div>
       `;
