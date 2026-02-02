@@ -1292,53 +1292,42 @@
       renderCategories();
       renderProducts();
       
-      // Load printer connection status from localStorage
-      loadPrinterConnection();
+      // Initialize printer connection
+      initPrinterConnection();
       
       // Initialize long press events
       initLongPressEvents();
-      
-      // Listen for beforeunload event to save printer connection
-      window.addEventListener('beforeunload', savePrinterConnection);
-      
-      // Try to reconnect if printer was previously connected
-      if (isPrinterConnected) {
-        setTimeout(() => {
-          checkPrinterConnection();
-        }, 1000);
-      }
     }
 
-    // Save printer connection status to localStorage
-    function savePrinterConnection() {
-      const connectionData = {
-        isPrinterConnected: isPrinterConnected,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem('printerConnection', JSON.stringify(connectionData));
-    }
-
-    // Load printer connection status from localStorage
-    function loadPrinterConnection() {
+    // Initialize printer connection
+    function initPrinterConnection() {
+      // Load previous connection status from localStorage
       const savedConnection = localStorage.getItem('printerConnection');
       if (savedConnection) {
         try {
           const connectionData = JSON.parse(savedConnection);
+          // Check if connection was recent (within 5 minutes)
           const savedTime = new Date(connectionData.timestamp);
           const currentTime = new Date();
-          const hoursDifference = (currentTime - savedTime) / (1000 * 60 * 60);
+          const minutesDifference = (currentTime - savedTime) / (1000 * 60);
           
-          // Only restore connection if it was saved less than 1 hour ago
-          if (connectionData.isPrinterConnected && hoursDifference < 1) {
-            isPrinterConnected = connectionData.isPrinterConnected;
-            updatePrinterLED(isPrinterConnected);
+          // If connection was recent, try to reconnect automatically
+          if (connectionData.isPrinterConnected && minutesDifference < 5) {
+            // Set status to connected but note that we need to reconnect
+            isPrinterConnected = false; // Will be set to true if reconnection succeeds
+            updatePrinterLED(false);
             updatePrinterButton();
+            
+            // Try to reconnect automatically
+            setTimeout(() => {
+              autoReconnectPrinter();
+            }, 1000);
           } else {
-            // Clear expired connection
-            localStorage.removeItem('printerConnection');
+            // Connection too old, reset to disconnected
             isPrinterConnected = false;
             updatePrinterLED(false);
             updatePrinterButton();
+            localStorage.removeItem('printerConnection');
           }
         } catch (e) {
           console.error('Error loading printer connection:', e);
@@ -1351,6 +1340,99 @@
         updatePrinterLED(false);
         updatePrinterButton();
       }
+    }
+
+    // Try to auto-reconnect to printer
+    async function autoReconnectPrinter() {
+      if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        return;
+      }
+      
+      try {
+        // Check if Web Serial API is available
+        if (!("serial" in navigator)) {
+          return;
+        }
+        
+        // Get previously granted ports
+        const ports = await navigator.serial.getPorts();
+        
+        if (ports.length === 0) {
+          // No ports available, show notification
+          showNotification('Printer perlu dihubungkan kembali setelah refresh halaman', 'info');
+          return;
+        }
+        
+        // Try to reconnect to the first available port
+        port = ports[0];
+        
+        // Check if port is already open
+        if (port.readable || port.writable) {
+          // Port is already open, try to get writer
+          writer = port.writable.getWriter();
+          isPrinterConnected = true;
+          reconnectAttempts = 0;
+          updatePrinterLED(true);
+          updatePrinterButton();
+          savePrinterConnection();
+          showNotification('Printer berhasil terhubung ulang!', 'success');
+          
+          // Set up disconnect listener
+          port.addEventListener('disconnect', handlePrinterDisconnect);
+          return;
+        }
+        
+        // Try to open the port
+        await port.open({ baudRate: 9600 });
+        writer = port.writable.getWriter();
+        
+        isPrinterConnected = true;
+        reconnectAttempts = 0;
+        updatePrinterLED(true);
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer berhasil terhubung ulang!', 'success');
+        
+        // Set up disconnect listener
+        port.addEventListener('disconnect', handlePrinterDisconnect);
+        
+      } catch (error) {
+        console.error("Auto-reconnect error:", error);
+        reconnectAttempts++;
+        
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          // Try again after delay
+          setTimeout(() => {
+            autoReconnectPrinter();
+          }, 2000);
+        } else {
+          // Show notification that reconnection failed
+          showNotification('Gagal menghubungkan ulang ke printer. Silakan hubungkan manual.', 'error');
+          isPrinterConnected = false;
+          updatePrinterLED(false);
+          updatePrinterButton();
+        }
+      }
+    }
+
+    // Handle printer disconnect event
+    function handlePrinterDisconnect() {
+      isPrinterConnected = false;
+      port = null;
+      writer = null;
+      updatePrinterLED(false);
+      updatePrinterButton();
+      savePrinterConnection();
+      showNotification('Printer terputus!', 'error');
+    }
+
+    // Save printer connection status to localStorage
+    function savePrinterConnection() {
+      const connectionData = {
+        isPrinterConnected: isPrinterConnected,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('printerConnection', JSON.stringify(connectionData));
     }
 
     // Update printer LED indicator
@@ -1399,36 +1481,6 @@
         disconnectFromPrinter();
       } else {
         connectToPrinter();
-      }
-    }
-
-    // Check if printer is still connected
-    async function checkPrinterConnection() {
-      if (!isPrinterConnected) return;
-      
-      try {
-        // Check if we can still communicate with the printer
-        if (port && writer) {
-          // Try to send a simple command to check connection
-          const encoder = new TextEncoder();
-          const testData = encoder.encode('\x1B@');
-          
-          await writer.write(testData);
-          isPrinterConnected = true;
-          updatePrinterLED(true);
-          updatePrinterButton();
-        } else {
-          isPrinterConnected = false;
-          updatePrinterLED(false);
-          updatePrinterButton();
-          savePrinterConnection();
-        }
-      } catch (error) {
-        console.log('Printer connection check failed:', error);
-        isPrinterConnected = false;
-        updatePrinterLED(false);
-        updatePrinterButton();
-        savePrinterConnection();
       }
     }
 
@@ -1904,6 +1956,9 @@
           </div>
           <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                  id="product-code-input" value="${product ? product.code : ''}" placeholder="0001" maxlength="4" required>
+          <div id="code-duplicate-warning" style="color:#dc3545;font-size:0.8rem;margin-top:5px;display:none;">
+            ⚠ Kode produk sudah digunakan!
+          </div>
         </div>
         
         <div style="margin-bottom:15px;">
@@ -1961,7 +2016,7 @@
             </svg>
             BATAL
           </button>
-          <button style="padding:14px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" onclick="saveProduct()">
+          <button style="padding:14px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" onclick="saveProduct()" id="save-product-btn">
             <svg class="icon icon-sm icon-white" viewBox="0 0 24 24">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
               <polyline points="17 21 17 13 7 13 7 21"/>
@@ -1974,6 +2029,13 @@
       
       const imageInput = document.getElementById('product-image-input');
       const imageUploadArea = document.getElementById('image-upload-area');
+      const codeInput = document.getElementById('product-code-input');
+      const warningDiv = document.getElementById('code-duplicate-warning');
+      
+      // Add event listener to check for duplicate code
+      if (codeInput) {
+        codeInput.addEventListener('input', checkDuplicateCode);
+      }
       
       imageInput.onchange = function(e) {
         const file = e.target.files[0];
@@ -2006,6 +2068,43 @@
       document.getElementById('product-modal').style.display = 'flex';
     }
 
+    // Check for duplicate product code
+    function checkDuplicateCode() {
+      const codeInput = document.getElementById('product-code-input');
+      const warningDiv = document.getElementById('code-duplicate-warning');
+      const saveButton = document.getElementById('save-product-btn');
+      
+      if (!codeInput || !warningDiv || !saveButton) return;
+      
+      const enteredCode = codeInput.value.trim();
+      
+      if (enteredCode.length === 0) {
+        warningDiv.style.display = 'none';
+        saveButton.disabled = false;
+        saveButton.style.opacity = '1';
+        return;
+      }
+      
+      // Check if code already exists (excluding the current product being edited)
+      const duplicateProduct = products.find(p => {
+        // If editing, exclude the current product from the check
+        if (editingProductId && p.id === editingProductId) {
+          return false;
+        }
+        return p.code === enteredCode;
+      });
+      
+      if (duplicateProduct) {
+        warningDiv.style.display = 'block';
+        saveButton.disabled = true;
+        saveButton.style.opacity = '0.6';
+      } else {
+        warningDiv.style.display = 'none';
+        saveButton.disabled = false;
+        saveButton.style.opacity = '1';
+      }
+    }
+
     // Handle category selection
     function handleCategorySelect() {
       const select = document.getElementById('product-category-select');
@@ -2021,10 +2120,23 @@
       }
     }
 
-    // Save Product - FIXED CATEGORY SAVING
+    // Save Product - FIXED CATEGORY SAVING with duplicate check
     function saveProduct() {
       const name = document.getElementById('product-name-input').value.trim();
       const code = document.getElementById('product-code-input').value.trim();
+      
+      // Check for duplicate code (final check)
+      const duplicateProduct = products.find(p => {
+        if (editingProductId && p.id === editingProductId) {
+          return false;
+        }
+        return p.code === code;
+      });
+      
+      if (duplicateProduct) {
+        showNotification('Kode produk sudah digunakan! Gunakan kode yang berbeda.', 'error');
+        return;
+      }
       
       const categorySelect = document.getElementById('product-category-select');
       let category = categorySelect.value;
@@ -2184,13 +2296,7 @@
         showNotification('Printer Connected!', 'success');
         
         // Listen for disconnect events
-        port.addEventListener('disconnect', () => {
-          isPrinterConnected = false;
-          updatePrinterLED(false);
-          updatePrinterButton();
-          showNotification('Printer terputus!', 'error');
-          savePrinterConnection();
-        });
+        port.addEventListener('disconnect', handlePrinterDisconnect);
         
         return true;
         
@@ -2347,10 +2453,7 @@
         showNotification("Gagal mengirim ke printer: " + error.message, 'error');
         
         if (error.message.includes("closed") || error.message.includes("disconnected") || error.name === 'NetworkError') {
-          isPrinterConnected = false;
-          updatePrinterLED(false);
-          updatePrinterButton();
-          savePrinterConnection();
+          handlePrinterDisconnect();
         }
       }
     }
@@ -2624,7 +2727,34 @@
               throw new Error('Format data tidak valid');
             }
             
-            products = importedData;
+            // Check for duplicate codes in imported data
+            const codeSet = new Set();
+            const duplicates = [];
+            
+            importedData.forEach(product => {
+              if (codeSet.has(product.code)) {
+                duplicates.push(product.code);
+              } else {
+                codeSet.add(product.code);
+              }
+            });
+            
+            if (duplicates.length > 0) {
+              showNotification(`Data mengandung ${duplicates.length} kode duplikat. Duplikat akan diabaikan.`, 'warning');
+            }
+            
+            // Remove duplicates from imported data
+            const uniqueProducts = [];
+            const seenCodes = new Set();
+            
+            importedData.forEach(product => {
+              if (!seenCodes.has(product.code)) {
+                seenCodes.add(product.code);
+                uniqueProducts.push(product);
+              }
+            });
+            
+            products = uniqueProducts;
             saveProducts();
             showNotification('Data berhasil diimport!', 'success');
           } catch (error) {
@@ -2655,7 +2785,10 @@
     function showNotification(message, type = 'success') {
       const notification = document.getElementById('notification');
       notification.textContent = message;
-      notification.style.background = type === 'error' ? '#ff6b6b' : '#006B54';
+      notification.style.background = type === 'error' ? '#ff6b6b' : 
+                                     type === 'warning' ? '#ffc107' : 
+                                     type === 'info' ? '#17a2b8' : 
+                                     '#006B54';
       notification.style.display = 'block';
       
       setTimeout(() => {
