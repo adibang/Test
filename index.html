@@ -17,15 +17,15 @@
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
-      background: #DAE8F2;
+      background: #FFFFFF;
       min-height: 100vh;
-      color: #333;
+      color: #333333;
     }
     
     /* Header */
     .app-header {
-      background: #1D9BF0;
-      color: white;
+      background: #FFFFFF;
+      color: #006B54;
       padding: 16px 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       position: sticky;
@@ -47,6 +47,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      color: #006B54;
     }
     
     .header-actions {
@@ -75,12 +76,12 @@
     .category-tab {
       padding: 8px 16px;
       background: white;
-      border-radius: 20px;
+      border-radius: 15px;
       cursor: pointer;
       font-size: 0.85rem;
       transition: all 0.2s;
-      border: 1px solid #dee2e6;
-      color: #495057;
+      border: 1px solid #333333;
+      color: #333333;
       font-weight: 500;
       flex-shrink: 0;
       position: relative;
@@ -88,14 +89,14 @@
     }
     
     .category-tab:hover {
-      border-color: #1D9BF0;
-      color: #1D9BF0;
+      border-color: #006B54;
+      color: #006B54;
     }
     
     .category-tab.active {
-      background: #1D9BF0;
+      background: #006B54;
       color: white;
-      border-color: #1D9BF0;
+      border-color: #006B54;
     }
     
     /* Products Grid */
@@ -108,7 +109,7 @@
     /* Product Card */
     .product-card {
       background: white;
-      border-radius: 20px;
+      border-radius: 15px;
       overflow: hidden;
       cursor: pointer;
       transition: all 0.2s;
@@ -123,11 +124,11 @@
     .product-card:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-      border-color: #1D9BF0;
+      border-color: #006B54;
     }
     
     .product-card.selected {
-      border: 2px solid #1D9BF0;
+      border: 2px solid #006B54;
     }
     
     /* Product Image */
@@ -152,7 +153,7 @@
     .product-name {
       font-weight: 600;
       font-size: 0.85rem;
-      color: #2c3e50;
+      color: #333333;
       margin-bottom: 5px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -168,7 +169,7 @@
       font-family: monospace;
       background: #f8f9fa;
       padding: 3px 8px;
-      border-radius: 20px;
+      border-radius: 15px;
       display: inline-block;
     }
     
@@ -190,7 +191,7 @@
     .action-btn {
       width: 26px;
       height: 26px;
-      border-radius: 20px;
+      border-radius: 15px;
       border: none;
       display: flex;
       align-items: center;
@@ -203,12 +204,12 @@
     }
     
     .edit-btn {
-      color: #1D9BF0;
-      border: 1px solid #1D9BF0;
+      color: #006B54;
+      border: 1px solid #006B54;
     }
     
     .edit-btn:hover {
-      background: #1D9BF0;
+      background: #006B54;
       color: white;
     }
     
@@ -225,11 +226,11 @@
     /* Add Product Card */
     .add-product-card {
       background: white;
-      border-radius: 20px;
+      border-radius: 15px;
       cursor: pointer;
       transition: all 0.2s;
       box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-      border: 2px dashed #A3D5D9;
+      border: 2px dashed #d9d9d9;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -238,7 +239,7 @@
     }
     
     .add-product-card:hover {
-      border-color: #1D9BF0;
+      border-color: #006B54;
       transform: translateY(-3px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.12);
     }
@@ -250,12 +251,12 @@
     
     .add-icon {
       font-size: 32px;
-      color: #1D9BF0;
+      color: #006B54;
       margin-bottom: 10px;
     }
     
     .add-text {
-      color: #1D9BF0;
+      color: #006B54;
       font-weight: 600;
       font-size: 0.85rem;
     }
@@ -277,8 +278,8 @@
     
     /* Modal Content */
     .modal-content {
-      background: #1D9BF0;
-      border-radius: 20px;
+      background: #FFFFFF;
+      border-radius: 15px;
       width: 100%;
       max-width: 450px;
       max-height: 90vh;
@@ -301,13 +302,14 @@
     /* Modal Header */
     .modal-header {
       padding: 12px 20px;
-      color: white;
+      color: #006B54;
       display: flex;
       justify-content: center;
       align-items: center;
       text-align: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(0, 107, 84, 0.1);
       position: relative;
+      background: #FFFFFF;
     }
     
     .modal-title {
@@ -316,6 +318,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      color: #006B54;
     }
     
     .close-modal {
@@ -326,18 +329,19 @@
       padding: 0 20px 20px;
       max-height: calc(90vh - 60px);
       overflow-y: auto;
+      background: #FFFFFF;
     }
     
     /* Display Section */
     .display-section {
-      background: #A3D5D9;
+      background: #f5f5f5;
       padding: 12px;
       margin-bottom: 15px;
-      border-radius: 20px;
+      border-radius: 15px;
       text-align: right;
       font-family: monospace;
       font-size: 1.1em;
-      color: #333;
+      color: #333333;
     }
     
     .display-row {
@@ -352,33 +356,33 @@
     
     /* Product Info Compact */
     .product-info-section {
-      background: rgba(255, 255, 255, 0.2);
+      background: #f5f5f5;
       padding: 12px;
       margin-bottom: 15px;
-      border-radius: 20px;
+      border-radius: 15px;
       display: flex;
       gap: 12px;
       align-items: center;
-      color: white;
+      color: #333333;
     }
     
     .product-thumbnail {
       width: 50px;
       height: 50px;
-      border-radius: 20px;
+      border-radius: 15px;
       object-fit: cover;
       background: white;
     }
     
     .product-details h4 {
-      color: white;
+      color: #333333;
       margin-bottom: 4px;
       font-size: 0.9rem;
       font-weight: 600;
     }
     
     .product-details .code {
-      color: rgba(255, 255, 255, 0.8);
+      color: #666666;
       font-family: monospace;
       font-size: 0.8rem;
     }
@@ -386,7 +390,7 @@
     /* Printer Status */
     .printer-status {
       padding: 8px;
-      border-radius: 20px;
+      border-radius: 15px;
       text-align: center;
       color: white;
       font-size: 13px;
@@ -419,10 +423,10 @@
     
     button {
       padding: 14px 8px;
-      border: none;
-      background: #ffffff;
-      color: #333;
-      border-radius: 20px;
+      border: 1px solid #333333;
+      background: #FFFFFF;
+      color: #333333;
+      border-radius: 15px;
       cursor: pointer;
       font-size: 16px;
       min-height: 48px;
@@ -438,56 +442,64 @@
     
     button:active {
       transform: scale(0.98);
-      box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.3);
+      border-color: #006B54;
+      box-shadow: 0 0 0 3px rgba(0, 107, 84, 0.3);
     }
     
     /* Function Buttons */
     .function-btn {
-      background: #ffffff;
-      color: #1D9BF0;
+      background: #FFFFFF;
+      color: #006B54;
       font-weight: 600;
+      border: 1px solid #333333;
     }
     
     .function-btn:active {
-      background: #1D9BF0;
+      background: #006B54;
       color: white;
+      border-color: #006B54;
     }
     
     .backspace-btn {
       background: #ff6b6b;
       color: white;
+      border: 1px solid #ff6b6b;
     }
     
     .backspace-btn:active {
       background: #ff5252;
+      border-color: #ff5252;
     }
     
     .print-btn {
       grid-column: span 3;
-      background: #ffffff !important;
-      color: #1D9BF0;
+      background: #FFFFFF !important;
+      color: #006B54;
       font-weight: 600;
+      border: 1px solid #333333;
     }
     
     .print-btn:active {
-      background: #1D9BF0 !important;
+      background: #006B54 !important;
       color: white;
+      border-color: #006B54;
     }
     
     .active-mode {
-      background: #1D9BF0 !important;
+      background: #006B54 !important;
       color: white;
+      border-color: #006B54;
     }
     
     /* Barcode Preview */
     .barcode-preview {
-      background: #A3D5D9;
+      background: #f5f5f5;
       padding: 15px;
-      border-radius: 20px;
+      border-radius: 15px;
       margin-top: 15px;
       text-align: center;
       font-size: 12px;
-      color: #333;
+      color: #333333;
       min-height: 140px;
       display: flex;
       flex-direction: column;
@@ -501,7 +513,7 @@
       align-items: center;
       justify-content: center;
       background: white;
-      border-radius: 20px;
+      border-radius: 15px;
       margin: 10px 0;
       padding: 10px;
       overflow: hidden;
@@ -514,13 +526,13 @@
     
     .barcode-info {
       font-size: 0.9rem;
-      color: #333;
+      color: #333333;
       margin-top: 5px;
       font-family: monospace;
       word-break: break-all;
       background: white;
       padding: 8px;
-      border-radius: 20px;
+      border-radius: 15px;
     }
     
     /* Settings Modal */
@@ -530,7 +542,7 @@
     }
     
     .settings-modal .modal-header {
-      background: #1D9BF0;
+      background: #FFFFFF;
     }
     
     .settings-content {
@@ -544,7 +556,7 @@
     .setting-label {
       display: block;
       margin-bottom: 8px;
-      color: #333;
+      color: #333333;
       font-weight: 500;
       font-size: 0.9rem;
     }
@@ -552,19 +564,26 @@
     .setting-input {
       width: 100%;
       padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 20px;
+      border: 1px solid #333333;
+      border-radius: 15px;
       font-size: 1rem;
       text-align: center;
+      background: #FFFFFF;
+    }
+    
+    .setting-input:focus {
+      outline: none;
+      border-color: #006B54;
+      box-shadow: 0 0 0 3px rgba(0, 107, 84, 0.1);
     }
     
     .digit-summary {
-      background: #DAE8F2;
+      background: #f5f5f5;
       padding: 15px;
-      border-radius: 20px;
+      border-radius: 15px;
       text-align: center;
       margin: 20px 0;
-      border: 2px solid #A3D5D9;
+      border: 2px solid #d9d9d9;
     }
     
     /* Category Management */
@@ -574,7 +593,7 @@
       align-items: center;
       padding: 10px;
       background: #f8f9fa;
-      border-radius: 20px;
+      border-radius: 15px;
       margin-bottom: 8px;
       border: 1px solid #e9ecef;
     }
@@ -592,7 +611,7 @@
     .category-context-menu {
       position: fixed;
       background: white;
-      border-radius: 20px;
+      border-radius: 15px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.2);
       z-index: 1001;
       min-width: 180px;
@@ -624,7 +643,7 @@
     }
     
     .context-menu-item.edit {
-      color: #1D9BF0;
+      color: #006B54;
     }
     
     .context-menu-item.delete {
@@ -638,10 +657,10 @@
       left: 50%;
       transform: translateX(-50%);
       padding: 12px 20px;
-      border-radius: 20px;
+      border-radius: 15px;
       display: none;
       color: white;
-      background-color: #1D9BF0;
+      background-color: #006B54;
       max-width: 90%;
       text-align: center;
       z-index: 1001;
@@ -654,7 +673,7 @@
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%231D9BF0' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23006B54' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
       padding-right: 40px !important;
@@ -663,17 +682,17 @@
     
     select:focus {
       outline: none;
-      border-color: #1D9BF0;
-      box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.1);
+      border-color: #006B54;
+      box-shadow: 0 0 0 3px rgba(0, 107, 84, 0.1);
     }
     
     /* Tombol Settings di Header */
     .header-actions button {
-      background: white;
-      color: #1D9BF0;
+      background: #FFFFFF;
+      color: #006B54;
       padding: 8px 12px;
-      border-radius: 20px;
-      border: none;
+      border-radius: 15px;
+      border: 1px solid #006B54;
       font-size: 14px;
       font-weight: 600;
       transition: all 0.2s;
@@ -683,8 +702,44 @@
     }
     
     .header-actions button:hover {
-      background: #0d8de0;
+      background: #006B54;
       color: white;
+    }
+    
+    /* Input Fields */
+    input, textarea, select {
+      background: #FFFFFF !important;
+      border: 1px solid #333333 !important;
+      border-radius: 15px !important;
+      color: #333333 !important;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      border-color: #006B54 !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(0, 107, 84, 0.1) !important;
+    }
+    
+    input::placeholder, textarea::placeholder {
+      color: #999999 !important;
+    }
+    
+    /* Modal tombol khusus untuk weight modal */
+    #weight-modal button {
+      background: #FFFFFF;
+      border: 1px solid #333333;
+      color: #333333;
+    }
+    
+    #weight-modal button:active {
+      border-color: #006B54;
+    }
+    
+    #weight-modal .function-btn:active,
+    #weight-modal .print-btn:active {
+      background: #006B54;
+      color: white;
+      border-color: #006B54;
     }
     
     /* Responsive Grid untuk Tablet */
@@ -758,27 +813,29 @@
     /* Warna untuk input focus */
     input:focus, textarea:focus {
       outline: none;
-      border-color: #1D9BF0;
-      box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.1);
+      border-color: #006B54;
+      box-shadow: 0 0 0 3px rgba(0, 107, 84, 0.1);
     }
     
     /* Warna untuk tombol dalam form */
     .form-button-primary {
-      background: #1D9BF0;
+      background: #006B54;
       color: white;
+      border: 1px solid #006B54 !important;
     }
     
     .form-button-primary:hover {
-      background: #0d8de0;
+      background: #005a46;
     }
     
     .form-button-secondary {
-      background: #A3D5D9;
-      color: #333;
+      background: #d9d9d9;
+      color: #333333;
+      border: 1px solid #d9d9d9 !important;
     }
     
     .form-button-secondary:hover {
-      background: #93c5c9;
+      background: #cccccc;
     }
     
     /* Long Press Indicator */
@@ -787,7 +844,7 @@
       background: rgba(0, 0, 0, 0.7);
       color: white;
       padding: 8px 12px;
-      border-radius: 20px;
+      border-radius: 15px;
       font-size: 12px;
       z-index: 9999;
       pointer-events: none;
@@ -804,16 +861,17 @@
     .form-input {
       width: 100%;
       padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 20px;
+      border: 1px solid #333333;
+      border-radius: 15px;
       font-size: 1rem;
       box-sizing: border-box;
+      background: #FFFFFF !important;
     }
     
     /* Tombol Kecil */
     .small-button {
       padding: 5px 10px;
-      border-radius: 20px;
+      border-radius: 15px;
       font-size: 12px;
       border: none;
       cursor: pointer;
@@ -847,7 +905,7 @@
     
     /* Icon Colors */
     .icon-primary {
-      color: #1D9BF0;
+      color: #006B54;
     }
     
     .icon-white {
@@ -888,7 +946,7 @@
     .add-icon svg {
       width: 40px;
       height: 40px;
-      stroke: #1D9BF0;
+      stroke: #006B54;
     }
     
     /* Button with icon */
@@ -906,7 +964,7 @@
     <div class="header-content">
       <div class="app-title">
         <div class="icon-container">
-          <svg class="icon box-icon icon-white" viewBox="0 0 24 24">
+          <svg class="icon box-icon icon-primary" viewBox="0 0 24 24">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
             <line x1="12" y1="22.08" x2="12" y2="12"/>
@@ -916,7 +974,7 @@
       </div>
       <div class="header-actions">
         <button onclick="showSettingsModal()">
-          <svg class="icon settings-icon" viewBox="0 0 24 24">
+          <svg class="icon settings-icon icon-primary" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
@@ -944,7 +1002,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title">
-          <svg class="icon weight-icon icon-white" viewBox="0 0 24 24">
+          <svg class="icon weight-icon icon-primary" viewBox="0 0 24 24">
             <path d="M3 6h18"/>
             <path d="M3 10h18"/>
             <path d="M12 6v8"/>
@@ -1045,8 +1103,8 @@
         
         <!-- Barcode Preview -->
         <div class="barcode-preview">
-          <div style="font-weight:600;color:#333;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
-            <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;">
+          <div style="font-weight:600;color:#333333;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;color:#006B54;">
               <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/>
               <path d="M8 7V5"/>
               <path d="M16 7V5"/>
@@ -1067,9 +1125,9 @@
   <!-- Add/Edit Product Modal -->
   <div class="modal-overlay" id="product-modal">
     <div class="modal-content" style="background:white;">
-      <div class="modal-header" style="background:#1D9BF0;">
-        <h2 class="modal-title" id="product-modal-title">
-          <svg class="icon icon-white" viewBox="0 0 24 24">
+      <div class="modal-header" style="background:#FFFFFF;">
+        <h2 class="modal-title" id="product-modal-title" style="color:#006B54;">
+          <svg class="icon icon-primary" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"/>
             <line x1="12" y1="8" x2="12" y2="16"/>
             <line x1="8" y1="12" x2="16" y2="12"/>
@@ -1088,9 +1146,9 @@
   <!-- Settings Modal -->
   <div class="modal-overlay" id="settings-modal">
     <div class="modal-content" style="background:white;">
-      <div class="modal-header" style="background:#1D9BF0;">
-        <h2 class="modal-title">
-          <svg class="icon icon-white settings-icon" viewBox="0 0 24 24">
+      <div class="modal-header" style="background:#FFFFFF;">
+        <h2 class="modal-title" style="color:#006B54;">
+          <svg class="icon icon-primary settings-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
@@ -1220,7 +1278,7 @@
             category: "Sembako",
             flex: "01",
             catcode: "01",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DAE8F2'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%231D9BF0'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23A3D5D9'/%3E%3C/svg%3E"
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%23006B54'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23d9d9d9'/%3E%3C/svg%3E"
           },
           {
             id: 2,
@@ -1229,7 +1287,7 @@
             category: "Sembako",
             flex: "01",
             catcode: "01",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DAE8F2'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%231D9BF0' stroke-width='2'/%3E%3C/svg%3E"
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%23006B54' stroke-width='2'/%3E%3C/svg%3E"
           },
           {
             id: 3,
@@ -1238,7 +1296,7 @@
             category: "Sembako",
             flex: "01",
             catcode: "02",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DAE8F2'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23A3D5D9'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%231D9BF0'/%3E%3C/svg%3E"
+            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23d9d9d9'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%23006B54'/%3E%3C/svg%3E"
           }
         ];
         saveProducts();
@@ -1289,7 +1347,7 @@
         if (category !== 'all') {
           tab.innerHTML = `
             <div style="display:flex;align-items:center;gap:6px;">
-              <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;color:${selectedCategory === category ? 'white' : '#006B54'}">
                 <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
                 <path d="M10 2v20"/>
               </svg>
@@ -1299,7 +1357,7 @@
         } else {
           tab.innerHTML = `
             <div style="display:flex;align-items:center;gap:6px;">
-              <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;color:${selectedCategory === category ? 'white' : '#006B54'}">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <line x1="3" y1="9" x2="21" y2="9"/>
                 <line x1="9" y1="21" x2="9" y2="9"/>
@@ -1546,7 +1604,7 @@
       addCard.innerHTML = `
         <div class="add-product-content">
           <div class="add-icon">
-            <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;">
+            <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;color:#006B54;">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
@@ -1586,13 +1644,13 @@
       const isEdit = !!product;
       const modalTitle = document.getElementById('product-modal-title');
       modalTitle.innerHTML = isEdit ? `
-        <svg class="icon icon-white" viewBox="0 0 24 24">
+        <svg class="icon icon-primary" viewBox="0 0 24 24">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
         Edit Produk
       ` : `
-        <svg class="icon icon-white" viewBox="0 0 24 24">
+        <svg class="icon icon-primary" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="16"/>
           <line x1="8" y1="12" x2="16" y2="12"/>
@@ -1611,17 +1669,17 @@
       const formContent = document.getElementById('product-form-content');
       formContent.innerHTML = `
         <div style="margin-bottom:15px;">
-          <div style="color:#333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+          <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
             ${icons.camera}
-            Gambar Produk
+            Product Pictures
           </div>
-          <div style="border:2px dashed #A3D5D9;border-radius:20px;padding:20px;text-align:center;cursor:pointer;background:#DAE8F2;"
+          <div style="border:2px dashed #d9d9d9;border-radius:15px;padding:20px;text-align:center;cursor:pointer;background:#f5f5f5;"
                onclick="document.getElementById('product-image-input').click()" id="image-upload-area">
             ${product && product.image ? 
-              `<img src="${product.image}" style="max-width:100%;max-height:140px;border-radius:20px;object-fit:cover;" id="image-preview">` :
+              `<img src="${product.image}" style="max-width:100%;max-height:140px;border-radius:15px;object-fit:cover;" id="image-preview">` :
               `<div style="color:#666;">
                 <div style="margin-bottom:5px;">
-                  <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;">
+                  <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;color:#006B54;">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                     <circle cx="12" cy="13" r="4"/>
                   </svg>
@@ -1635,38 +1693,38 @@
         </div>
         
         <div style="margin-bottom:15px;">
-          <div style="color:#333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
-            Nama Produk
+            Product Name
           </div>
-          <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:1rem;" 
+          <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                  id="product-name-input" value="${product ? product.name : ''}" placeholder="Nama produk" required>
         </div>
         
         <div style="margin-bottom:15px;">
-          <div style="color:#333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
             </svg>
-            Kode Produk (4 digit)
+            Product Code (4 digit)
           </div>
-          <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:1rem;" 
+          <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                  id="product-code-input" value="${product ? product.code : ''}" placeholder="0001" maxlength="4" required>
         </div>
         
         <div style="margin-bottom:15px;">
-          <div style="color:#333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
               <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
               <path d="M10 2v20"/>
             </svg>
-            Kategori
+            Categori
           </div>
           <div style="display:flex;gap:10px;">
-            <select style="flex:1;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:1rem;background:white;" 
+            <select style="flex:1;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                     id="product-category-select" onchange="handleCategorySelect()">
               <option value="">-- Pilih Kategori --</option>
               ${categoryOptions}
@@ -1674,51 +1732,51 @@
             </select>
           </div>
           <div id="new-category-input" style="margin-top:10px;display:none;">
-            <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:1rem;" 
+            <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                    id="product-category-new" placeholder="Nama kategori baru">
           </div>
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
           <div>
-            <div style="color:#333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
-              <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <line x1="9" y1="9" x2="15" y2="15"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
               </svg>
               Flex Code (2 digit)
             </div>
-            <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:1rem;" 
+            <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                    id="product-flex-input" value="${product ? product.flex : '01'}" placeholder="01" maxlength="2">
           </div>
           <div>
-            <div style="color:#333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
-              <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
               </svg>
-              Kategori Code (2 digit)
+              Cat Code (2 digit)
             </div>
-            <input type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:1rem;" 
+            <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                    id="product-catcode-input" value="${product ? product.catcode : '01'}" placeholder="01" maxlength="2">
           </div>
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button style="padding:14px;border:none;border-radius:20px;background:#A3D5D9;color:#333;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="closeProductModal()">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <button style="padding:14px;border:none;border-radius:15px;background:#d9d9d9;color:#333333;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #d9d9d9;" onclick="closeProductModal()">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
-            BATAL
+            CANCEL
           </button>
-          <button style="padding:14px;border:none;border-radius:20px;background:#1D9BF0;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="saveProduct()">
+          <button style="padding:14px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" onclick="saveProduct()">
             <svg class="icon icon-sm icon-white" viewBox="0 0 24 24">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
               <polyline points="17 21 17 13 7 13 7 21"/>
               <polyline points="7 3 7 8 15 8"/>
             </svg>
-            ${isEdit ? 'UPDATE' : 'SIMPAN'}
+            ${isEdit ? 'UPDATE' : 'SAVE'}
           </button>
         </div>
       `;
@@ -1742,7 +1800,7 @@
         
         const reader = new FileReader();
         reader.onload = function(event) {
-          imageUploadArea.innerHTML = `<img src="${event.target.result}" style="max-width:100%;max-height:140px;border-radius:20px;object-fit:cover;" id="image-preview">`;
+          imageUploadArea.innerHTML = `<img src="${event.target.result}" style="max-width:100%;max-height:140px;border-radius:15px;object-fit:cover;" id="image-preview">`;
         };
         reader.readAsDataURL(file);
       };
@@ -1810,7 +1868,7 @@
         const existingProduct = products.find(p => p.id === editingProductId);
         imageData = existingProduct ? existingProduct.image : '';
       } else {
-        imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23DAE8F2'/%3E%3Crect x='50' y='80' width='200' height='140' fill='%231D9BF0' rx='20'/%3E%3Ccircle cx='150' cy='150' r='50' fill='%23A3D5D9'/%3E%3Cpath d='M130 140 L150 160 L180 120' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
+        imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3Crect x='50' y='80' width='200' height='140' fill='%23006B54' rx='15'/%3E%3Ccircle cx='150' cy='150' r='50' fill='%23d9d9d9'/%3E%3Cpath d='M130 140 L150 160 L180 120' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
       }
       
       const productData = {
@@ -2089,19 +2147,19 @@
           categoryListHTML += `
             <div class="category-item">
               <span style="font-weight:500;display:flex;align-items:center;gap:8px;">
-                <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;color:#006B54;">
                   <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
                   <path d="M10 2v20"/>
                 </svg>
                 ${cat}
               </span>
               <div class="category-actions">
-                <button style="padding:5px 10px;border:none;border-radius:20px;background:#1D9BF0;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;" 
+                <button style="padding:5px 10px;border:none;border-radius:15px;background:#006B54;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid #006B54;" 
                         onclick="editCategory('${cat}')">
                   ${icons.edit}
                   Edit
                 </button>
-                <button style="padding:5px 10px;border:none;border-radius:20px;background:#ff6b6b;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;" 
+                <button style="padding:5px 10px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid #ff6b6b;" 
                         onclick="deleteCategory('${cat}')">
                   ${icons.delete}
                   Hapus
@@ -2116,8 +2174,8 @@
       
       settingsContent.innerHTML = `
         <div style="margin-bottom:20px;">
-          <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
               <path d="M12 20h9"/>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
             </svg>
@@ -2126,28 +2184,28 @@
           
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
             <div>
-              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Flex</div>
-              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;text-align:center;" 
+              <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Flex</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #333333;border-radius:15px;text-align:center;background:#FFFFFF;" 
                      id="flex-digits" value="${digitConfig.flex}" min="1" max="5">
             </div>
             <div>
-              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Kategori</div>
-              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;text-align:center;" 
+              <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Kategori</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #333333;border-radius:15px;text-align:center;background:#FFFFFF;" 
                      id="category-digits" value="${digitConfig.category}" min="1" max="5">
             </div>
             <div>
-              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Produk</div>
-              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;text-align:center;" 
+              <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Produk</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #333333;border-radius:15px;text-align:center;background:#FFFFFF;" 
                      id="product-digits" value="${digitConfig.product}" min="1" max="5">
             </div>
             <div>
-              <div style="color:#333;margin-bottom:5px;font-weight:500;">Digit Berat</div>
-              <input type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;text-align:center;" 
+              <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Berat</div>
+              <input type="number" style="width:100%;padding:10px;border:1px solid #333333;border-radius:15px;text-align:center;background:#FFFFFF;" 
                      id="weight-digits" value="${digitConfig.weight}" min="1" max="5">
             </div>
           </div>
           
-          <div class="digit-summary" style="background:${isValid ? '#DAE8F2' : '#ffe6e6'};border-color:${isValid ? '#A3D5D9' : '#ffcccc'};">
+          <div class="digit-summary" style="background:${isValid ? '#f5f5f5' : '#ffe6e6'};border-color:${isValid ? '#d9d9d9' : '#ffcccc'};">
             <div style="font-weight:600;margin-bottom:5px;color:${isValid ? '#155724' : '#721c24'}">
               Total Digit: ${totalDigits}
             </div>
@@ -2158,18 +2216,18 @@
         </div>
         
         <div style="margin-bottom:20px;">
-          <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
               <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
               <path d="M10 2v20"/>
             </svg>
             Manajemen Kategori
           </div>
-          <div style="background:#DAE8F2;padding:15px;border-radius:20px;margin-bottom:10px;">
+          <div style="background:#f5f5f5;padding:15px;border-radius:15px;margin-bottom:10px;">
             <div style="display:flex;gap:10px;margin-bottom:10px;">
-              <input type="text" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;" 
+              <input type="text" style="flex:1;padding:10px;border:1px solid #333333;border-radius:15px;background:#FFFFFF;" 
                      id="new-category-input-settings" placeholder="Nama kategori baru">
-              <button style="padding:10px 15px;border:none;border-radius:20px;background:#1D9BF0;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;" 
+              <button style="padding:10px 15px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;border:1px solid #006B54;" 
                       onclick="addNewCategoryFromSettings()">
                 ${icons.add}
                 Tambah
@@ -2183,25 +2241,25 @@
         </div>
         
         <div style="margin-bottom:20px;">
-          <div style="color:#333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             Manajemen Data
           </div>
-          <button style="width:100%;padding:12px;border:none;border-radius:20px;background:#1D9BF0;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" 
+          <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" 
                   onclick="exportData()">
             ${icons.upload}
             Export Data Produk
           </button>
-          <button style="width:100%;padding:12px;border:none;border-radius:20px;background:#1D9BF0;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" 
+          <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" 
                   onclick="importData()">
             ${icons.download}
             Import Data Produk
           </button>
-          <button style="width:100%;padding:12px;border:none;border-radius:20px;background:#ff6b6b;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" 
+          <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #ff6b6b;" 
                   onclick="clearAllData()">
             ${icons.delete}
             Hapus Semua Data
@@ -2209,15 +2267,15 @@
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button style="padding:14px;border:none;border-radius:20px;background:#A3D5D9;color:#333;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" 
+          <button style="padding:14px;border:none;border-radius:15px;background:#d9d9d9;color:#333333;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #d9d9d9;" 
                   onclick="closeSettingsModal()">
-            <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
             BATAL
           </button>
-          <button style="padding:14px;border:none;border-radius:20px;background:#1D9BF0;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" 
+          <button style="padding:14px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" 
                   onclick="saveSettingsConfig()">
             <svg class="icon icon-sm icon-white" viewBox="0 0 24 24">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
@@ -2282,8 +2340,8 @@
             ${isValid ? '✓ Format barcode valid (13 digit)' : '⚠ Harus tepat 13 digit!'}
           </div>
         `;
-        summary.style.background = isValid ? '#DAE8F2' : '#ffe6e6';
-        summary.style.borderColor = isValid ? '#A3D5D9' : '#ffcccc';
+        summary.style.background = isValid ? '#f5f5f5' : '#ffe6e6';
+        summary.style.borderColor = isValid ? '#d9d9d9' : '#ffcccc';
       }
     }
 
@@ -2374,7 +2432,7 @@
     function showNotification(message, type = 'success') {
       const notification = document.getElementById('notification');
       notification.textContent = message;
-      notification.style.background = type === 'error' ? '#ff6b6b' : '#1D9BF0';
+      notification.style.background = type === 'error' ? '#ff6b6b' : '#006B54';
       notification.style.display = 'block';
       
       setTimeout(() => {
