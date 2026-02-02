@@ -53,6 +53,55 @@
     .header-actions {
       display: flex;
       gap: 8px;
+      align-items: center;
+    }
+    
+    /* Printer LED Indicator */
+    .printer-led-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: 10px;
+    }
+    
+    .printer-led {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      position: relative;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    
+    .printer-led.connected {
+      background-color: #28a745;
+      box-shadow: 0 0 15px rgba(40, 167, 69, 0.7), 0 0 30px rgba(40, 167, 69, 0.4);
+      animation: pulse-green 2s infinite;
+    }
+    
+    .printer-led.disconnected {
+      background-color: #dc3545;
+      box-shadow: 0 0 15px rgba(220, 53, 69, 0.7), 0 0 30px rgba(220, 53, 69, 0.4);
+      animation: pulse-red 2s infinite;
+    }
+    
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 10px rgba(40, 167, 69, 0.7); }
+      50% { box-shadow: 0 0 20px rgba(40, 167, 69, 0.9), 0 0 40px rgba(40, 167, 69, 0.6); }
+      100% { box-shadow: 0 0 10px rgba(40, 167, 69, 0.7); }
+    }
+    
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 10px rgba(220, 53, 69, 0.7); }
+      50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.9), 0 0 40px rgba(220, 53, 69, 0.6); }
+      100% { box-shadow: 0 0 10px rgba(220, 53, 69, 0.7); }
+    }
+    
+    .printer-status-text {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #333333;
+      white-space: nowrap;
     }
     
     /* Main Content */
@@ -385,25 +434,6 @@
       color: #666666;
       font-family: monospace;
       font-size: 0.8rem;
-    }
-    
-    /* Printer Status */
-    .printer-status {
-      padding: 8px;
-      border-radius: 15px;
-      text-align: center;
-      color: white;
-      font-size: 13px;
-      margin-bottom: 15px;
-      background: rgba(0, 0, 0, 0.2);
-    }
-    
-    .status-connected { 
-      background-color: #28a745; 
-    }
-    
-    .status-disconnected { 
-      background-color: #dc3545; 
     }
     
     /* Buttons Grid */
@@ -774,6 +804,15 @@
         font-size: 14px;
         min-height: 44px;
       }
+      
+      .printer-led {
+        width: 20px;
+        height: 20px;
+      }
+      
+      .printer-status-text {
+        font-size: 0.7rem;
+      }
     }
     
     /* Responsive Grid untuk Mobile */
@@ -807,6 +846,20 @@
         padding: 10px 4px;
         font-size: 13px;
         min-height: 40px;
+      }
+      
+      .printer-led {
+        width: 18px;
+        height: 18px;
+      }
+      
+      .printer-status-text {
+        display: none;
+      }
+      
+      .header-actions button {
+        padding: 6px 10px;
+        font-size: 12px;
       }
     }
     
@@ -973,6 +1026,10 @@
         <span>POS Barcode Generator</span>
       </div>
       <div class="header-actions">
+        <div class="printer-led-container">
+          <div class="printer-led disconnected" id="printer-led"></div>
+          <div class="printer-status-text" id="printer-status-text">Printer Offline</div>
+        </div>
         <button onclick="showSettingsModal()">
           <svg class="icon settings-icon icon-primary" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"/>
@@ -1033,9 +1090,6 @@
             <span id="display-barcode">-</span>
           </div>
         </div>
-        
-        <!-- Printer Status -->
-        <div id="status" class="printer-status status-disconnected">Printer: Tidak Terkoneksi</div>
         
         <!-- Function Row -->
         <div class="function-row">
@@ -1250,7 +1304,7 @@
       // Try to reconnect if printer was previously connected
       if (isPrinterConnected) {
         setTimeout(() => {
-          reconnectToPrinter();
+          checkPrinterConnection();
         }, 1000);
       }
     }
@@ -1277,25 +1331,41 @@
           // Only restore connection if it was saved less than 1 hour ago
           if (connectionData.isPrinterConnected && hoursDifference < 1) {
             isPrinterConnected = connectionData.isPrinterConnected;
-            updateConnectionStatus(isPrinterConnected);
+            updatePrinterLED(isPrinterConnected);
             updatePrinterButton();
           } else {
             // Clear expired connection
             localStorage.removeItem('printerConnection');
             isPrinterConnected = false;
-            updateConnectionStatus(false);
+            updatePrinterLED(false);
             updatePrinterButton();
           }
         } catch (e) {
           console.error('Error loading printer connection:', e);
           isPrinterConnected = false;
-          updateConnectionStatus(false);
+          updatePrinterLED(false);
           updatePrinterButton();
         }
       } else {
         isPrinterConnected = false;
-        updateConnectionStatus(false);
+        updatePrinterLED(false);
         updatePrinterButton();
+      }
+    }
+
+    // Update printer LED indicator
+    function updatePrinterLED(connected) {
+      const printerLED = document.getElementById('printer-led');
+      const statusText = document.getElementById('printer-status-text');
+      
+      if (printerLED) {
+        if (connected) {
+          printerLED.className = 'printer-led connected';
+          if (statusText) statusText.textContent = 'Printer Online';
+        } else {
+          printerLED.className = 'printer-led disconnected';
+          if (statusText) statusText.textContent = 'Printer Offline';
+        }
       }
     }
 
@@ -1329,6 +1399,36 @@
         disconnectFromPrinter();
       } else {
         connectToPrinter();
+      }
+    }
+
+    // Check if printer is still connected
+    async function checkPrinterConnection() {
+      if (!isPrinterConnected) return;
+      
+      try {
+        // Check if we can still communicate with the printer
+        if (port && writer) {
+          // Try to send a simple command to check connection
+          const encoder = new TextEncoder();
+          const testData = encoder.encode('\x1B@');
+          
+          await writer.write(testData);
+          isPrinterConnected = true;
+          updatePrinterLED(true);
+          updatePrinterButton();
+        } else {
+          isPrinterConnected = false;
+          updatePrinterLED(false);
+          updatePrinterButton();
+          savePrinterConnection();
+        }
+      } catch (error) {
+        console.log('Printer connection check failed:', error);
+        isPrinterConnected = false;
+        updatePrinterLED(false);
+        updatePrinterButton();
+        savePrinterConnection();
       }
     }
 
@@ -2016,7 +2116,6 @@
       document.getElementById('current-barcode').textContent = 'Klik GENERATE untuk membuat barcode';
       currentBarcodeData = '';
       
-      updateConnectionStatus();
       updatePrinterButton();
       
       document.getElementById('weight-modal').style.display = 'flex';
@@ -2079,7 +2178,7 @@
         
         isPrinterConnected = true;
         reconnectAttempts = 0;
-        updateConnectionStatus(true);
+        updatePrinterLED(true);
         updatePrinterButton();
         savePrinterConnection();
         showNotification('Printer Connected!', 'success');
@@ -2087,9 +2186,10 @@
         // Listen for disconnect events
         port.addEventListener('disconnect', () => {
           isPrinterConnected = false;
-          updateConnectionStatus(false);
+          updatePrinterLED(false);
           updatePrinterButton();
           showNotification('Printer terputus!', 'error');
+          savePrinterConnection();
         });
         
         return true;
@@ -2104,64 +2204,9 @@
           showNotification("Gagal terhubung ke printer: " + error.message, 'error');
         }
         isPrinterConnected = false;
-        updateConnectionStatus(false);
+        updatePrinterLED(false);
         updatePrinterButton();
         return false;
-      }
-    }
-
-    // Reconnect to printer on page load
-    async function reconnectToPrinter() {
-      if (!isPrinterConnected || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-        return;
-      }
-      
-      try {
-        showNotification(`Mencoba menghubungkan ulang ke printer... (${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
-        
-        // Get available ports
-        const ports = await navigator.serial.getPorts();
-        
-        if (ports.length === 0) {
-          showNotification('Tidak ada printer yang terdeteksi', 'error');
-          isPrinterConnected = false;
-          updateConnectionStatus(false);
-          updatePrinterButton();
-          return;
-        }
-        
-        // Try to reconnect to the first available port
-        port = ports[0];
-        await port.open({ baudRate: 9600 });
-        writer = port.writable.getWriter();
-        
-        isPrinterConnected = true;
-        reconnectAttempts = 0;
-        updateConnectionStatus(true);
-        updatePrinterButton();
-        showNotification('Printer berhasil terhubung ulang!', 'success');
-        
-        // Listen for disconnect events
-        port.addEventListener('disconnect', () => {
-          isPrinterConnected = false;
-          updateConnectionStatus(false);
-          updatePrinterButton();
-          showNotification('Printer terputus!', 'error');
-        });
-        
-      } catch (error) {
-        console.error("Reconnection error:", error);
-        reconnectAttempts++;
-        
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-          // Try again after 2 seconds
-          setTimeout(reconnectToPrinter, 2000);
-        } else {
-          showNotification('Gagal menghubungkan ulang ke printer', 'error');
-          isPrinterConnected = false;
-          updateConnectionStatus(false);
-          updatePrinterButton();
-        }
       }
     }
 
@@ -2169,7 +2214,7 @@
     async function disconnectFromPrinter() {
       try {
         if (writer) {
-          await writer.releaseLock();
+          writer.releaseLock();
           writer = null;
         }
         if (port) {
@@ -2179,7 +2224,7 @@
         
         isPrinterConnected = false;
         reconnectAttempts = 0;
-        updateConnectionStatus(false);
+        updatePrinterLED(false);
         updatePrinterButton();
         savePrinterConnection();
         showNotification('Printer disconnected', 'success');
@@ -2187,21 +2232,10 @@
       } catch (error) {
         console.error("Disconnection error:", error);
         isPrinterConnected = false;
-        updateConnectionStatus(false);
+        updatePrinterLED(false);
         updatePrinterButton();
         savePrinterConnection();
         showNotification('Printer disconnected', 'success');
-      }
-    }
-
-    function updateConnectionStatus(connected) {
-      const statusElement = document.getElementById('status');
-      if (connected === true) {
-        statusElement.textContent = 'Printer: Terkoneksi';
-        statusElement.className = 'printer-status status-connected';
-      } else {
-        statusElement.textContent = 'Printer: Tidak Terkoneksi';
-        statusElement.className = 'printer-status status-disconnected';
       }
     }
 
@@ -2314,7 +2348,7 @@
         
         if (error.message.includes("closed") || error.message.includes("disconnected") || error.name === 'NetworkError') {
           isPrinterConnected = false;
-          updateConnectionStatus(false);
+          updatePrinterLED(false);
           updatePrinterButton();
           savePrinterConnection();
         }
