@@ -1059,7 +1059,7 @@
             </svg>
             GENERATE
           </button>
-          <button id="connect-btn" class="function-btn" onclick="connectToPrinter()">
+          <button id="connect-btn" class="function-btn" onclick="togglePrinterConnection()">
             <svg class="icon icon-sm" viewBox="0 0 24 24">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
             </svg>
@@ -1185,6 +1185,8 @@
     let writer = null;
     let isPrinterConnected = false;
     let currentBarcodeData = '';
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 3;
     
     // Variables for long press handling
     let longPressTimer = null;
@@ -1235,10 +1237,99 @@
       loadCategories();
       renderCategories();
       renderProducts();
-      checkPrinterConnection();
+      
+      // Load printer connection status from localStorage
+      loadPrinterConnection();
       
       // Initialize long press events
       initLongPressEvents();
+      
+      // Listen for beforeunload event to save printer connection
+      window.addEventListener('beforeunload', savePrinterConnection);
+      
+      // Try to reconnect if printer was previously connected
+      if (isPrinterConnected) {
+        setTimeout(() => {
+          reconnectToPrinter();
+        }, 1000);
+      }
+    }
+
+    // Save printer connection status to localStorage
+    function savePrinterConnection() {
+      const connectionData = {
+        isPrinterConnected: isPrinterConnected,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('printerConnection', JSON.stringify(connectionData));
+    }
+
+    // Load printer connection status from localStorage
+    function loadPrinterConnection() {
+      const savedConnection = localStorage.getItem('printerConnection');
+      if (savedConnection) {
+        try {
+          const connectionData = JSON.parse(savedConnection);
+          const savedTime = new Date(connectionData.timestamp);
+          const currentTime = new Date();
+          const hoursDifference = (currentTime - savedTime) / (1000 * 60 * 60);
+          
+          // Only restore connection if it was saved less than 1 hour ago
+          if (connectionData.isPrinterConnected && hoursDifference < 1) {
+            isPrinterConnected = connectionData.isPrinterConnected;
+            updateConnectionStatus(isPrinterConnected);
+            updatePrinterButton();
+          } else {
+            // Clear expired connection
+            localStorage.removeItem('printerConnection');
+            isPrinterConnected = false;
+            updateConnectionStatus(false);
+            updatePrinterButton();
+          }
+        } catch (e) {
+          console.error('Error loading printer connection:', e);
+          isPrinterConnected = false;
+          updateConnectionStatus(false);
+          updatePrinterButton();
+        }
+      } else {
+        isPrinterConnected = false;
+        updateConnectionStatus(false);
+        updatePrinterButton();
+      }
+    }
+
+    // Update printer button text and icon
+    function updatePrinterButton() {
+      const connectBtn = document.getElementById('connect-btn');
+      if (!connectBtn) return;
+      
+      if (isPrinterConnected) {
+        connectBtn.innerHTML = `
+          <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          DISCONNECT
+        `;
+        connectBtn.onclick = disconnectFromPrinter;
+      } else {
+        connectBtn.innerHTML = `
+          <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          CONNECT
+        `;
+        connectBtn.onclick = connectToPrinter;
+      }
+    }
+
+    // Toggle printer connection (for backward compatibility)
+    function togglePrinterConnection() {
+      if (isPrinterConnected) {
+        disconnectFromPrinter();
+      } else {
+        connectToPrinter();
+      }
     }
 
     // Initialize long press events
@@ -1671,7 +1762,7 @@
         <div style="margin-bottom:15px;">
           <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
             ${icons.camera}
-            Foto Produk
+            Gambar Produk
           </div>
           <div style="border:2px dashed #d9d9d9;border-radius:15px;padding:20px;text-align:center;cursor:pointer;background:#f5f5f5;"
                onclick="document.getElementById('product-image-input').click()" id="image-upload-area">
@@ -1745,7 +1836,7 @@
                 <line x1="9" y1="9" x2="15" y2="15"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
               </svg>
-              Kode Flex (2 digit)
+              Flex Code (2 digit)
             </div>
             <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                    id="product-flex-input" value="${product ? product.flex : '01'}" placeholder="01" maxlength="2">
@@ -1755,7 +1846,7 @@
               <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
               </svg>
-              Kode Ktgr (2 digit)
+              Kategori Code (2 digit)
             </div>
             <input type="text" style="width:100%;padding:12px;border:1px solid #333333;border-radius:15px;font-size:1rem;background:#FFFFFF;" 
                    id="product-catcode-input" value="${product ? product.catcode : '01'}" placeholder="01" maxlength="2">
@@ -1926,6 +2017,7 @@
       currentBarcodeData = '';
       
       updateConnectionStatus();
+      updatePrinterButton();
       
       document.getElementById('weight-modal').style.display = 'flex';
     }
@@ -1972,7 +2064,7 @@
     async function connectToPrinter() {
       try {
         if (!("serial" in navigator)) {
-          showNotification("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.");
+          showNotification("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.", 'error');
           return false;
         }
 
@@ -1986,20 +2078,119 @@
         writer = port.writable.getWriter();
         
         isPrinterConnected = true;
+        reconnectAttempts = 0;
         updateConnectionStatus(true);
-        showNotification('Printer Connected!');
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer Connected!', 'success');
+        
+        // Listen for disconnect events
+        port.addEventListener('disconnect', () => {
+          isPrinterConnected = false;
+          updateConnectionStatus(false);
+          updatePrinterButton();
+          showNotification('Printer terputus!', 'error');
+        });
         
         return true;
         
       } catch (error) {
         console.error("Connection error:", error);
         if (error.name === 'NotFoundError') {
-          showNotification("Tidak ada printer yang dipilih");
+          showNotification("Tidak ada printer yang dipilih", 'error');
+        } else if (error.name === 'InvalidStateError') {
+          showNotification("Printer sudah terhubung", 'error');
         } else {
-          showNotification("Gagal terhubung ke printer: " + error.message);
+          showNotification("Gagal terhubung ke printer: " + error.message, 'error');
         }
+        isPrinterConnected = false;
         updateConnectionStatus(false);
+        updatePrinterButton();
         return false;
+      }
+    }
+
+    // Reconnect to printer on page load
+    async function reconnectToPrinter() {
+      if (!isPrinterConnected || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        return;
+      }
+      
+      try {
+        showNotification(`Mencoba menghubungkan ulang ke printer... (${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+        
+        // Get available ports
+        const ports = await navigator.serial.getPorts();
+        
+        if (ports.length === 0) {
+          showNotification('Tidak ada printer yang terdeteksi', 'error');
+          isPrinterConnected = false;
+          updateConnectionStatus(false);
+          updatePrinterButton();
+          return;
+        }
+        
+        // Try to reconnect to the first available port
+        port = ports[0];
+        await port.open({ baudRate: 9600 });
+        writer = port.writable.getWriter();
+        
+        isPrinterConnected = true;
+        reconnectAttempts = 0;
+        updateConnectionStatus(true);
+        updatePrinterButton();
+        showNotification('Printer berhasil terhubung ulang!', 'success');
+        
+        // Listen for disconnect events
+        port.addEventListener('disconnect', () => {
+          isPrinterConnected = false;
+          updateConnectionStatus(false);
+          updatePrinterButton();
+          showNotification('Printer terputus!', 'error');
+        });
+        
+      } catch (error) {
+        console.error("Reconnection error:", error);
+        reconnectAttempts++;
+        
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          // Try again after 2 seconds
+          setTimeout(reconnectToPrinter, 2000);
+        } else {
+          showNotification('Gagal menghubungkan ulang ke printer', 'error');
+          isPrinterConnected = false;
+          updateConnectionStatus(false);
+          updatePrinterButton();
+        }
+      }
+    }
+
+    // Disconnect from printer
+    async function disconnectFromPrinter() {
+      try {
+        if (writer) {
+          await writer.releaseLock();
+          writer = null;
+        }
+        if (port) {
+          await port.close();
+          port = null;
+        }
+        
+        isPrinterConnected = false;
+        reconnectAttempts = 0;
+        updateConnectionStatus(false);
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer disconnected', 'success');
+        
+      } catch (error) {
+        console.error("Disconnection error:", error);
+        isPrinterConnected = false;
+        updateConnectionStatus(false);
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer disconnected', 'success');
       }
     }
 
@@ -2014,19 +2205,15 @@
       }
     }
 
-    function checkPrinterConnection() {
-      updateConnectionStatus(false);
-    }
-
     // Generate Barcode
     function generateBarcode() {
       if (!currentProduct) {
-        showNotification('Pilih produk terlebih dahulu!');
+        showNotification('Pilih produk terlebih dahulu!', 'error');
         return;
       }
       
       if (!weightValue || weightValue === '0') {
-        showNotification('Masukkan berat terlebih dahulu!');
+        showNotification('Masukkan berat terlebih dahulu!', 'error');
         return;
       }
       
@@ -2039,7 +2226,7 @@
       const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
       
       if (currentBarcodeData.length !== totalDigits) {
-        showNotification(`Pastikan semua field terisi. Total harus ${totalDigits} digit`);
+        showNotification(`Pastikan semua field terisi. Total harus ${totalDigits} digit`, 'error');
         return;
       }
       
@@ -2061,7 +2248,7 @@
         document.getElementById('display-barcode').textContent = currentBarcodeData;
         document.getElementById('current-barcode').textContent = currentBarcodeData;
         
-        showNotification('Barcode berhasil digenerate!');
+        showNotification('Barcode berhasil digenerate!', 'success');
       } catch (error) {
         console.error("Barcode generation error:", error);
         showNotification('Gagal membuat barcode: ' + error.message, 'error');
@@ -2072,17 +2259,17 @@
     async function printBarcode() {
       try {
         if (!currentProduct || !weightValue) {
-          showNotification('Harap isi berat terlebih dahulu dan generate barcode');
+          showNotification('Harap isi berat terlebih dahulu dan generate barcode', 'error');
           return;
         }
         
         if (!currentBarcodeData) {
-          showNotification('Generate barcode terlebih dahulu!');
+          showNotification('Generate barcode terlebih dahulu!', 'error');
           return;
         }
         
         if (!isPrinterConnected || !writer) {
-          showNotification('Printer belum terhubung. Klik CONNECT dulu.');
+          showNotification('Printer belum terhubung. Klik CONNECT dulu.', 'error');
           return;
         }
 
@@ -2120,14 +2307,16 @@
         
         await writer.write(encodedData);
         
-        showNotification('Barcode berhasil dicetak!');
+        showNotification('Barcode berhasil dicetak!', 'success');
       } catch (error) {
         console.error("Print error:", error);
-        showNotification("Gagal mengirim ke printer: " + error.message);
+        showNotification("Gagal mengirim ke printer: " + error.message, 'error');
         
-        if (error.message.includes("closed") || error.message.includes("disconnected")) {
+        if (error.message.includes("closed") || error.message.includes("disconnected") || error.name === 'NetworkError') {
           isPrinterConnected = false;
           updateConnectionStatus(false);
+          updatePrinterButton();
+          savePrinterConnection();
         }
       }
     }
@@ -2314,7 +2503,7 @@
       categories.push(category);
       saveCategories();
       renderCategories();
-      showNotification(`Kategori "${category}" ditambahkan!`);
+      showNotification(`Kategori "${category}" ditambahkan!`, 'success');
       input.value = '';
       
       // Refresh settings modal
@@ -2365,7 +2554,7 @@
       digitConfig = { flex, category, product, weight };
       saveSettings();
       
-      showNotification('Pengaturan berhasil disimpan!');
+      showNotification('Pengaturan berhasil disimpan!', 'success');
       closeSettingsModal();
     }
 
@@ -2381,7 +2570,7 @@
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
       
-      showNotification('Data berhasil diexport!');
+      showNotification('Data berhasil diexport!', 'success');
     }
 
     function importData() {
@@ -2403,7 +2592,7 @@
             
             products = importedData;
             saveProducts();
-            showNotification('Data berhasil diimport!');
+            showNotification('Data berhasil diimport!', 'success');
           } catch (error) {
             showNotification('Gagal mengimport data: ' + error.message, 'error');
           }
@@ -2423,7 +2612,7 @@
         selectedCategory = 'all';
         renderCategories();
         renderProducts();
-        showNotification('Semua data berhasil dihapus!');
+        showNotification('Semua data berhasil dihapus!', 'success');
         closeSettingsModal();
       }
     }
