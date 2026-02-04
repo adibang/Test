@@ -109,6 +109,15 @@ body {
     max-width: 1200px;
     margin: 20px auto 15px;
     padding: 0 20px;
+    position: sticky;
+    top: 80px; /* Di bawah header */
+    z-index: 90;
+    background: #FFFFFF;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
 .search-input {
@@ -140,6 +149,15 @@ body {
     margin: 0 auto 10px;
     padding: 0 20px;
     display: none; /* Hidden by default on desktop */
+    position: sticky;
+    top: 140px; /* Di bawah search container */
+    z-index: 89;
+    background: #FFFFFF;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
 .category-dropdown-button {
@@ -186,7 +204,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
-    z-index: 999;
+    z-index: 1000; /* Lebih tinggi dari sticky elements */
     align-items: flex-start;
     justify-content: center;
     padding: 15px;
@@ -336,7 +354,7 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    padding-top: 0;
+    padding-top: 10px; /* Kurangi padding atas karena ada sticky elements */
 }
 
 /* ==================== CATEGORY TABS ==================== */
@@ -1146,8 +1164,14 @@ input::placeholder, textarea::placeholder {
     }
     
     .search-container {
+        position: sticky;
+        top: 60px; /* Header lebih kecil di mobile */
+        z-index: 90;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin-top: 0;
+        margin-bottom: 10px;
         padding: 0 15px;
-        margin-top: 15px;
     }
     
     .search-input {
@@ -1156,8 +1180,13 @@ input::placeholder, textarea::placeholder {
     }
     
     .category-dropdown-container {
+        position: sticky;
+        top: 110px; /* Di bawah search container di mobile */
+        z-index: 89;
         display: block;
-        margin-bottom: 15px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        padding: 0 15px;
     }
     
     .category-switcher {
@@ -1220,6 +1249,10 @@ input::placeholder, textarea::placeholder {
     }
     
     .search-container {
+        top: 55px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        margin-bottom: 8px;
         padding: 0 12px;
         margin: 12px auto;
     }
@@ -1231,6 +1264,9 @@ input::placeholder, textarea::placeholder {
     }
     
     .category-dropdown-container {
+        top: 100px;
+        padding-top: 3px;
+        padding-bottom: 3px;
         padding: 0 12px;
         margin-bottom: 12px;
     }
@@ -1262,8 +1298,7 @@ input::placeholder, textarea::placeholder {
 #save-product-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-}
-</style>
+}</style>
 </head>
 <body>
 <!-- ==================== HEADER ==================== -->
