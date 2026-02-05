@@ -3370,8 +3370,7 @@ async function printBarcode() {
         if (printDesign === 1) {
             // Desain 1: Baris kosong, Nilai barcode (tengah), Barcode (tengah), Baris kosong, Potong
             
-            // Print separator line
-            data += '-----------------------------\n';
+            // Baris kosong di atas (sudah ada dari baris 116)
             
             // Print barcode value (centered)
             data += currentBarcodeData + '\n';
@@ -3384,8 +3383,8 @@ async function printBarcode() {
             data += currentBarcodeData;
             data += lf;
             
-            // Print separator line
-            data += '-----------------------------\n';
+            // Baris kosong di bawah
+            data += lf;
             
         } else if (printDesign === 2) {
             // Desain 2: Baris kosong, Nama produk (tengah), Barcode (tengah), Nilai barcode (tengah), Nilai berat (tengah), Baris kosong, Potong
