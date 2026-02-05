@@ -1218,6 +1218,69 @@ input::placeholder, textarea::placeholder {
     gap: 8px;
 }
 
+/* ==================== LOADING STATES ==================== */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #006B54;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==================== ERROR STATES ==================== */
+.error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    display: none;
+}
+
+.error-state .icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 20px;
+    color: #ff6b6b;
+}
+
+.retry-button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #006B54;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* ==================== RESPONSIVE STYLES ==================== */
 @media (max-width: 768px) {
     .products-grid {
@@ -1433,6 +1496,30 @@ input::placeholder, textarea::placeholder {
         </div>
     </div>
 </header>
+
+<!-- ==================== LOADING OVERLAY ==================== -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div style="margin-top: 20px; color: #006B54; font-weight: 600;">Memuat aplikasi...</div>
+</div>
+
+<!-- ==================== ERROR STATE ==================== -->
+<div id="error-state" class="error-state">
+    <svg class="icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <h3>Gagal memuat aplikasi</h3>
+    <p id="error-message"></p>
+    <button class="retry-button" onclick="retryAppLoad()">
+        <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+        </svg>
+        Coba Lagi
+    </button>
+</div>
 
 <!-- ==================== STATIC SEARCH AND CATEGORY CONTAINER ==================== -->
 <div class="sticky-search-category-container">
@@ -1726,77 +1813,153 @@ const icons = {
     preset: `<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`
 };
 
+// ==================== LOADING STATE FUNCTIONS ====================
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    const productsGrid = document.getElementById('products-grid');
+    const mainContent = document.querySelector('.main-content');
+    
+    if (overlay) overlay.style.display = 'flex';
+    if (productsGrid) productsGrid.classList.add('loading');
+    if (mainContent) mainContent.style.opacity = '0.5';
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    const productsGrid = document.getElementById('products-grid');
+    const mainContent = document.querySelector('.main-content');
+    
+    if (overlay) overlay.style.display = 'none';
+    if (productsGrid) productsGrid.classList.remove('loading');
+    if (mainContent) mainContent.style.opacity = '1';
+}
+
+function showError(message) {
+    const errorState = document.getElementById('error-state');
+    const errorMessage = document.getElementById('error-message');
+    const mainContent = document.querySelector('.main-content');
+    const stickyContainer = document.querySelector('.sticky-search-category-container');
+    
+    if (errorState && errorMessage) {
+        errorMessage.textContent = message;
+        errorState.style.display = 'block';
+    }
+    
+    if (mainContent) {
+        mainContent.style.display = 'none';
+    }
+    
+    if (stickyContainer) {
+        stickyContainer.style.display = 'none';
+    }
+}
+
+function hideError() {
+    const errorState = document.getElementById('error-state');
+    const mainContent = document.querySelector('.main-content');
+    const stickyContainer = document.querySelector('.sticky-search-category-container');
+    
+    if (errorState) errorState.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'block';
+    if (stickyContainer) stickyContainer.style.display = 'block';
+}
+
 // ==================== DATABASE FUNCTIONS ====================
 async function initDatabase() {
     return new Promise((resolve, reject) => {
+        // Check if browser supports IndexedDB
+        if (!window.indexedDB) {
+            const error = "Browser tidak mendukung IndexedDB. Gunakan Chrome, Edge, atau Firefox versi terbaru.";
+            console.error(error);
+            showError(error);
+            reject(new Error(error));
+            return;
+        }
+
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         
         request.onerror = (event) => {
             console.error('Database error:', event.target.error);
+            showError('Gagal membuka database: ' + event.target.error);
             reject(event.target.error);
         };
         
         request.onblocked = () => {
             console.warn('Database blocked. Tutup tab lain yang menggunakan aplikasi ini.');
+            showError('Database diblokir. Tutup tab lain dan refresh halaman.');
+            reject(new Error('Database blocked'));
         };
         
         request.onsuccess = (event) => {
             db = event.target.result;
             
+            // Handle database errors
             db.onerror = (event) => {
                 console.error('Database error:', event.target.error);
+                showNotification('Error database: ' + event.target.error, 'error');
             };
             
-            console.log('Database initialized');
+            // Handle database version change
+            db.onversionchange = (event) => {
+                console.log('Database version changed, closing...');
+                db.close();
+                showNotification('Database diperbarui, silakan refresh halaman.', 'info');
+            };
+            
+            console.log('Database initialized successfully');
             resolve();
         };
         
         request.onupgradeneeded = (event) => {
-            console.log('Upgrading database...');
+            console.log('Upgrading database from version', event.oldVersion, 'to', event.newVersion);
             const db = event.target.result;
             
-            if (db.objectStoreNames.contains(STORES.PRODUCTS)) {
-                db.deleteObjectStore(STORES.PRODUCTS);
-            }
-            if (db.objectStoreNames.contains(STORES.CATEGORIES)) {
-                db.deleteObjectStore(STORES.CATEGORIES);
-            }
-            if (db.objectStoreNames.contains(STORES.SETTINGS)) {
-                db.deleteObjectStore(STORES.SETTINGS);
-            }
-            if (db.objectStoreNames.contains(STORES.HISTORY)) {
-                db.deleteObjectStore(STORES.HISTORY);
-            }
-            if (db.objectStoreNames.contains(STORES.APP_STATE)) {
-                db.deleteObjectStore(STORES.APP_STATE);
+            // Create object stores if they don't exist
+            if (!db.objectStoreNames.contains(STORES.PRODUCTS)) {
+                console.log('Creating products store...');
+                const productStore = db.createObjectStore(STORES.PRODUCTS, { 
+                    keyPath: 'id',
+                    autoIncrement: true 
+                });
+                productStore.createIndex('category', 'category', { unique: false });
+                productStore.createIndex('code', 'code', { unique: true });
             }
             
-            const productStore = db.createObjectStore(STORES.PRODUCTS, { 
-                keyPath: 'id',
-                autoIncrement: true 
-            });
-            productStore.createIndex('category', 'category', { unique: false });
-            productStore.createIndex('code', 'code', { unique: true });
+            if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
+                console.log('Creating categories store...');
+                const categoryStore = db.createObjectStore(STORES.CATEGORIES, { 
+                    keyPath: 'id',
+                    autoIncrement: true 
+                });
+                categoryStore.createIndex('name', 'name', { unique: true });
+            }
             
-            const categoryStore = db.createObjectStore(STORES.CATEGORIES, { 
-                keyPath: 'id',
-                autoIncrement: true 
-            });
-            categoryStore.createIndex('name', 'name', { unique: true });
+            if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+                console.log('Creating settings store...');
+                db.createObjectStore(STORES.SETTINGS, { 
+                    keyPath: 'key' 
+                });
+            }
             
-            const settingsStore = db.createObjectStore(STORES.SETTINGS, { 
-                keyPath: 'key' 
-            });
+            if (!db.objectStoreNames.contains(STORES.HISTORY)) {
+                console.log('Creating history store...');
+                const historyStore = db.createObjectStore(STORES.HISTORY, { 
+                    keyPath: 'id',
+                    autoIncrement: true 
+                });
+                historyStore.createIndex('timestamp', 'timestamp', { unique: false });
+            }
             
-            const historyStore = db.createObjectStore(STORES.HISTORY, { 
-                keyPath: 'id',
-                autoIncrement: true 
-            });
-            historyStore.createIndex('timestamp', 'timestamp', { unique: false });
+            if (!db.objectStoreNames.contains(STORES.APP_STATE)) {
+                console.log('Creating app state store...');
+                db.createObjectStore(STORES.APP_STATE, { 
+                    keyPath: 'key' 
+                });
+            }
             
-            const appStateStore = db.createObjectStore(STORES.APP_STATE, { 
-                keyPath: 'key' 
-            });
+            event.target.transaction.oncomplete = () => {
+                console.log('Database upgrade completed');
+            };
         };
     });
 }
@@ -1808,12 +1971,24 @@ async function dbGetAll(storeName) {
             return;
         }
         
-        const transaction = db.transaction([storeName], 'readonly');
-        const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.getAll();
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        try {
+            const transaction = db.transaction([storeName], 'readonly');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.getAll();
+            
+            request.onsuccess = () => {
+                console.log(`Retrieved ${request.result.length} items from ${storeName}`);
+                resolve(request.result || []);
+            };
+            
+            request.onerror = (e) => {
+                console.error(`Error getting all from ${storeName}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbGetAll for ${storeName}:`, error);
+            reject(error);
+        }
     });
 }
 
@@ -1824,12 +1999,20 @@ async function dbGet(storeName, key) {
             return;
         }
         
-        const transaction = db.transaction([storeName], 'readonly');
-        const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.get(key);
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        try {
+            const transaction = db.transaction([storeName], 'readonly');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.get(key);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error getting from ${storeName} with key ${key}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbGet for ${storeName}:`, error);
+            reject(error);
+        }
     });
 }
 
@@ -1840,15 +2023,28 @@ async function dbAdd(storeName, data) {
             return;
         }
         
-        const transaction = db.transaction([storeName], 'readwrite');
-        const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.add(data);
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = (e) => {
-            console.error('Error adding to', storeName, data, e.target.error);
-            reject(e.target.error);
-        };
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.add(data);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error adding to ${storeName}:`, data, e.target.error);
+                
+                // Handle constraint errors (duplicate keys)
+                if (e.target.error.name === 'ConstraintError') {
+                    const errorMsg = `Data dengan key yang sama sudah ada di ${storeName}`;
+                    console.error(errorMsg);
+                    reject(new Error(errorMsg));
+                } else {
+                    reject(e.target.error);
+                }
+            };
+        } catch (error) {
+            console.error(`Exception in dbAdd for ${storeName}:`, error);
+            reject(error);
+        }
     });
 }
 
@@ -1859,15 +2055,20 @@ async function dbPut(storeName, data) {
             return;
         }
         
-        const transaction = db.transaction([storeName], 'readwrite');
-        const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.put(data);
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = (e) => {
-            console.error('Error putting to', storeName, data, e.target.error);
-            reject(e.target.error);
-        };
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.put(data);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error putting to ${storeName}:`, data, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbPut for ${storeName}:`, error);
+            reject(error);
+        }
     });
 }
 
@@ -1878,12 +2079,20 @@ async function dbDelete(storeName, key) {
             return;
         }
         
-        const transaction = db.transaction([storeName], 'readwrite');
-        const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.delete(key);
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.delete(key);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error deleting from ${storeName} with key ${key}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbDelete for ${storeName}:`, error);
+            reject(error);
+        }
     });
 }
 
@@ -1894,12 +2103,20 @@ async function dbClear(storeName) {
             return;
         }
         
-        const transaction = db.transaction([storeName], 'readwrite');
-        const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.clear();
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.clear();
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error clearing ${storeName}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbClear for ${storeName}:`, error);
+            reject(error);
+        }
     });
 }
 
@@ -1912,32 +2129,39 @@ function generateExampleCode(digitCount) {
 // ==================== APPLICATION DATABASE FUNCTIONS ====================
 async function loadSettings() {
     try {
+        console.log('Loading settings...');
+        
         // Load barcode configuration
         const savedConfig = await dbGet(STORES.SETTINGS, 'barcodeConfig');
         if (savedConfig) {
             digitConfig = savedConfig.value;
+            console.log('Loaded barcode config:', digitConfig);
         } else {
             digitConfig = { flex: 2, category: 2, product: 4, weight: 5 };
             await saveSettings();
+            console.log('Created default barcode config');
         }
         
         // Load print design setting
         const savedPrintDesign = await dbGet(STORES.SETTINGS, 'printDesign');
         if (savedPrintDesign) {
             printDesign = savedPrintDesign.value;
+            console.log('Loaded print design:', printDesign);
         } else {
-            printDesign = 1; // Default: Desain 1
+            printDesign = 1;
             await dbPut(STORES.SETTINGS, {
                 key: 'printDesign',
                 value: printDesign,
                 updatedAt: new Date().toISOString()
             });
+            console.log('Created default print design');
         }
         
         // Load weight presets
         const savedWeightPresets = await dbGet(STORES.SETTINGS, 'weightPresets');
         if (savedWeightPresets) {
             weightPresets = savedWeightPresets.value;
+            console.log('Loaded weight presets:', weightPresets);
         } else {
             weightPresets = {
                 preset1: 100,
@@ -1950,9 +2174,13 @@ async function loadSettings() {
                 value: weightPresets,
                 updatedAt: new Date().toISOString()
             });
+            console.log('Created default weight presets');
         }
+        
+        console.log('Settings loaded successfully');
     } catch (error) {
         console.error('Error loading settings:', error);
+        // Use defaults if settings can't be loaded
         digitConfig = { flex: 2, category: 2, product: 4, weight: 5 };
         printDesign = 1;
         weightPresets = {
@@ -1961,11 +2189,14 @@ async function loadSettings() {
             preset3: 500,
             preset4: 1000
         };
+        showNotification('Menggunakan pengaturan default', 'info');
     }
 }
 
 async function saveSettings() {
     try {
+        console.log('Saving settings...');
+        
         // Save barcode configuration
         await dbPut(STORES.SETTINGS, {
             key: 'barcodeConfig',
@@ -1986,129 +2217,190 @@ async function saveSettings() {
             value: weightPresets,
             updatedAt: new Date().toISOString()
         });
+        
+        console.log('Settings saved successfully');
     } catch (error) {
         console.error('Error saving settings:', error);
+        throw error;
     }
 }
 
 async function loadProducts() {
     try {
+        console.log('Loading products...');
         products = await dbGetAll(STORES.PRODUCTS);
         
-        if (products.length === 0 && isFirstLoad) {
-            const appState = await dbGet(STORES.APP_STATE, 'dummyDataAdded');
-            
-            if (!appState) {
-                await addDummyProducts();
-                await dbPut(STORES.APP_STATE, {
-                    key: 'dummyDataAdded',
-                    value: true,
-                    addedAt: new Date().toISOString()
-                });
-                
-                products = await dbGetAll(STORES.PRODUCTS);
-            }
-        }
+        console.log(`Found ${products.length} products in database`);
         
+        // Filter out invalid products
         products = products.filter(product => {
-            if (!product.code || typeof product.code !== 'string') {
-                console.warn('Produk dengan kode tidak valid ditemukan:', product);
+            if (!product || typeof product !== 'object') {
+                console.warn('Invalid product object found:', product);
                 return false;
             }
+            
+            // Ensure product has required fields
+            if (!product.code || typeof product.code !== 'string') {
+                console.warn('Product has invalid code:', product);
+                return false;
+            }
+            
+            if (!product.name || typeof product.name !== 'string') {
+                console.warn('Product has invalid name:', product);
+                return false;
+            }
+            
             return true;
         });
         
-        console.log('Products loaded:', products.length);
+        // If no products and this is first load, add dummy data
+        if (products.length === 0 && isFirstLoad) {
+            console.log('No products found, adding dummy data...');
+            await addDummyProducts();
+            products = await dbGetAll(STORES.PRODUCTS);
+            console.log(`Added ${products.length} dummy products`);
+        }
+        
+        // Sort products by name for better UX
+        products.sort((a, b) => a.name.localeCompare(b.name));
+        
+        console.log(`Successfully loaded ${products.length} products`);
+        
     } catch (error) {
         console.error('Error loading products:', error);
         products = [];
+        throw error;
     }
 }
 
 async function addDummyProducts() {
-    const dummyProducts = [
-        {
-            name: "Beras Premium 5kg",
-            code: "0001",
-            category: "Sembako",
-            flex: "01",
-            catcode: "01",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%23006B54'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23d9d9d9'/%3E%3C/svg%3E",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            name: "Gula Pasir 1kg",
-            code: "0002",
-            category: "Sembako",
-            flex: "01",
-            catcode: "01",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%23006B54' stroke-width='2'/%3E%3C/svg%3E",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            name: "Minyak Goreng 2L",
-            code: "0003",
-            category: "Sembako",
-            flex: "01",
-            catcode: "02",
-            image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23d9d9d9'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%23006B54'/%3E%3C/svg%3E",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }
-    ];
-    
-    for (const product of dummyProducts) {
-        try {
-            const existingProduct = products.find(p => p.code === product.code);
-            if (!existingProduct) {
-                await dbAdd(STORES.PRODUCTS, product);
-                console.log('Dummy product added:', product.code);
+    try {
+        console.log('Adding dummy products...');
+        
+        const dummyProducts = [
+            {
+                name: "Beras Premium 5kg",
+                code: "0001",
+                category: "Sembako",
+                flex: "01",
+                catcode: "01",
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%23006B54'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23d9d9d9'/%3E%3C/svg%3E",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                name: "Gula Pasir 1kg",
+                code: "0002",
+                category: "Sembako",
+                flex: "01",
+                catcode: "01",
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%23006B54' stroke-width='2'/%3E%3C/svg%3E",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                name: "Minyak Goreng 2L",
+                code: "0003",
+                category: "Sembako",
+                flex: "01",
+                catcode: "02",
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23d9d9d9'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%23006B54'/%3E%3C/svg%3E",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             }
-        } catch (error) {
-            console.warn('Failed to add dummy product:', product.code, error);
+        ];
+        
+        for (const product of dummyProducts) {
+            try {
+                // Check if product already exists
+                const existingProducts = await dbGetAll(STORES.PRODUCTS);
+                const exists = existingProducts.some(p => p.code === product.code);
+                
+                if (!exists) {
+                    await dbAdd(STORES.PRODUCTS, product);
+                    console.log('Added dummy product:', product.code);
+                }
+            } catch (error) {
+                console.warn('Failed to add dummy product:', product.code, error);
+            }
         }
+        
+        // Mark that dummy data has been added
+        await dbPut(STORES.APP_STATE, {
+            key: 'dummyDataAdded',
+            value: true,
+            addedAt: new Date().toISOString()
+        });
+        
+        console.log('Dummy products added successfully');
+    } catch (error) {
+        console.error('Error adding dummy products:', error);
+        throw error;
     }
 }
 
 async function loadCategories() {
     try {
+        console.log('Loading categories...');
         const dbCategories = await dbGetAll(STORES.CATEGORIES);
         
         if (dbCategories.length === 0) {
-            const uniqueCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
+            console.log('No categories found, creating from products...');
             
+            // Get unique categories from products
+            const uniqueCategories = [...new Set(products
+                .map(p => p.category)
+                .filter(category => category && category.trim() !== '')
+            )];
+            
+            console.log(`Found ${uniqueCategories.length} unique categories in products`);
+            
+            // Add each category to database
             for (const categoryName of uniqueCategories) {
                 try {
                     await dbAdd(STORES.CATEGORIES, {
                         name: categoryName,
                         createdAt: new Date().toISOString()
                     });
+                    console.log('Added category:', categoryName);
                 } catch (error) {
-                    console.warn('Failed to add category:', categoryName, error);
+                    // Ignore duplicate errors
+                    if (error.message.includes('ConstraintError') || error.message.includes('key yang sama')) {
+                        console.log('Category already exists:', categoryName);
+                    } else {
+                        console.warn('Failed to add category:', categoryName, error);
+                    }
                 }
             }
             
             categories = ['all', ...uniqueCategories];
         } else {
+            // Get category names from database
             const categoryNames = dbCategories.map(c => c.name);
             categories = ['all', ...categoryNames];
         }
+        
+        console.log(`Loaded ${categories.length} categories`);
+        
     } catch (error) {
         console.error('Error loading categories:', error);
         categories = ['all'];
+        throw error;
     }
 }
 
 async function saveProduct(productData) {
     try {
+        console.log('Saving product:', productData);
+        
         const now = new Date().toISOString();
         
+        // Validate required fields
         if (!productData.code || !productData.name) {
             throw new Error('Kode dan nama produk harus diisi');
         }
         
+        // Check for duplicate code
         const existingProducts = await dbGetAll(STORES.PRODUCTS);
         const duplicateProduct = existingProducts.find(p => {
             if (productData.id && p.id === productData.id) return false;
@@ -2119,6 +2411,7 @@ async function saveProduct(productData) {
             throw new Error(`Kode produk "${productData.code}" sudah digunakan oleh produk: ${duplicateProduct.name}`);
         }
         
+        // Prepare data to save
         const dataToSave = {
             name: productData.name,
             code: productData.code,
@@ -2129,30 +2422,24 @@ async function saveProduct(productData) {
             updatedAt: now
         };
         
+        // Add or update product
         if (productData.id) {
+            // Update existing product
             dataToSave.id = productData.id;
             dataToSave.createdAt = productData.createdAt || now;
             await dbPut(STORES.PRODUCTS, dataToSave);
+            console.log('Product updated:', productData.id);
         } else {
+            // Add new product
             dataToSave.createdAt = now;
             const newId = await dbAdd(STORES.PRODUCTS, dataToSave);
             dataToSave.id = newId;
+            console.log('Product added with ID:', newId);
         }
         
+        // Ensure category exists in categories table
         if (dataToSave.category && dataToSave.category !== 'Lainnya') {
-            const categories = await dbGetAll(STORES.CATEGORIES);
-            const categoryExists = categories.some(c => c.name === dataToSave.category);
-            
-            if (!categoryExists) {
-                try {
-                    await dbAdd(STORES.CATEGORIES, {
-                        name: dataToSave.category,
-                        createdAt: now
-                    });
-                } catch (error) {
-                    console.warn('Failed to add category:', dataToSave.category, error);
-                }
-            }
+            await ensureCategoryExists(dataToSave.category);
         }
         
         return dataToSave;
@@ -2162,9 +2449,28 @@ async function saveProduct(productData) {
     }
 }
 
+async function ensureCategoryExists(categoryName) {
+    try {
+        const categories = await dbGetAll(STORES.CATEGORIES);
+        const categoryExists = categories.some(c => c.name === categoryName);
+        
+        if (!categoryExists) {
+            await dbAdd(STORES.CATEGORIES, {
+                name: categoryName,
+                createdAt: new Date().toISOString()
+            });
+            console.log('Category added:', categoryName);
+        }
+    } catch (error) {
+        console.warn('Failed to ensure category exists:', categoryName, error);
+    }
+}
+
 async function deleteProductFromDB(productId) {
     try {
+        console.log('Deleting product:', productId);
         await dbDelete(STORES.PRODUCTS, productId);
+        console.log('Product deleted successfully');
         return true;
     } catch (error) {
         console.error('Error deleting product:', error);
@@ -2174,6 +2480,7 @@ async function deleteProductFromDB(productId) {
 
 async function saveCategoryToDB(categoryName) {
     try {
+        console.log('Saving category:', categoryName);
         const categories = await dbGetAll(STORES.CATEGORIES);
         const existingCategory = categories.find(c => c.name === categoryName);
         
@@ -2182,8 +2489,10 @@ async function saveCategoryToDB(categoryName) {
                 name: categoryName,
                 createdAt: new Date().toISOString()
             });
+            console.log('Category saved successfully');
             return true;
         }
+        console.log('Category already exists');
         return false;
     } catch (error) {
         console.error('Error saving category:', error);
@@ -2193,6 +2502,7 @@ async function saveCategoryToDB(categoryName) {
 
 async function updateCategoryInDB(oldName, newName) {
     try {
+        console.log(`Updating category from "${oldName}" to "${newName}"`);
         const categories = await dbGetAll(STORES.CATEGORIES);
         const categoryToUpdate = categories.find(c => c.name === oldName);
         
@@ -2201,6 +2511,7 @@ async function updateCategoryInDB(oldName, newName) {
             categoryToUpdate.updatedAt = new Date().toISOString();
             await dbPut(STORES.CATEGORIES, categoryToUpdate);
             
+            // Update all products with the old category
             const productsToUpdate = products.filter(p => p.category === oldName);
             for (const product of productsToUpdate) {
                 product.category = newName;
@@ -2208,8 +2519,10 @@ async function updateCategoryInDB(oldName, newName) {
                 await dbPut(STORES.PRODUCTS, product);
             }
             
+            console.log('Category updated successfully');
             return true;
         }
+        console.log('Category not found for update');
         return false;
     } catch (error) {
         console.error('Error updating category:', error);
@@ -2219,12 +2532,14 @@ async function updateCategoryInDB(oldName, newName) {
 
 async function deleteCategoryFromDB(categoryName) {
     try {
+        console.log('Deleting category:', categoryName);
         const categories = await dbGetAll(STORES.CATEGORIES);
         const categoryToDelete = categories.find(c => c.name === categoryName);
         
         if (categoryToDelete) {
             await dbDelete(STORES.CATEGORIES, categoryToDelete.id);
             
+            // Update products to use "Lainnya" category
             const productsToUpdate = products.filter(p => p.category === categoryName);
             for (const product of productsToUpdate) {
                 product.category = "Lainnya";
@@ -2232,13 +2547,16 @@ async function deleteCategoryFromDB(categoryName) {
                 await dbPut(STORES.PRODUCTS, product);
             }
             
+            // Ensure "Lainnya" category exists
             const lainnyaExists = categories.some(c => c.name === "Lainnya");
             if (!lainnyaExists) {
                 await saveCategoryToDB("Lainnya");
             }
             
+            console.log('Category deleted successfully');
             return true;
         }
+        console.log('Category not found for deletion');
         return false;
     } catch (error) {
         console.error('Error deleting category:', error);
@@ -2248,6 +2566,7 @@ async function deleteCategoryFromDB(categoryName) {
 
 async function savePrintHistory(barcodeData, productName, weight) {
     try {
+        console.log('Saving print history...');
         await dbAdd(STORES.HISTORY, {
             barcode: barcodeData,
             productName: productName,
@@ -2255,6 +2574,7 @@ async function savePrintHistory(barcodeData, productName, weight) {
             timestamp: new Date().toISOString(),
             printedAt: new Date().toLocaleString('id-ID')
         });
+        console.log('Print history saved');
     } catch (error) {
         console.error('Error saving print history:', error);
     }
@@ -2262,6 +2582,8 @@ async function savePrintHistory(barcodeData, productName, weight) {
 
 async function exportData() {
     try {
+        showLoading();
+        
         const exportData = {
             products: await dbGetAll(STORES.PRODUCTS),
             categories: await dbGetAll(STORES.CATEGORIES),
@@ -2285,6 +2607,8 @@ async function exportData() {
     } catch (error) {
         console.error('Error exporting data:', error);
         showNotification('Gagal mengeksport data: ' + error.message, 'error');
+    } finally {
+        hideLoading();
     }
 }
 
@@ -2301,6 +2625,8 @@ async function importData() {
                 return;
             }
             
+            showLoading();
+            
             const reader = new FileReader();
             
             reader.onload = async (event) => {
@@ -2311,10 +2637,12 @@ async function importData() {
                         throw new Error('Format data tidak valid');
                     }
                     
+                    // Clear existing data
                     await dbClear(STORES.PRODUCTS);
                     await dbClear(STORES.CATEGORIES);
                     await dbClear(STORES.SETTINGS);
                     
+                    // Import products
                     for (const product of importedData.products) {
                         try {
                             await dbAdd(STORES.PRODUCTS, product);
@@ -2323,6 +2651,7 @@ async function importData() {
                         }
                     }
                     
+                    // Import categories
                     if (importedData.categories && Array.isArray(importedData.categories)) {
                         for (const category of importedData.categories) {
                             try {
@@ -2333,6 +2662,7 @@ async function importData() {
                         }
                     }
                     
+                    // Import settings
                     if (importedData.settings && Array.isArray(importedData.settings)) {
                         for (const setting of importedData.settings) {
                             try {
@@ -2343,16 +2673,19 @@ async function importData() {
                         }
                     }
                     
+                    // Update app state
                     await dbPut(STORES.APP_STATE, {
                         key: 'dummyDataAdded',
                         value: true,
                         updatedAt: new Date().toISOString()
                     });
                     
+                    // Reload data
                     await loadProducts();
                     await loadCategories();
                     await loadSettings();
                     
+                    // Update UI
                     renderCategoryDropdown();
                     renderCategories();
                     renderProducts();
@@ -2363,7 +2696,15 @@ async function importData() {
                     console.error('Error importing data:', error);
                     showNotification('Gagal mengimport data: ' + error.message, 'error');
                     resolve(false);
+                } finally {
+                    hideLoading();
                 }
+            };
+            
+            reader.onerror = () => {
+                showNotification('Gagal membaca file', 'error');
+                hideLoading();
+                resolve(false);
             };
             
             reader.readAsText(file);
@@ -2376,6 +2717,8 @@ async function importData() {
 async function clearAllData() {
     if (confirm('Apakah Anda yakin ingin menghapus SEMUA data?\nTindakan ini tidak dapat dibatalkan!')) {
         try {
+            showLoading();
+            
             await dbClear(STORES.PRODUCTS);
             await dbClear(STORES.CATEGORIES);
             await dbClear(STORES.HISTORY);
@@ -2393,6 +2736,46 @@ async function clearAllData() {
         } catch (error) {
             console.error('Error clearing data:', error);
             showNotification('Gagal menghapus data: ' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+}
+
+async function forceResetDatabase() {
+    if (confirm('Yakin ingin reset database? Semua data akan hilang dan aplikasi akan direfresh!')) {
+        try {
+            showLoading();
+            
+            // Close existing connection
+            if (db) {
+                db.close();
+            }
+            
+            // Delete database
+            const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+            
+            deleteRequest.onsuccess = () => {
+                console.log('Database deleted successfully');
+                showNotification('Database direset. Halaman akan direfresh...', 'success');
+                setTimeout(() => location.reload(), 2000);
+            };
+            
+            deleteRequest.onerror = (event) => {
+                console.error('Error deleting database:', event.target.error);
+                showNotification('Gagal mereset database: ' + event.target.error, 'error');
+                hideLoading();
+            };
+            
+            deleteRequest.onblocked = () => {
+                showNotification('Database diblokir. Tutup tab lain dan coba lagi.', 'error');
+                hideLoading();
+            };
+            
+        } catch (error) {
+            console.error('Error in force reset:', error);
+            showNotification('Error: ' + error.message, 'error');
+            hideLoading();
         }
     }
 }
@@ -2445,11 +2828,20 @@ function setWeightFromPreset(presetKey) {
 // ==================== APPLICATION INITIALIZATION ====================
 async function initApp() {
     try {
+        console.log('Starting app initialization...');
+        
+        showLoading();
+        hideError();
+        
+        // Initialize database first
         await initDatabase();
+        
+        // Load data in sequence to ensure dependencies
         await loadSettings();
         await loadProducts();
         await loadCategories();
         
+        // Initialize UI components
         renderCategoryDropdown();
         renderCategories();
         renderProducts();
@@ -2461,10 +2853,34 @@ async function initApp() {
         
         console.log('App initialized successfully');
         isFirstLoad = false;
+        
+        // Show success message
+        const productCount = products.length;
+        showNotification(`Aplikasi siap. ${productCount} produk dimuat.`, 'success');
+        
     } catch (error) {
         console.error('Error initializing app:', error);
-        showNotification('Gagal memuat aplikasi. Silakan refresh halaman.', 'error');
+        
+        let errorMessage = 'Gagal memuat aplikasi: ' + error.message;
+        
+        if (error.name === 'VersionError') {
+            errorMessage = 'Database versi tidak kompatibel. Coba reset aplikasi.';
+        } else if (error.name === 'InvalidStateError') {
+            errorMessage = 'Database dalam state tidak valid. Refresh halaman.';
+        } else if (error.message.includes('IndexedDB')) {
+            errorMessage = 'Browser tidak mendukung IndexedDB. Gunakan Chrome/Edge/Firefox.';
+        }
+        
+        showError(errorMessage);
+        
+    } finally {
+        hideLoading();
     }
+}
+
+async function retryAppLoad() {
+    console.log('Retrying app load...');
+    await initApp();
 }
 
 // ==================== CATEGORY VIEW MODE FUNCTIONS ====================
@@ -2485,8 +2901,11 @@ function setupCategoryViewMode() {
         }
     });
     
+    // Set initial view based on screen size
     if (window.innerWidth <= 768) {
         showCategoryDropdownMobile();
+    } else {
+        showCategoryTabs();
     }
 }
 
@@ -2715,8 +3134,8 @@ function renderProducts() {
     let filteredProducts;
     if (searchQuery) {
         filteredProducts = products.filter(p => 
-            p.name.toLowerCase().includes(searchQuery) || 
-            p.code.toLowerCase().includes(searchQuery)
+            (p.name && p.name.toLowerCase().includes(searchQuery)) || 
+            (p.code && p.code.toLowerCase().includes(searchQuery))
         );
     } else {
         filteredProducts = selectedCategory === 'all'
@@ -2724,42 +3143,61 @@ function renderProducts() {
             : products.filter(p => p.category === selectedCategory);
     }
     
-    filteredProducts.forEach(product => {
-        const card = document.createElement('div');
-        card.className = `product-card ${currentProduct?.id === product.id ? 'selected' : ''}`;
-        card.innerHTML = `
-            <img src="${product.image}" alt="${product.name}" class="product-image">
-            <div class="product-actions">
-                <button class="action-btn edit-btn">${icons.edit}</button>
-                <button class="action-btn delete-btn">${icons.delete}</button>
-            </div>
-            <div class="product-info">
-                <div class="product-name">${product.name}</div>
-                <div class="product-code">${product.code}</div>
-            </div>
+    if (filteredProducts.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.style.gridColumn = '1 / -1';
+        emptyState.style.textAlign = 'center';
+        emptyState.style.padding = '40px 20px';
+        emptyStyle = document.createElement('style');
+        emptyState.innerHTML = `
+            <svg class="icon" viewBox="0 0 24 24" style="width:60px;height:60px;color:#d9d9d9;margin-bottom:20px;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <h3 style="color:#666;margin-bottom:10px;">Tidak ada produk</h3>
+            <p style="color:#999;">${searchQuery ? 'Tidak ditemukan produk dengan kata kunci "' + searchQuery + '"' : 'Tambahkan produk baru dengan mengklik kartu "+" di bawah'}</p>
         `;
-        
-        const editBtn = card.querySelector('.edit-btn');
-        const deleteBtn = card.querySelector('.delete-btn');
-        
-        editBtn.onclick = (event) => {
-            event.stopPropagation();
-            editProduct(product.id);
-        };
-        
-        deleteBtn.onclick = (event) => {
-            event.stopPropagation();
-            deleteProductHandler(product.id);
-        };
-        
-        card.onclick = () => {
-            currentProduct = product;
-            showWeightModal();
-        };
-        
-        container.appendChild(card);
-    });
+        container.appendChild(emptyState);
+    } else {
+        filteredProducts.forEach(product => {
+            const card = document.createElement('div');
+            card.className = `product-card ${currentProduct?.id === product.id ? 'selected' : ''}`;
+            card.innerHTML = `
+                <img src="${product.image}" alt="${product.name}" class="product-image">
+                <div class="product-actions">
+                    <button class="action-btn edit-btn">${icons.edit}</button>
+                    <button class="action-btn delete-btn">${icons.delete}</button>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-code">${product.code}</div>
+                </div>
+            `;
+            
+            const editBtn = card.querySelector('.edit-btn');
+            const deleteBtn = card.querySelector('.delete-btn');
+            
+            editBtn.onclick = (event) => {
+                event.stopPropagation();
+                editProduct(product.id);
+            };
+            
+            deleteBtn.onclick = (event) => {
+                event.stopPropagation();
+                deleteProductHandler(product.id);
+            };
+            
+            card.onclick = () => {
+                currentProduct = product;
+                showWeightModal();
+            };
+            
+            container.appendChild(card);
+        });
+    }
     
+    // Add the "Add Product" card
     const addCard = document.createElement('div');
     addCard.className = 'add-product-card';
     addCard.innerHTML = `
@@ -2781,7 +3219,10 @@ function renderProducts() {
 
 async function editProduct(productId) {
     const product = products.find(p => p.id === productId);
-    if (!product) return;
+    if (!product) {
+        showNotification('Produk tidak ditemukan', 'error');
+        return;
+    }
     
     editingProductId = productId;
     showProductModal(product);
@@ -2791,6 +3232,7 @@ async function deleteProductHandler(productId) {
     if (!confirm('Hapus produk ini?')) return;
     
     try {
+        showLoading();
         await deleteProductFromDB(productId);
         products = products.filter(p => p.id !== productId);
         
@@ -2803,6 +3245,8 @@ async function deleteProductHandler(productId) {
     } catch (error) {
         console.error('Error deleting product:', error);
         showNotification('Gagal menghapus produk: ' + error.message, 'error');
+    } finally {
+        hideLoading();
     }
 }
 
@@ -3182,6 +3626,7 @@ async function saveProductHandler() {
     }
     
     try {
+        showLoading();
         const savedProduct = await saveProduct(productData);
         
         if (editingProductId) {
@@ -3203,7 +3648,7 @@ async function saveProductHandler() {
         resetProductForm();
     } catch (error) {
         console.error('Error saving product:', error);
-        if (error.name === 'ConstraintError') {
+        if (error.name === 'ConstraintError' || error.message.includes('key yang sama')) {
             showNotification('Kode produk sudah digunakan! Silakan gunakan kode lain.', 'error');
         } else if (error.message.includes('key path')) {
             showNotification('Database error. Coba reset aplikasi.', 'error');
@@ -3211,6 +3656,8 @@ async function saveProductHandler() {
         } else {
             showNotification('Gagal menyimpan produk: ' + error.message, 'error');
         }
+    } finally {
+        hideLoading();
     }
 }
 
@@ -3284,9 +3731,9 @@ function backspaceWeight() {
 
 // ==================== PRINTER FUNCTIONS ====================
 function initPrinterConnection() {
-    const savedConnection = localStorage.getItem('printerConnection');
-    if (savedConnection) {
-        try {
+    try {
+        const savedConnection = localStorage.getItem('printerConnection');
+        if (savedConnection) {
             const connectionData = JSON.parse(savedConnection);
             const savedTime = new Date(connectionData.timestamp);
             const currentTime = new Date();
@@ -3305,13 +3752,13 @@ function initPrinterConnection() {
                 updatePrinterButton();
                 localStorage.removeItem('printerConnection');
             }
-        } catch (e) {
-            console.error('Error loading printer connection:', e);
+        } else {
             isPrinterConnected = false;
             updatePrinterLED(false);
             updatePrinterButton();
         }
-    } else {
+    } catch (e) {
+        console.error('Error loading printer connection:', e);
         isPrinterConnected = false;
         updatePrinterLED(false);
         updatePrinterButton();
@@ -3384,11 +3831,15 @@ function handlePrinterDisconnect() {
 }
 
 function savePrinterConnection() {
-    const connectionData = {
-        isPrinterConnected: isPrinterConnected,
-        timestamp: new Date().toISOString()
-    };
-    localStorage.setItem('printerConnection', JSON.stringify(connectionData));
+    try {
+        const connectionData = {
+            isPrinterConnected: isPrinterConnected,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('printerConnection', JSON.stringify(connectionData));
+    } catch (e) {
+        console.error('Error saving printer connection:', e);
+    }
 }
 
 function updatePrinterLED(connected) {
@@ -3443,9 +3894,9 @@ async function connectToPrinter() {
             return false;
         }
         
-        showNotification("Memilih printer...");
+        showNotification("Memilih printer...", 'info');
         port = await navigator.serial.requestPort();
-        showNotification("Membuka koneksi...");
+        showNotification("Membuka koneksi...", 'info');
         await port.open({ baudRate: 9600 });
         writer = port.writable.getWriter();
         isPrinterConnected = true;
@@ -3561,7 +4012,7 @@ async function printBarcode() {
             return;
         }
         
-        showNotification("Mengirim data ke printer...");
+        showNotification("Mengirim data ke printer...", 'info');
         
         const esc = '\x1B';
         const gs = '\x1D';
@@ -3577,8 +4028,6 @@ async function printBarcode() {
         
         if (printDesign === 1) {
             // Desain 1: Baris kosong, Nilai barcode (tengah), Barcode (tengah), Baris kosong, Potong
-            
-            // Baris kosong di atas (sudah ada dari baris 116)
             
             // Print barcode value (centered)
             data += currentBarcodeData + '\n';
@@ -3858,6 +4307,14 @@ function showSettingsModal() {
                 ${icons.delete}
                 Hapus Semua Data
             </button>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#dc3545;color:white;font-weight:600;margin-top:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dc3545;"
+                onclick="forceResetDatabase()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+                Force Reset Database
+            </button>
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -3934,6 +4391,11 @@ async function addNewCategoryFromSettings() {
         return;
     }
     
+    if (category === 'all') {
+        showNotification('Kategori "all" tidak dapat digunakan', 'error');
+        return;
+    }
+    
     try {
         await saveCategoryToDB(category);
         await loadCategories();
@@ -3954,6 +4416,11 @@ async function editCategoryHandler(oldCategory) {
     
     const newCategory = prompt('Edit nama kategori:', oldCategory);
     if (newCategory && newCategory.trim() && newCategory !== oldCategory) {
+        if (newCategory === 'all') {
+            showNotification('Kategori "all" tidak dapat digunakan', 'error');
+            return;
+        }
+        
         try {
             await updateCategoryInDB(oldCategory, newCategory);
             
@@ -4059,6 +4526,7 @@ async function saveSettingsConfig() {
     };
     
     try {
+        showLoading();
         await saveSettings();
         updateWeightPresetButtons();
         showNotification('Pengaturan berhasil disimpan!', 'success');
@@ -4066,6 +4534,8 @@ async function saveSettingsConfig() {
     } catch (error) {
         console.error('Error saving settings:', error);
         showNotification('Gagal menyimpan pengaturan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
     }
 }
 
@@ -4182,7 +4652,10 @@ function showNotification(message, type = 'success') {
 }
 
 // ==================== EVENT LISTENERS ====================
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM fully loaded, initializing app...');
+    await initApp();
+});
 
 window.onclick = function(event) {
     if (event.target.classList.contains('modal-overlay')) {
@@ -4208,6 +4681,29 @@ window.addEventListener('resize', function() {
         document.querySelector('.category-dropdown-container').style.display = 'none';
     }
 });
+
+// Handle page visibility changes for data refresh
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        console.log('Page became visible, refreshing data...');
+        refreshData();
+    }
+});
+
+async function refreshData() {
+    try {
+        showLoading();
+        await loadProducts();
+        await loadCategories();
+        renderCategories();
+        renderProducts();
+        console.log('Data refreshed successfully');
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+    } finally {
+        hideLoading();
+    }
+}
 </script>
 </body>
 </html>
