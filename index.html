@@ -1763,7 +1763,6 @@ async function dbClear(storeName) {
 // ==================== UTILITY FUNCTIONS ====================
 function generateExampleCode(digitCount) {
     if (digitCount <= 0) return '';
-    // Generate example like "01" for 2 digits, "001" for 3 digits, etc.
     return '0'.repeat(digitCount - 1) + '1';
 }
 
@@ -2232,7 +2231,6 @@ function setupCategoryViewMode() {
         dropdownButton.addEventListener('click', showCategoryModal);
     }
     
-    // Close modal when clicking outside
     document.addEventListener('click', function(event) {
         const modal = document.getElementById('category-modal');
         const button = document.getElementById('category-dropdown-button');
@@ -2255,10 +2253,8 @@ function showCategoryModal() {
     
     if (!modal || !list) return;
     
-    // Clear existing items
     list.innerHTML = '';
     
-    // Create category items
     categories.forEach(category => {
         const item = document.createElement('div');
         item.className = `category-modal-item ${selectedCategory === category ? 'active' : ''}`;
@@ -2282,30 +2278,25 @@ function showCategoryModal() {
             }
             selectedCategory = category;
             
-            // Update button label
             const label = document.getElementById('category-dropdown-label');
             if (label) {
                 label.textContent = category === 'all' ? 'Semua Produk' : category;
             }
             
-            // Update button active state
             const button = document.getElementById('category-dropdown-button');
             if (button) {
                 button.classList.add('active');
             }
             
-            // Update categories and products
             renderCategories();
             renderProducts();
             
-            // Close modal
             closeCategoryModal();
         };
         
         list.appendChild(item);
     });
     
-    // Show modal
     modal.style.display = 'flex';
 }
 
@@ -2314,7 +2305,6 @@ function closeCategoryModal() {
     if (modal) {
         modal.style.display = 'none';
         
-        // Remove active state from button
         const button = document.getElementById('category-dropdown-button');
         if (button) {
             button.classList.remove('active');
@@ -2470,7 +2460,6 @@ function renderCategories() {
         container.appendChild(tab);
     });
     
-    // Update dropdown selection
     renderCategoryDropdown();
 }
 
@@ -2628,7 +2617,6 @@ function showProductModal(product = null) {
         Tambah Produk
     `;
     
-    // Generate example codes based on current digitConfig
     const productExample = generateExampleCode(digitConfig.product);
     const flexExample = generateExampleCode(digitConfig.flex);
     const catcodeExample = generateExampleCode(digitConfig.category);
@@ -2828,9 +2816,7 @@ function checkDuplicateCode() {
     const formattedCode = enteredCode.padStart(digitConfig.product, '0');
     
     const duplicateProduct = products.find(p => {
-        if (editingProductId && p.id === editingProductId) {
-            return false;
-        }
+        if (editingProductId && p.id === editingProductId) return false;
         return p.code === formattedCode || p.code === enteredCode;
     });
     
@@ -2900,7 +2886,6 @@ async function saveProductHandler() {
         return;
     }
     
-    // Validasi flex code
     if (flex && flex.length > digitConfig.flex) {
         showNotification(`Flex code maksimal ${digitConfig.flex} digit!`, 'error');
         return;
@@ -2911,7 +2896,6 @@ async function saveProductHandler() {
         return;
     }
     
-    // Validasi catcode
     if (catcode && catcode.length > digitConfig.category) {
         showNotification(`Kode kategori maksimal ${digitConfig.category} digit!`, 'error');
         return;
@@ -2934,7 +2918,6 @@ async function saveProductHandler() {
         imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3Crect x='50' y='80' width='200' height='140' fill='%23006B54' rx='15'/%3E%3Ccircle cx='150' cy='150' r='50' fill='%23d9d9d9'/%3E%3Cpath d='M130 140 L150 160 L180 120' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
     }
     
-    // Jika flex atau catcode kosong, gunakan default "01"
     const finalFlex = flex ? flex.padStart(digitConfig.flex, '0') : '01';
     const finalCatcode = catcode ? catcode.padStart(digitConfig.category, '0') : '01';
     
@@ -3339,18 +3322,36 @@ async function printBarcode() {
         const lf = '\x0A';
         
         let data = esc + '@';
+        
+        // Set alignment center
         data += esc + 'a' + '\x01';
-        data += `[${currentProduct.flex.padStart(digitConfig.flex, '0')}][${currentProduct.catcode.padStart(digitConfig.category, '0')}]` +
-                `[${currentProduct.code.padStart(digitConfig.product, '0')}][${weightValue.padStart(digitConfig.weight, '0')}]${lf}`;
-        data += lf;
-        data += esc + 'a' + '\x01';
-        data += gs + 'h' + '\x50';
-        data += gs + 'w' + '\x02';
-        data += gs + 'k' + '\x49';
+        
+        // Print separator line
+        data += '-----------------------------\n';
+        
+        // Print product name (centered)
+        const productName = currentProduct.name;
+        data += productName + '\n';
+        
+        // Print barcode
+        data += gs + 'h' + '\x50'; // Barcode height
+        data += gs + 'w' + '\x02'; // Barcode width
+        data += gs + 'k' + '\x49'; // CODE128 barcode
         data += String.fromCharCode(currentBarcodeData.length);
         data += currentBarcodeData;
         data += lf;
-        data += lf + lf;
+        
+        // Print barcode value
+        data += currentBarcodeData + '\n';
+        
+        // Print weight value
+        data += weightValue + ' gram\n';
+        
+        // Print separator line
+        data += '-----------------------------\n';
+        
+        // Feed paper and cut
+        data += lf + lf + lf;
         data += gs + 'V' + '\x41' + '\x00';
         
         const encoder = new TextEncoder();
@@ -3778,7 +3779,6 @@ window.onclick = function(event) {
     }
 };
 
-// Responsive behavior for category view
 window.addEventListener('resize', function() {
     if (window.innerWidth <= 768) {
         showCategoryDropdownMobile();
