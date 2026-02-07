@@ -1,0 +1,2947 @@
+// ==================== DATABASE CONFIGURATION ====================
+const DB_NAME = 'POSBarcodeDB';
+const DB_VERSION = 5;
+
+// Object store names
+const STORES = {
+    PRODUCTS: 'products',
+    CATEGORIES: 'categories',
+    SETTINGS: 'settings',
+    HISTORY: 'printHistory',
+    APP_STATE: 'appState'
+};
+
+// ==================== GLOBAL VARIABLES ====================
+let db = null;
+let products = [];
+let categories = [];
+let currentProduct = null;
+let weightValue = '';
+let digitConfig = { flex: 2, category: 2, product: 4, weight: 5 };
+let printDesign = 1; // Default: Desain 1
+let selectedCategory = 'all';
+let editingProductId = null;
+let port = null;
+let writer = null;
+let isPrinterConnected = false;
+let currentBarcodeData = '';
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 3;
+let searchQuery = '';
+let longPressTimer = null;
+let longPressCategory = null;
+let isLongPress = false;
+let isFirstLoad = true;
+let categoryViewMode = 'tabs'; // 'tabs' or 'dropdown'
+
+// Weight presets
+let weightPresets = {
+    preset1: 100,
+    preset2: 200,
+    preset3: 500,
+    preset4: 1000
+};
+
+// Icon definitions
+const icons = {
+    edit: `<svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    delete: `<svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
+    add: `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+    upload: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+    download: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    category: `<svg class="icon" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M10 2v20"/></svg>`,
+    camera: `<svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+    preset: `<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`
+};
+
+// ==================== LOADING STATE FUNCTIONS ====================
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    const productsGrid = document.getElementById('products-grid');
+    const mainContent = document.querySelector('.main-content');
+    
+    if (overlay) overlay.style.display = 'flex';
+    if (productsGrid) productsGrid.classList.add('loading');
+    if (mainContent) mainContent.style.opacity = '0.5';
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    const productsGrid = document.getElementById('products-grid');
+    const mainContent = document.querySelector('.main-content');
+    
+    if (overlay) overlay.style.display = 'none';
+    if (productsGrid) productsGrid.classList.remove('loading');
+    if (mainContent) mainContent.style.opacity = '1';
+}
+
+function showError(message) {
+    const errorState = document.getElementById('error-state');
+    const errorMessage = document.getElementById('error-message');
+    const mainContent = document.querySelector('.main-content');
+    const stickyContainer = document.querySelector('.sticky-search-category-container');
+    
+    if (errorState && errorMessage) {
+        errorMessage.textContent = message;
+        errorState.style.display = 'block';
+    }
+    
+    if (mainContent) {
+        mainContent.style.display = 'none';
+    }
+    
+    if (stickyContainer) {
+        stickyContainer.style.display = 'none';
+    }
+}
+
+function hideError() {
+    const errorState = document.getElementById('error-state');
+    const mainContent = document.querySelector('.main-content');
+    const stickyContainer = document.querySelector('.sticky-search-category-container');
+    
+    if (errorState) errorState.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'block';
+    if (stickyContainer) stickyContainer.style.display = 'block';
+}
+
+// ==================== DATABASE FUNCTIONS ====================
+async function initDatabase() {
+    return new Promise((resolve, reject) => {
+        // Check if browser supports IndexedDB
+        if (!window.indexedDB) {
+            const error = "Browser tidak mendukung IndexedDB. Gunakan Chrome, Edge, atau Firefox versi terbaru.";
+            console.error(error);
+            showError(error);
+            reject(new Error(error));
+            return;
+        }
+
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = (event) => {
+            console.error('Database error:', event.target.error);
+            showError('Gagal membuka database: ' + event.target.error);
+            reject(event.target.error);
+        };
+        
+        request.onblocked = () => {
+            console.warn('Database blocked. Tutup tab lain yang menggunakan aplikasi ini.');
+            showError('Database diblokir. Tutup tab lain dan refresh halaman.');
+            reject(new Error('Database blocked'));
+        };
+        
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            
+            // Handle database errors
+            db.onerror = (event) => {
+                console.error('Database error:', event.target.error);
+                showNotification('Error database: ' + event.target.error, 'error');
+            };
+            
+            // Handle database version change
+            db.onversionchange = (event) => {
+                console.log('Database version changed, closing...');
+                db.close();
+                showNotification('Database diperbarui, silakan refresh halaman.', 'info');
+            };
+            
+            console.log('Database initialized successfully');
+            resolve();
+        };
+        
+        request.onupgradeneeded = (event) => {
+            console.log('Upgrading database from version', event.oldVersion, 'to', event.newVersion);
+            const db = event.target.result;
+            
+            // Create object stores if they don't exist
+            if (!db.objectStoreNames.contains(STORES.PRODUCTS)) {
+                console.log('Creating products store...');
+                const productStore = db.createObjectStore(STORES.PRODUCTS, { 
+                    keyPath: 'id',
+                    autoIncrement: true 
+                });
+                productStore.createIndex('category', 'category', { unique: false });
+                productStore.createIndex('code', 'code', { unique: true });
+            }
+            
+            if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
+                console.log('Creating categories store...');
+                const categoryStore = db.createObjectStore(STORES.CATEGORIES, { 
+                    keyPath: 'id',
+                    autoIncrement: true 
+                });
+                categoryStore.createIndex('name', 'name', { unique: true });
+            }
+            
+            if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+                console.log('Creating settings store...');
+                db.createObjectStore(STORES.SETTINGS, { 
+                    keyPath: 'key' 
+                });
+            }
+            
+            if (!db.objectStoreNames.contains(STORES.HISTORY)) {
+                console.log('Creating history store...');
+                const historyStore = db.createObjectStore(STORES.HISTORY, { 
+                    keyPath: 'id',
+                    autoIncrement: true 
+                });
+                historyStore.createIndex('timestamp', 'timestamp', { unique: false });
+            }
+            
+            if (!db.objectStoreNames.contains(STORES.APP_STATE)) {
+                console.log('Creating app state store...');
+                db.createObjectStore(STORES.APP_STATE, { 
+                    keyPath: 'key' 
+                });
+            }
+            
+            event.target.transaction.oncomplete = () => {
+                console.log('Database upgrade completed');
+            };
+        };
+    });
+}
+
+async function dbGetAll(storeName) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([storeName], 'readonly');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.getAll();
+            
+            request.onsuccess = () => {
+                console.log(`Retrieved ${request.result.length} items from ${storeName}`);
+                resolve(request.result || []);
+            };
+            
+            request.onerror = (e) => {
+                console.error(`Error getting all from ${storeName}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbGetAll for ${storeName}:`, error);
+            reject(error);
+        }
+    });
+}
+
+async function dbGet(storeName, key) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([storeName], 'readonly');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.get(key);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error getting from ${storeName} with key ${key}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbGet for ${storeName}:`, error);
+            reject(error);
+        }
+    });
+}
+
+async function dbAdd(storeName, data) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.add(data);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error adding to ${storeName}:`, data, e.target.error);
+                
+                // Handle constraint errors (duplicate keys)
+                if (e.target.error.name === 'ConstraintError') {
+                    const errorMsg = `Data dengan key yang sama sudah ada di ${storeName}`;
+                    console.error(errorMsg);
+                    reject(new Error(errorMsg));
+                } else {
+                    reject(e.target.error);
+                }
+            };
+        } catch (error) {
+            console.error(`Exception in dbAdd for ${storeName}:`, error);
+            reject(error);
+        }
+    });
+}
+
+async function dbPut(storeName, data) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.put(data);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error putting to ${storeName}:`, data, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbPut for ${storeName}:`, error);
+            reject(error);
+        }
+    });
+}
+
+async function dbDelete(storeName, key) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.delete(key);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error deleting from ${storeName} with key ${key}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbDelete for ${storeName}:`, error);
+            reject(error);
+        }
+    });
+}
+
+async function dbClear(storeName) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.clear();
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error clearing ${storeName}:`, e.target.error);
+                reject(e.target.error);
+            };
+        } catch (error) {
+            console.error(`Exception in dbClear for ${storeName}:`, error);
+            reject(error);
+        }
+    });
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+function generateExampleCode(digitCount) {
+    if (digitCount <= 0) return '';
+    return '0'.repeat(digitCount - 1) + '1';
+}
+
+// ==================== APPLICATION DATABASE FUNCTIONS ====================
+async function loadSettings() {
+    try {
+        console.log('Loading settings...');
+        
+        // Load barcode configuration
+        const savedConfig = await dbGet(STORES.SETTINGS, 'barcodeConfig');
+        if (savedConfig) {
+            digitConfig = savedConfig.value;
+            console.log('Loaded barcode config:', digitConfig);
+        } else {
+            digitConfig = { flex: 2, category: 2, product: 4, weight: 5 };
+            await saveSettings();
+            console.log('Created default barcode config');
+        }
+        
+        // Load print design setting
+        const savedPrintDesign = await dbGet(STORES.SETTINGS, 'printDesign');
+        if (savedPrintDesign) {
+            printDesign = savedPrintDesign.value;
+            console.log('Loaded print design:', printDesign);
+        } else {
+            printDesign = 1;
+            await dbPut(STORES.SETTINGS, {
+                key: 'printDesign',
+                value: printDesign,
+                updatedAt: new Date().toISOString()
+            });
+            console.log('Created default print design');
+        }
+        
+        // Load weight presets
+        const savedWeightPresets = await dbGet(STORES.SETTINGS, 'weightPresets');
+        if (savedWeightPresets) {
+            weightPresets = savedWeightPresets.value;
+            console.log('Loaded weight presets:', weightPresets);
+        } else {
+            weightPresets = {
+                preset1: 100,
+                preset2: 200,
+                preset3: 500,
+                preset4: 1000
+            };
+            await dbPut(STORES.SETTINGS, {
+                key: 'weightPresets',
+                value: weightPresets,
+                updatedAt: new Date().toISOString()
+            });
+            console.log('Created default weight presets');
+        }
+        
+        console.log('Settings loaded successfully');
+    } catch (error) {
+        console.error('Error loading settings:', error);
+        // Use defaults if settings can't be loaded
+        digitConfig = { flex: 2, category: 2, product: 4, weight: 5 };
+        printDesign = 1;
+        weightPresets = {
+            preset1: 100,
+            preset2: 200,
+            preset3: 500,
+            preset4: 1000
+        };
+        showNotification('Menggunakan pengaturan default', 'info');
+    }
+}
+
+async function saveSettings() {
+    try {
+        console.log('Saving settings...');
+        
+        // Save barcode configuration
+        await dbPut(STORES.SETTINGS, {
+            key: 'barcodeConfig',
+            value: digitConfig,
+            updatedAt: new Date().toISOString()
+        });
+        
+        // Save print design setting
+        await dbPut(STORES.SETTINGS, {
+            key: 'printDesign',
+            value: printDesign,
+            updatedAt: new Date().toISOString()
+        });
+        
+        // Save weight presets
+        await dbPut(STORES.SETTINGS, {
+            key: 'weightPresets',
+            value: weightPresets,
+            updatedAt: new Date().toISOString()
+        });
+        
+        console.log('Settings saved successfully');
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        throw error;
+    }
+}
+
+async function loadProducts() {
+    try {
+        console.log('Loading products...');
+        products = await dbGetAll(STORES.PRODUCTS);
+        
+        console.log(`Found ${products.length} products in database`);
+        
+        // Filter out invalid products
+        products = products.filter(product => {
+            if (!product || typeof product !== 'object') {
+                console.warn('Invalid product object found:', product);
+                return false;
+            }
+            
+            // Ensure product has required fields
+            if (!product.code || typeof product.code !== 'string') {
+                console.warn('Product has invalid code:', product);
+                return false;
+            }
+            
+            if (!product.name || typeof product.name !== 'string') {
+                console.warn('Product has invalid name:', product);
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // If no products and this is first load, add dummy data
+        if (products.length === 0 && isFirstLoad) {
+            console.log('No products found, adding dummy data...');
+            await addDummyProducts();
+            products = await dbGetAll(STORES.PRODUCTS);
+            console.log(`Added ${products.length} dummy products`);
+        }
+        
+        // Sort products by name for better UX
+        products.sort((a, b) => a.name.localeCompare(b.name));
+        
+        console.log(`Successfully loaded ${products.length} products`);
+        
+    } catch (error) {
+        console.error('Error loading products:', error);
+        products = [];
+        throw error;
+    }
+}
+
+async function addDummyProducts() {
+    try {
+        console.log('Adding dummy products...');
+        
+        const dummyProducts = [
+            {
+                name: "Beras Premium 5kg",
+                code: "0001",
+                category: "Sembako",
+                flex: "01",
+                catcode: "01",
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Cpath d='M30,40 L70,40 L65,60 L35,60 Z' fill='%23006B54'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%23d9d9d9'/%3E%3C/svg%3E",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                name: "Gula Pasir 1kg",
+                code: "0002",
+                category: "Sembako",
+                flex: "01",
+                catcode: "01",
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='30' y='30' width='40' height='40' fill='%23fff' stroke='%23006B54' stroke-width='2'/%3E%3C/svg%3E",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                name: "Minyak Goreng 2L",
+                code: "0003",
+                category: "Sembako",
+                flex: "01",
+                catcode: "02",
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Crect x='35' y='25' width='30' height='50' fill='%23d9d9d9'/%3E%3Ccircle cx='50' cy='80' r='8' fill='%23006B54'/%3E%3C/svg%3E",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        ];
+        
+        for (const product of dummyProducts) {
+            try {
+                // Check if product already exists
+                const existingProducts = await dbGetAll(STORES.PRODUCTS);
+                const exists = existingProducts.some(p => p.code === product.code);
+                
+                if (!exists) {
+                    await dbAdd(STORES.PRODUCTS, product);
+                    console.log('Added dummy product:', product.code);
+                }
+            } catch (error) {
+                console.warn('Failed to add dummy product:', product.code, error);
+            }
+        }
+        
+        // Mark that dummy data has been added
+        await dbPut(STORES.APP_STATE, {
+            key: 'dummyDataAdded',
+            value: true,
+            addedAt: new Date().toISOString()
+        });
+        
+        console.log('Dummy products added successfully');
+    } catch (error) {
+        console.error('Error adding dummy products:', error);
+        throw error;
+    }
+}
+
+async function loadCategories() {
+    try {
+        console.log('Loading categories...');
+        const dbCategories = await dbGetAll(STORES.CATEGORIES);
+        
+        if (dbCategories.length === 0) {
+            console.log('No categories found, creating from products...');
+            
+            // Get unique categories from products
+            const uniqueCategories = [...new Set(products
+                .map(p => p.category)
+                .filter(category => category && category.trim() !== '')
+            )];
+            
+            console.log(`Found ${uniqueCategories.length} unique categories in products`);
+            
+            // Add each category to database
+            for (const categoryName of uniqueCategories) {
+                try {
+                    await dbAdd(STORES.CATEGORIES, {
+                        name: categoryName,
+                        createdAt: new Date().toISOString()
+                    });
+                    console.log('Added category:', categoryName);
+                } catch (error) {
+                    // Ignore duplicate errors
+                    if (error.message.includes('ConstraintError') || error.message.includes('key yang sama')) {
+                        console.log('Category already exists:', categoryName);
+                    } else {
+                        console.warn('Failed to add category:', categoryName, error);
+                    }
+                }
+            }
+            
+            categories = ['all', ...uniqueCategories];
+        } else {
+            // Get category names from database
+            const categoryNames = dbCategories.map(c => c.name);
+            categories = ['all', ...categoryNames];
+        }
+        
+        console.log(`Loaded ${categories.length} categories`);
+        
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        categories = ['all'];
+        throw error;
+    }
+}
+
+async function saveProduct(productData) {
+    try {
+        console.log('Saving product:', productData);
+        
+        const now = new Date().toISOString();
+        
+        // Validate required fields
+        if (!productData.code || !productData.name) {
+            throw new Error('Kode dan nama produk harus diisi');
+        }
+        
+        // Check for duplicate code
+        const existingProducts = await dbGetAll(STORES.PRODUCTS);
+        const duplicateProduct = existingProducts.find(p => {
+            if (productData.id && p.id === productData.id) return false;
+            return p.code === productData.code;
+        });
+        
+        if (duplicateProduct) {
+            throw new Error(`Kode produk "${productData.code}" sudah digunakan oleh produk: ${duplicateProduct.name}`);
+        }
+        
+        // Prepare data to save
+        const dataToSave = {
+            name: productData.name,
+            code: productData.code,
+            category: productData.category || 'Lainnya',
+            flex: productData.flex || '01',
+            catcode: productData.catcode || '01',
+            image: productData.image || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3C/svg%3E",
+            updatedAt: now
+        };
+        
+        // Add or update product
+        if (productData.id) {
+            // Update existing product
+            dataToSave.id = productData.id;
+            dataToSave.createdAt = productData.createdAt || now;
+            await dbPut(STORES.PRODUCTS, dataToSave);
+            console.log('Product updated:', productData.id);
+        } else {
+            // Add new product
+            dataToSave.createdAt = now;
+            const newId = await dbAdd(STORES.PRODUCTS, dataToSave);
+            dataToSave.id = newId;
+            console.log('Product added with ID:', newId);
+        }
+        
+        // Ensure category exists in categories table
+        if (dataToSave.category && dataToSave.category !== 'Lainnya') {
+            await ensureCategoryExists(dataToSave.category);
+        }
+        
+        return dataToSave;
+    } catch (error) {
+        console.error('Error saving product:', error);
+        throw error;
+    }
+}
+
+async function ensureCategoryExists(categoryName) {
+    try {
+        const categories = await dbGetAll(STORES.CATEGORIES);
+        const categoryExists = categories.some(c => c.name === categoryName);
+        
+        if (!categoryExists) {
+            await dbAdd(STORES.CATEGORIES, {
+                name: categoryName,
+                createdAt: new Date().toISOString()
+            });
+            console.log('Category added:', categoryName);
+        }
+    } catch (error) {
+        console.warn('Failed to ensure category exists:', categoryName, error);
+    }
+}
+
+async function deleteProductFromDB(productId) {
+    try {
+        console.log('Deleting product:', productId);
+        await dbDelete(STORES.PRODUCTS, productId);
+        console.log('Product deleted successfully');
+        return true;
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        throw error;
+    }
+}
+
+async function saveCategoryToDB(categoryName) {
+    try {
+        console.log('Saving category:', categoryName);
+        const categories = await dbGetAll(STORES.CATEGORIES);
+        const existingCategory = categories.find(c => c.name === categoryName);
+        
+        if (!existingCategory) {
+            await dbAdd(STORES.CATEGORIES, {
+                name: categoryName,
+                createdAt: new Date().toISOString()
+            });
+            console.log('Category saved successfully');
+            return true;
+        }
+        console.log('Category already exists');
+        return false;
+    } catch (error) {
+        console.error('Error saving category:', error);
+        throw error;
+    }
+}
+
+async function updateCategoryInDB(oldName, newName) {
+    try {
+        console.log(`Updating category from "${oldName}" to "${newName}"`);
+        const categories = await dbGetAll(STORES.CATEGORIES);
+        const categoryToUpdate = categories.find(c => c.name === oldName);
+        
+        if (categoryToUpdate) {
+            categoryToUpdate.name = newName;
+            categoryToUpdate.updatedAt = new Date().toISOString();
+            await dbPut(STORES.CATEGORIES, categoryToUpdate);
+            
+            // Update all products with the old category
+            const productsToUpdate = products.filter(p => p.category === oldName);
+            for (const product of productsToUpdate) {
+                product.category = newName;
+                product.updatedAt = new Date().toISOString();
+                await dbPut(STORES.PRODUCTS, product);
+            }
+            
+            console.log('Category updated successfully');
+            return true;
+        }
+        console.log('Category not found for update');
+        return false;
+    } catch (error) {
+        console.error('Error updating category:', error);
+        throw error;
+    }
+}
+
+async function deleteCategoryFromDB(categoryName) {
+    try {
+        console.log('Deleting category:', categoryName);
+        const categories = await dbGetAll(STORES.CATEGORIES);
+        const categoryToDelete = categories.find(c => c.name === categoryName);
+        
+        if (categoryToDelete) {
+            await dbDelete(STORES.CATEGORIES, categoryToDelete.id);
+            
+            // Update products to use "Lainnya" category
+            const productsToUpdate = products.filter(p => p.category === categoryName);
+            for (const product of productsToUpdate) {
+                product.category = "Lainnya";
+                product.updatedAt = new Date().toISOString();
+                await dbPut(STORES.PRODUCTS, product);
+            }
+            
+            // Ensure "Lainnya" category exists
+            const lainnyaExists = categories.some(c => c.name === "Lainnya");
+            if (!lainnyaExists) {
+                await saveCategoryToDB("Lainnya");
+            }
+            
+            console.log('Category deleted successfully');
+            return true;
+        }
+        console.log('Category not found for deletion');
+        return false;
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        throw error;
+    }
+}
+
+async function savePrintHistory(barcodeData, productName, weight) {
+    try {
+        console.log('Saving print history...');
+        await dbAdd(STORES.HISTORY, {
+            barcode: barcodeData,
+            productName: productName,
+            weight: weight,
+            timestamp: new Date().toISOString(),
+            printedAt: new Date().toLocaleString('id-ID')
+        });
+        console.log('Print history saved');
+    } catch (error) {
+        console.error('Error saving print history:', error);
+    }
+}
+
+async function exportData() {
+    try {
+        showLoading();
+        
+        const exportData = {
+            products: await dbGetAll(STORES.PRODUCTS),
+            categories: await dbGetAll(STORES.CATEGORIES),
+            settings: await dbGetAll(STORES.SETTINGS),
+            exportDate: new Date().toISOString(),
+            version: DB_VERSION
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        const exportFileName = `pos-backup-${new Date().toISOString().split('T')[0]}.json`;
+        
+        const link = document.createElement('a');
+        link.href = dataUri;
+        link.download = exportFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification('Data berhasil dieksport!', 'success');
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        showNotification('Gagal mengeksport data: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function importData() {
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                resolve(false);
+                return;
+            }
+            
+            showLoading();
+            
+            const reader = new FileReader();
+            
+            reader.onload = async (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    
+                    if (!importedData.products || !Array.isArray(importedData.products)) {
+                        throw new Error('Format data tidak valid');
+                    }
+                    
+                    // Clear existing data
+                    await dbClear(STORES.PRODUCTS);
+                    await dbClear(STORES.CATEGORIES);
+                    await dbClear(STORES.SETTINGS);
+                    
+                    // Import products
+                    for (const product of importedData.products) {
+                        try {
+                            await dbAdd(STORES.PRODUCTS, product);
+                        } catch (error) {
+                            console.warn('Gagal mengimport produk:', product, error);
+                        }
+                    }
+                    
+                    // Import categories
+                    if (importedData.categories && Array.isArray(importedData.categories)) {
+                        for (const category of importedData.categories) {
+                            try {
+                                await dbAdd(STORES.CATEGORIES, category);
+                            } catch (error) {
+                                console.warn('Gagal mengimport kategori:', category, error);
+                            }
+                        }
+                    }
+                    
+                    // Import settings
+                    if (importedData.settings && Array.isArray(importedData.settings)) {
+                        for (const setting of importedData.settings) {
+                            try {
+                                await dbAdd(STORES.SETTINGS, setting);
+                            } catch (error) {
+                                console.warn('Gagal mengimport setting:', setting, error);
+                            }
+                        }
+                    }
+                    
+                    // Update app state
+                    await dbPut(STORES.APP_STATE, {
+                        key: 'dummyDataAdded',
+                        value: true,
+                        updatedAt: new Date().toISOString()
+                    });
+                    
+                    // Reload data
+                    await loadProducts();
+                    await loadCategories();
+                    await loadSettings();
+                    
+                    // Update UI
+                    renderCategoryDropdown();
+                    renderCategories();
+                    renderProducts();
+                    
+                    showNotification('Data berhasil diimport!', 'success');
+                    resolve(true);
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    showNotification('Gagal mengimport data: ' + error.message, 'error');
+                    resolve(false);
+                } finally {
+                    hideLoading();
+                }
+            };
+            
+            reader.onerror = () => {
+                showNotification('Gagal membaca file', 'error');
+                hideLoading();
+                resolve(false);
+            };
+            
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    });
+}
+
+async function clearAllData() {
+    if (confirm('Apakah Anda yakin ingin menghapus SEMUA data?\nTindakan ini tidak dapat dibatalkan!')) {
+        try {
+            showLoading();
+            
+            await dbClear(STORES.PRODUCTS);
+            await dbClear(STORES.CATEGORIES);
+            await dbClear(STORES.HISTORY);
+            await dbClear(STORES.APP_STATE);
+            
+            products = [];
+            categories = ['all'];
+            selectedCategory = 'all';
+            
+            renderCategoryDropdown();
+            renderCategories();
+            renderProducts();
+            
+            showNotification('Semua data berhasil dihapus!', 'success');
+        } catch (error) {
+            console.error('Error clearing data:', error);
+            showNotification('Gagal menghapus data: ' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+}
+
+async function forceResetDatabase() {
+    if (confirm('Yakin ingin reset database? Semua data akan hilang dan aplikasi akan direfresh!')) {
+        try {
+            showLoading();
+            
+            // Close existing connection
+            if (db) {
+                db.close();
+            }
+            
+            // Delete database
+            const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+            
+            deleteRequest.onsuccess = () => {
+                console.log('Database deleted successfully');
+                showNotification('Database direset. Halaman akan direfresh...', 'success');
+                setTimeout(() => location.reload(), 2000);
+            };
+            
+            deleteRequest.onerror = (event) => {
+                console.error('Error deleting database:', event.target.error);
+                showNotification('Gagal mereset database: ' + event.target.error, 'error');
+                hideLoading();
+            };
+            
+            deleteRequest.onblocked = () => {
+                showNotification('Database diblokir. Tutup tab lain dan coba lagi.', 'error');
+                hideLoading();
+            };
+            
+        } catch (error) {
+            console.error('Error in force reset:', error);
+            showNotification('Error: ' + error.message, 'error');
+            hideLoading();
+        }
+    }
+}
+
+// ==================== WEIGHT PRESET FUNCTIONS ====================
+function updateWeightPresetButtons() {
+    const presetContainer = document.getElementById('weight-preset-buttons');
+    if (!presetContainer) return;
+    
+    presetContainer.innerHTML = '';
+    
+    // Create 4 preset buttons
+    for (let i = 1; i <= 4; i++) {
+        const presetKey = `preset${i}`;
+        const presetValue = weightPresets[presetKey] || 0;
+        
+        const button = document.createElement('button');
+        button.className = 'weight-preset-btn';
+        button.innerHTML = `
+            <div class="weight-preset-label">Preset ${i}</div>
+            <div class="weight-preset-value">${presetValue}g</div>
+        `;
+        button.onclick = () => setWeightFromPreset(presetKey);
+        
+        presetContainer.appendChild(button);
+    }
+}
+
+function setWeightFromPreset(presetKey) {
+    const presetValue = weightPresets[presetKey];
+    if (presetValue && presetValue > 0) {
+        // Set the weight value, ensuring it doesn't exceed the allowed digits
+        const maxDigits = digitConfig.weight;
+        let weightString = presetValue.toString();
+        
+        // If the preset value exceeds the allowed digits, truncate it
+        if (weightString.length > maxDigits) {
+            weightString = weightString.substring(0, maxDigits);
+            showNotification(`Berat dipotong menjadi ${weightString} (maks ${maxDigits} digit)`, 'info');
+        }
+        
+        weightValue = weightString;
+        document.getElementById('display-weight').textContent = weightValue;
+        showNotification(`Berat diatur ke preset: ${presetValue}g`, 'success');
+    } else {
+        showNotification('Preset belum diatur!', 'error');
+    }
+}
+
+// ==================== APPLICATION INITIALIZATION ====================
+async function initApp() {
+    try {
+        console.log('Starting app initialization...');
+        
+        showLoading();
+        hideError();
+        
+        // Initialize database first
+        await initDatabase();
+        
+        // Load data in sequence to ensure dependencies
+        await loadSettings();
+        await loadProducts();
+        await loadCategories();
+        
+        // Initialize UI components
+        renderCategoryDropdown();
+        renderCategories();
+        renderProducts();
+        updateWeightPresetButtons();
+        initPrinterConnection();
+        initLongPressEvents();
+        setupSearch();
+        setupCategoryViewMode();
+        
+        console.log('App initialized successfully');
+        isFirstLoad = false;
+        
+        // Show success message
+        const productCount = products.length;
+        showNotification(`Aplikasi siap. ${productCount} produk dimuat.`, 'success');
+        
+    } catch (error) {
+        console.error('Error initializing app:', error);
+        
+        let errorMessage = 'Gagal memuat aplikasi: ' + error.message;
+        
+        if (error.name === 'VersionError') {
+            errorMessage = 'Database versi tidak kompatibel. Coba reset aplikasi.';
+        } else if (error.name === 'InvalidStateError') {
+            errorMessage = 'Database dalam state tidak valid. Refresh halaman.';
+        } else if (error.message.includes('IndexedDB')) {
+            errorMessage = 'Browser tidak mendukung IndexedDB. Gunakan Chrome/Edge/Firefox.';
+        }
+        
+        showError(errorMessage);
+        
+    } finally {
+        hideLoading();
+    }
+}
+
+async function retryAppLoad() {
+    console.log('Retrying app load...');
+    await initApp();
+}
+
+// ==================== CATEGORY VIEW MODE FUNCTIONS ====================
+function setupCategoryViewMode() {
+    const dropdownButton = document.getElementById('category-dropdown-button');
+    if (dropdownButton) {
+        dropdownButton.addEventListener('click', showCategoryModal);
+    }
+    
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('category-modal');
+        const button = document.getElementById('category-dropdown-button');
+        
+        if (modal && modal.style.display === 'flex' && 
+            !modal.contains(event.target) && 
+            !button.contains(event.target)) {
+            closeCategoryModal();
+        }
+    });
+    
+    // Set initial view based on screen size
+    if (window.innerWidth <= 768) {
+        showCategoryDropdownMobile();
+    } else {
+        showCategoryTabs();
+    }
+}
+
+function showCategoryModal() {
+    const modal = document.getElementById('category-modal');
+    const list = document.getElementById('category-modal-list');
+    
+    if (!modal || !list) return;
+    
+    list.innerHTML = '';
+    
+    categories.forEach(category => {
+        const item = document.createElement('div');
+        item.className = `category-modal-item ${selectedCategory === category ? 'active' : ''}`;
+        item.dataset.category = category;
+        
+        item.innerHTML = `
+            <svg class="icon category-modal-icon" viewBox="0 0 24 24">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                <path d="M10 2v20"/>
+            </svg>
+            ${category === 'all' ? 'Semua Produk' : category}
+        `;
+        
+        item.onclick = () => {
+            if (searchQuery) {
+                const searchInput = document.getElementById('product-search');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchQuery = '';
+                }
+            }
+            selectedCategory = category;
+            
+            const label = document.getElementById('category-dropdown-label');
+            if (label) {
+                label.textContent = category === 'all' ? 'Semua Produk' : category;
+            }
+            
+            const button = document.getElementById('category-dropdown-button');
+            if (button) {
+                button.classList.add('active');
+            }
+            
+            renderCategories();
+            renderProducts();
+            
+            closeCategoryModal();
+        };
+        
+        list.appendChild(item);
+    });
+    
+    modal.style.display = 'flex';
+}
+
+function closeCategoryModal() {
+    const modal = document.getElementById('category-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        const button = document.getElementById('category-dropdown-button');
+        if (button) {
+            button.classList.remove('active');
+        }
+    }
+}
+
+function renderCategoryDropdown() {
+    const label = document.getElementById('category-dropdown-label');
+    if (label) {
+        label.textContent = selectedCategory === 'all' ? 'Semua Produk' : selectedCategory;
+    }
+}
+
+function showCategoryTabs() {
+    categoryViewMode = 'tabs';
+    document.querySelectorAll('.category-toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector('.category-toggle-btn:first-child').classList.add('active');
+    
+    const tabs = document.getElementById('category-tabs');
+    const dropdownContainer = document.querySelector('.category-dropdown-container');
+    const switcher = document.querySelector('.category-switcher');
+    
+    if (tabs) {
+        tabs.style.display = 'flex';
+    }
+    if (dropdownContainer) {
+        dropdownContainer.style.display = 'none';
+    }
+    if (switcher) {
+        switcher.style.display = 'flex';
+    }
+}
+
+function showCategoryDropdown() {
+    categoryViewMode = 'dropdown';
+    document.querySelectorAll('.category-toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector('.category-toggle-btn:last-child').classList.add('active');
+    
+    const tabs = document.getElementById('category-tabs');
+    const dropdownContainer = document.querySelector('.category-dropdown-container');
+    const switcher = document.querySelector('.category-switcher');
+    
+    if (tabs) {
+        tabs.style.display = 'none';
+    }
+    if (dropdownContainer) {
+        dropdownContainer.style.display = 'block';
+    }
+    if (switcher) {
+        switcher.style.display = 'flex';
+    }
+}
+
+function showCategoryDropdownMobile() {
+    const tabs = document.getElementById('category-tabs');
+    const dropdownContainer = document.querySelector('.category-dropdown-container');
+    const switcher = document.querySelector('.category-switcher');
+    
+    if (tabs) {
+        tabs.style.display = 'none';
+        tabs.classList.remove('mobile-visible');
+    }
+    if (dropdownContainer) {
+        dropdownContainer.style.display = 'block';
+    }
+    if (switcher) {
+        switcher.style.display = 'none';
+    }
+}
+
+function showCategoryTabsMobile() {
+    const tabs = document.getElementById('category-tabs');
+    const dropdownContainer = document.querySelector('.category-dropdown-container');
+    const switcher = document.querySelector('.category-switcher');
+    
+    if (tabs) {
+        tabs.style.display = 'flex';
+        tabs.classList.add('mobile-visible');
+    }
+    if (dropdownContainer) {
+        dropdownContainer.style.display = 'none';
+    }
+    if (switcher) {
+        switcher.style.display = 'flex';
+    }
+}
+
+// ==================== UI FUNCTIONS ====================
+function setupSearch() {
+    const searchInput = document.getElementById('product-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            searchQuery = e.target.value.trim().toLowerCase();
+            renderProducts();
+        });
+    }
+}
+
+function renderCategories() {
+    const container = document.getElementById('category-tabs');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    categories.forEach(category => {
+        const tab = document.createElement('div');
+        tab.className = `category-tab ${selectedCategory === category ? 'active' : ''}`;
+        tab.dataset.category = category;
+        
+        if (category !== 'all') {
+            tab.innerHTML = `
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;color:${selectedCategory === category ? 'white' : '#006B54'}">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                        <path d="M10 2v20"/>
+                    </svg>
+                    ${category}
+                </div>
+            `;
+        } else {
+            tab.innerHTML = `
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;color:${selectedCategory === category ? 'white' : '#006B54'}">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </svg>
+                    Semua Produk
+                </div>
+            `;
+        }
+        
+        tab.onclick = () => {
+            if (!isLongPress) {
+                const searchInput = document.getElementById('product-search');
+                if (searchInput && searchInput.value.trim() !== '') {
+                    searchInput.value = '';
+                    searchQuery = '';
+                }
+                selectedCategory = category;
+                renderCategoryDropdown();
+                renderCategories();
+                renderProducts();
+            }
+            isLongPress = false;
+        };
+        
+        container.appendChild(tab);
+    });
+    
+    renderCategoryDropdown();
+}
+
+function renderProducts() {
+    const container = document.getElementById('products-grid');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    let filteredProducts;
+    if (searchQuery) {
+        filteredProducts = products.filter(p => 
+            (p.name && p.name.toLowerCase().includes(searchQuery)) || 
+            (p.code && p.code.toLowerCase().includes(searchQuery))
+        );
+    } else {
+        filteredProducts = selectedCategory === 'all'
+            ? products
+            : products.filter(p => p.category === selectedCategory);
+    }
+    
+    if (filteredProducts.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.style.gridColumn = '1 / -1';
+        emptyState.style.textAlign = 'center';
+        emptyState.style.padding = '40px 20px';
+        emptyStyle = document.createElement('style');
+        emptyState.innerHTML = `
+            <svg class="icon" viewBox="0 0 24 24" style="width:60px;height:60px;color:#d9d9d9;margin-bottom:20px;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <h3 style="color:#666;margin-bottom:10px;">Tidak ada produk</h3>
+            <p style="color:#999;">${searchQuery ? 'Tidak ditemukan produk dengan kata kunci "' + searchQuery + '"' : 'Tambahkan produk baru dengan mengklik kartu "+" di bawah'}</p>
+        `;
+        container.appendChild(emptyState);
+    } else {
+        filteredProducts.forEach(product => {
+            const card = document.createElement('div');
+            card.className = `product-card ${currentProduct?.id === product.id ? 'selected' : ''}`;
+            card.innerHTML = `
+                <img src="${product.image}" alt="${product.name}" class="product-image">
+                <div class="product-actions">
+                    <button class="action-btn edit-btn">${icons.edit}</button>
+                    <button class="action-btn delete-btn">${icons.delete}</button>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-code">${product.code}</div>
+                </div>
+            `;
+            
+            const editBtn = card.querySelector('.edit-btn');
+            const deleteBtn = card.querySelector('.delete-btn');
+            
+            editBtn.onclick = (event) => {
+                event.stopPropagation();
+                editProduct(product.id);
+            };
+            
+            deleteBtn.onclick = (event) => {
+                event.stopPropagation();
+                deleteProductHandler(product.id);
+            };
+            
+            card.onclick = () => {
+                currentProduct = product;
+                showWeightModal();
+            };
+            
+            container.appendChild(card);
+        });
+    }
+    
+    // Add the "Add Product" card
+    const addCard = document.createElement('div');
+    addCard.className = 'add-product-card';
+    addCard.innerHTML = `
+        <div class="add-product-content">
+            <div class="add-icon">
+                <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;color:#006B54;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+            </div>
+            <div class="add-text">Tambah Produk</div>
+        </div>
+    `;
+    
+    addCard.onclick = () => showProductModal();
+    container.appendChild(addCard);
+}
+
+async function editProduct(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) {
+        showNotification('Produk tidak ditemukan', 'error');
+        return;
+    }
+    
+    editingProductId = productId;
+    showProductModal(product);
+}
+
+async function deleteProductHandler(productId) {
+    if (!confirm('Hapus produk ini?')) return;
+    
+    try {
+        showLoading();
+        await deleteProductFromDB(productId);
+        products = products.filter(p => p.id !== productId);
+        
+        if (currentProduct && currentProduct.id === productId) {
+            currentProduct = null;
+        }
+        
+        renderProducts();
+        showNotification('Produk berhasil dihapus!', 'success');
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        showNotification('Gagal menghapus produk: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function resetProductForm() {
+    const formContent = document.getElementById('product-form-content');
+    if (!formContent) return;
+    
+    const nameInput = document.getElementById('product-name-input');
+    const codeInput = document.getElementById('product-code-input');
+    const categorySelect = document.getElementById('product-category-select');
+    const flexInput = document.getElementById('product-flex-input');
+    const catcodeInput = document.getElementById('product-catcode-input');
+    const imageUploadArea = document.getElementById('image-upload-area');
+    
+    if (nameInput) nameInput.value = '';
+    if (codeInput) codeInput.value = '';
+    if (categorySelect) categorySelect.value = '';
+    if (flexInput) flexInput.value = '';
+    if (catcodeInput) catcodeInput.value = '';
+    
+    if (imageUploadArea) {
+        imageUploadArea.innerHTML = `
+            <div style="color:#666;">
+                <div style="margin-bottom:5px;">
+                    <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;color:#006B54;">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </div>
+                <div>Klik untuk upload gambar</div>
+                <div style="font-size:12px;margin-top:5px;color:#999;">Rekomendasi: 300x300px</div>
+            </div>
+        `;
+    }
+    
+    editingProductId = null;
+}
+
+function showProductModal(product = null) {
+    const isEdit = !!product;
+    const modalTitle = document.getElementById('product-modal-title');
+    
+    modalTitle.innerHTML = isEdit ? `
+        <svg class="icon icon-primary" viewBox="0 0 24 24">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Edit Produk
+    ` : `
+        <svg class="icon icon-primary" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Tambah Produk
+    `;
+    
+    const productExample = generateExampleCode(digitConfig.product);
+    const flexExample = generateExampleCode(digitConfig.flex);
+    const catcodeExample = generateExampleCode(digitConfig.category);
+    
+    const existingCategories = categories.filter(cat => cat !== 'all');
+    let categoryOptions = existingCategories.map(cat => {
+        const selected = product && product.category === cat ? 'selected' : '';
+        return `<option value="${cat}" ${selected}>${cat}</option>`;
+    }).join('');
+    
+    const formContent = document.getElementById('product-form-content');
+    formContent.innerHTML = `
+        <div style="margin-bottom:15px;">
+            <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+                ${icons.camera}
+                Gambar Produk
+            </div>
+            <div style="border:2px dashed #d9d9d9;border-radius:15px;padding:20px;text-align:center;cursor:pointer;background:#f5f5f5;"
+                onclick="document.getElementById('product-image-input').click()" id="image-upload-area">
+                ${product && product.image ?
+                    `<img src="${product.image}" style="max-width:100%;max-height:140px;border-radius:15px;object-fit:cover;" id="image-preview">` :
+                    `<div style="color:#666;">
+                        <div style="margin-bottom:5px;">
+                            <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;color:#006B54;">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                        <div>Klik untuk upload gambar</div>
+                        <div style="font-size:12px;margin-top:5px;color:#999;">Rekomendasi: 300x300px</div>
+                    </div>`
+                }
+            </div>
+            <input type="file" id="product-image-input" accept="image/*" style="display:none">
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Nama Produk
+            </div>
+            <input type="text" class="form-input" id="product-name-input" 
+                value="${product ? product.name : ''}" placeholder="Nama produk" required>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                Kode Produk (${digitConfig.product} digit)
+            </div>
+            <input type="text" class="form-input" id="product-code-input" 
+                value="${product ? product.code : ''}" placeholder="Contoh: ${productExample}" 
+                maxlength="${digitConfig.product}" required
+                oninput="checkDuplicateCode()">
+            <div id="code-duplicate-warning" style="color:#dc3545;font-size:0.8rem;margin-top:5px;display:none;">
+                ⚠ Kode produk sudah digunakan!
+            </div>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                    <path d="M10 2v20"/>
+                </svg>
+                Kategori
+            </div>
+            <div style="display:flex;gap:10px;">
+                <select class="form-input" id="product-category-select" onchange="handleCategorySelect()" style="padding-right:40px;">
+                    <option value="">-- Pilih Kategori --</option>
+                    ${categoryOptions}
+                    <option value="_new">${icons.add} Tambah Kategori Baru</option>
+                </select>
+            </div>
+            <div id="new-category-input" style="margin-top:10px;display:none;">
+                <input type="text" class="form-input" id="product-category-new" placeholder="Nama kategori baru">
+            </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+            <div>
+                <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                    </svg>
+                    Flex Code (${digitConfig.flex} digit)
+                </div>
+                <input type="text" class="form-input" id="product-flex-input" 
+                    value="${product ? product.flex : ''}" 
+                    placeholder="Contoh: ${flexExample}" 
+                    maxlength="${digitConfig.flex}"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+            <div>
+                <div style="color:#333333;margin-bottom:5px;font-weight:500;display:flex;align-items:center;gap:8px;">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                    Kategori (${digitConfig.category} digit)
+                </div>
+                <input type="text" class="form-input" id="product-catcode-input" 
+                    value="${product ? product.catcode : ''}" 
+                    placeholder="Contoh: ${catcodeExample}" 
+                    maxlength="${digitConfig.category}"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button class="form-button-secondary" onclick="closeProductModal()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                BATAL
+            </button>
+            <button class="form-button-primary" onclick="saveProductHandler()" id="save-product-btn">
+                <svg class="icon icon-sm icon-white" viewBox="0 0 24 24">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                ${isEdit ? 'UPDATE' : 'SIMPAN'}
+            </button>
+        </div>
+    `;
+    
+    const imageInput = document.getElementById('product-image-input');
+    const imageUploadArea = document.getElementById('image-upload-area');
+    const codeInput = document.getElementById('product-code-input');
+    const warningDiv = document.getElementById('code-duplicate-warning');
+    const saveButton = document.getElementById('save-product-btn');
+    
+    if (codeInput) {
+        codeInput.addEventListener('input', checkDuplicateCode);
+    }
+    
+    if (imageInput) {
+        imageInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.match('image.*')) {
+                showNotification('File harus gambar!', 'error');
+                return;
+            }
+            
+            if (file.size > 2 * 1024 * 1024) {
+                showNotification('Maksimal 2MB!', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imageUploadArea.innerHTML = `<img src="${event.target.result}" style="max-width:100%;max-height:140px;border-radius:15px;object-fit:cover;" id="image-preview">`;
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+    
+    if (product && product.category) {
+        setTimeout(() => {
+            const select = document.getElementById('product-category-select');
+            if (select) select.value = product.category;
+        }, 10);
+    }
+    
+    document.getElementById('product-modal').style.display = 'flex';
+    
+    setTimeout(() => {
+        checkDuplicateCode();
+    }, 100);
+}
+
+function checkDuplicateCode() {
+    const codeInput = document.getElementById('product-code-input');
+    const warningDiv = document.getElementById('code-duplicate-warning');
+    const saveButton = document.getElementById('save-product-btn');
+    
+    if (!codeInput || !warningDiv || !saveButton) return;
+    
+    const enteredCode = codeInput.value.trim();
+    if (enteredCode.length === 0) {
+        warningDiv.style.display = 'none';
+        saveButton.disabled = false;
+        saveButton.style.opacity = '1';
+        return;
+    }
+    
+    const formattedCode = enteredCode.padStart(digitConfig.product, '0');
+    
+    const duplicateProduct = products.find(p => {
+        if (editingProductId && p.id === editingProductId) return false;
+        return p.code === formattedCode || p.code === enteredCode;
+    });
+    
+    if (duplicateProduct) {
+        warningDiv.style.display = 'block';
+        warningDiv.innerHTML = `⚠ Kode produk "${formattedCode}" sudah digunakan oleh: ${duplicateProduct.name}`;
+        saveButton.disabled = true;
+        saveButton.style.opacity = '0.6';
+    } else {
+        warningDiv.style.display = 'none';
+        saveButton.disabled = false;
+        saveButton.style.opacity = '1';
+    }
+}
+
+function handleCategorySelect() {
+    const select = document.getElementById('product-category-select');
+    const newCategoryDiv = document.getElementById('new-category-input');
+    
+    if (select.value === '_new') {
+        newCategoryDiv.style.display = 'block';
+        if (document.getElementById('product-category-new')) {
+            document.getElementById('product-category-new').focus();
+        }
+    } else {
+        newCategoryDiv.style.display = 'none';
+    }
+}
+
+async function saveProductHandler() {
+    const name = document.getElementById('product-name-input')?.value.trim();
+    const code = document.getElementById('product-code-input')?.value.trim();
+    const categorySelect = document.getElementById('product-category-select');
+    let category = categorySelect?.value;
+    
+    if (category === '_new') {
+        category = document.getElementById('product-category-new')?.value.trim();
+    }
+    
+    const flex = document.getElementById('product-flex-input')?.value.trim();
+    const catcode = document.getElementById('product-catcode-input')?.value.trim();
+    
+    if (!name || !code || !category) {
+        showNotification('Nama, kode, dan kategori harus diisi!', 'error');
+        return;
+    }
+    
+    if (code.length > digitConfig.product) {
+        showNotification(`Kode maksimal ${digitConfig.product} digit!`, 'error');
+        return;
+    }
+    
+    const formattedCode = code.padStart(digitConfig.product, '0');
+    
+    const isDuplicate = products.some(p => {
+        if (editingProductId && p.id === editingProductId) return false;
+        return p.code === formattedCode || p.code === code;
+    });
+    
+    if (isDuplicate) {
+        showNotification(`Kode produk "${formattedCode}" sudah digunakan!`, 'error');
+        return;
+    }
+    
+    if (!/^\d+$/.test(code)) {
+        showNotification('Kode produk hanya boleh berisi angka!', 'error');
+        return;
+    }
+    
+    if (flex && flex.length > digitConfig.flex) {
+        showNotification(`Flex code maksimal ${digitConfig.flex} digit!`, 'error');
+        return;
+    }
+    
+    if (flex && !/^\d+$/.test(flex)) {
+        showNotification('Flex code hanya boleh berisi angka!', 'error');
+        return;
+    }
+    
+    if (catcode && catcode.length > digitConfig.category) {
+        showNotification(`Kode kategori maksimal ${digitConfig.category} digit!`, 'error');
+        return;
+    }
+    
+    if (catcode && !/^\d+$/.test(catcode)) {
+        showNotification('Kode kategori hanya boleh berisi angka!', 'error');
+        return;
+    }
+    
+    const imagePreview = document.getElementById('image-preview');
+    let imageData = '';
+    
+    if (imagePreview && imagePreview.src) {
+        imageData = imagePreview.src;
+    } else if (editingProductId) {
+        const existingProduct = products.find(p => p.id === editingProductId);
+        imageData = existingProduct ? existingProduct.image : '';
+    } else {
+        imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3Crect x='50' y='80' width='200' height='140' fill='%23006B54' rx='15'/%3E%3Ccircle cx='150' cy='150' r='50' fill='%23d9d9d9'/%3E%3Cpath d='M130 140 L150 160 L180 120' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
+    }
+    
+    const finalFlex = flex ? flex.padStart(digitConfig.flex, '0') : '01';
+    const finalCatcode = catcode ? catcode.padStart(digitConfig.category, '0') : '01';
+    
+    const productData = {
+        id: editingProductId || undefined,
+        name,
+        code: formattedCode,
+        category,
+        flex: finalFlex,
+        catcode: finalCatcode,
+        image: imageData
+    };
+    
+    if (editingProductId) {
+        const existingProduct = products.find(p => p.id === editingProductId);
+        if (existingProduct) {
+            productData.createdAt = existingProduct.createdAt;
+        }
+    }
+    
+    try {
+        showLoading();
+        const savedProduct = await saveProduct(productData);
+        
+        if (editingProductId) {
+            const index = products.findIndex(p => p.id === editingProductId);
+            if (index !== -1) {
+                products[index] = savedProduct;
+            }
+        } else {
+            products.push(savedProduct);
+        }
+        
+        await loadCategories();
+        renderCategoryDropdown();
+        renderCategories();
+        renderProducts();
+        
+        showNotification(editingProductId ? 'Produk diperbarui!' : 'Produk ditambahkan!', 'success');
+        closeProductModal();
+        resetProductForm();
+    } catch (error) {
+        console.error('Error saving product:', error);
+        if (error.name === 'ConstraintError' || error.message.includes('key yang sama')) {
+            showNotification('Kode produk sudah digunakan! Silakan gunakan kode lain.', 'error');
+        } else if (error.message.includes('key path')) {
+            showNotification('Database error. Coba reset aplikasi.', 'error');
+            console.error('Database error details:', error);
+        } else {
+            showNotification('Gagal menyimpan produk: ' + error.message, 'error');
+        }
+    } finally {
+        hideLoading();
+    }
+}
+
+function closeProductModal() {
+    document.getElementById('product-modal').style.display = 'none';
+    resetProductForm();
+}
+
+// ==================== WEIGHT MODAL FUNCTIONS ====================
+function showWeightModal() {
+    if (!currentProduct) return;
+    
+    const productInfo = document.getElementById('selected-product-info');
+    productInfo.innerHTML = `
+        <img src="${currentProduct.image}" alt="${currentProduct.name}" class="product-thumbnail">
+        <div class="product-details">
+            <h4>${currentProduct.name}</h4>
+            <div class="code">${currentProduct.code} | ${currentProduct.category}</div>
+        </div>
+    `;
+    
+    document.getElementById('display-product-code').textContent = currentProduct.code;
+    weightValue = '';
+    document.getElementById('display-weight').textContent = '0';
+    document.getElementById('display-barcode').textContent = '-';
+    const barcodeSvg = document.getElementById('barcode-svg');
+    barcodeSvg.innerHTML = '';
+    document.getElementById('current-barcode').textContent = 'Klik GENERATE untuk membuat barcode';
+    currentBarcodeData = '';
+    updatePrinterButton();
+    
+    // Update preset buttons
+    updateWeightPresetButtons();
+    
+    document.getElementById('weight-modal').style.display = 'flex';
+}
+
+function closeWeightModal() {
+    document.getElementById('weight-modal').style.display = 'none';
+    currentProduct = null;
+    weightValue = '';
+    document.querySelectorAll('.product-card.selected').forEach(c => {
+        c.classList.remove('selected');
+    });
+}
+
+function appendNumber(num) {
+    if (num === '00') {
+        if (weightValue.length <= digitConfig.weight - 2) {
+            weightValue += '00';
+        }
+    } else if (weightValue.length < digitConfig.weight) {
+        weightValue += num;
+    }
+    const displayWeight = weightValue || '0';
+    document.getElementById('display-weight').textContent = displayWeight;
+}
+
+function clearWeight() {
+    weightValue = '';
+    document.getElementById('display-weight').textContent = '0';
+}
+
+function backspaceWeight() {
+    if (weightValue.length > 0) {
+        weightValue = weightValue.slice(0, -1);
+    }
+    const displayWeight = weightValue || '0';
+    document.getElementById('display-weight').textContent = displayWeight;
+}
+
+// ==================== PRINTER FUNCTIONS ====================
+function initPrinterConnection() {
+    try {
+        const savedConnection = localStorage.getItem('printerConnection');
+        if (savedConnection) {
+            const connectionData = JSON.parse(savedConnection);
+            const savedTime = new Date(connectionData.timestamp);
+            const currentTime = new Date();
+            const minutesDifference = (currentTime - savedTime) / (1000 * 60);
+            
+            if (connectionData.isPrinterConnected && minutesDifference < 5) {
+                isPrinterConnected = false;
+                updatePrinterLED(false);
+                updatePrinterButton();
+                setTimeout(() => {
+                    autoReconnectPrinter();
+                }, 1000);
+            } else {
+                isPrinterConnected = false;
+                updatePrinterLED(false);
+                updatePrinterButton();
+                localStorage.removeItem('printerConnection');
+            }
+        } else {
+            isPrinterConnected = false;
+            updatePrinterLED(false);
+            updatePrinterButton();
+        }
+    } catch (e) {
+        console.error('Error loading printer connection:', e);
+        isPrinterConnected = false;
+        updatePrinterLED(false);
+        updatePrinterButton();
+    }
+}
+
+async function autoReconnectPrinter() {
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        return;
+    }
+    
+    try {
+        if (!("serial" in navigator)) {
+            return;
+        }
+        
+        const ports = await navigator.serial.getPorts();
+        if (ports.length === 0) {
+            showNotification('Printer perlu dihubungkan kembali setelah refresh halaman', 'info');
+            return;
+        }
+        
+        port = ports[0];
+        
+        if (port.readable || port.writable) {
+            writer = port.writable.getWriter();
+            isPrinterConnected = true;
+            reconnectAttempts = 0;
+            updatePrinterLED(true);
+            updatePrinterButton();
+            savePrinterConnection();
+            showNotification('Printer berhasil terhubung ulang!', 'success');
+            port.addEventListener('disconnect', handlePrinterDisconnect);
+            return;
+        }
+        
+        await port.open({ baudRate: 9600 });
+        writer = port.writable.getWriter();
+        isPrinterConnected = true;
+        reconnectAttempts = 0;
+        updatePrinterLED(true);
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer berhasil terhubung ulang!', 'success');
+        port.addEventListener('disconnect', handlePrinterDisconnect);
+    } catch (error) {
+        console.error("Auto-reconnect error:", error);
+        reconnectAttempts++;
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            setTimeout(() => {
+                autoReconnectPrinter();
+            }, 2000);
+        } else {
+            showNotification('Gagal menghubungkan ulang ke printer. Silakan hubungkan manual.', 'error');
+            isPrinterConnected = false;
+            updatePrinterLED(false);
+            updatePrinterButton();
+        }
+    }
+}
+
+function handlePrinterDisconnect() {
+    isPrinterConnected = false;
+    port = null;
+    writer = null;
+    updatePrinterLED(false);
+    updatePrinterButton();
+    savePrinterConnection();
+    showNotification('Printer terputus!', 'error');
+}
+
+function savePrinterConnection() {
+    try {
+        const connectionData = {
+            isPrinterConnected: isPrinterConnected,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('printerConnection', JSON.stringify(connectionData));
+    } catch (e) {
+        console.error('Error saving printer connection:', e);
+    }
+}
+
+function updatePrinterLED(connected) {
+    const printerLED = document.getElementById('printer-led');
+    const statusText = document.getElementById('printer-status-text');
+    if (printerLED) {
+        if (connected) {
+            printerLED.className = 'printer-led connected';
+            if (statusText) statusText.textContent = 'Printer Online';
+        } else {
+            printerLED.className = 'printer-led disconnected';
+            if (statusText) statusText.textContent = 'Printer Offline';
+        }
+    }
+}
+
+function updatePrinterButton() {
+    const connectBtn = document.getElementById('connect-btn');
+    if (!connectBtn) return;
+    
+    if (isPrinterConnected) {
+        connectBtn.innerHTML = `
+            <svg class="icon icon-sm" viewBox="0 0 24 24">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            DISCONNECT
+        `;
+        connectBtn.onclick = disconnectFromPrinter;
+    } else {
+        connectBtn.innerHTML = `
+            <svg class="icon icon-sm" viewBox="0 0 24 24">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            CONNECT
+        `;
+        connectBtn.onclick = connectToPrinter;
+    }
+}
+
+function togglePrinterConnection() {
+    if (isPrinterConnected) {
+        disconnectFromPrinter();
+    } else {
+        connectToPrinter();
+    }
+}
+
+async function connectToPrinter() {
+    try {
+        if (!("serial" in navigator)) {
+            showNotification("Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.", 'error');
+            return false;
+        }
+        
+        showNotification("Memilih printer...", 'info');
+        port = await navigator.serial.requestPort();
+        showNotification("Membuka koneksi...", 'info');
+        await port.open({ baudRate: 9600 });
+        writer = port.writable.getWriter();
+        isPrinterConnected = true;
+        reconnectAttempts = 0;
+        updatePrinterLED(true);
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer Connected!', 'success');
+        port.addEventListener('disconnect', handlePrinterDisconnect);
+        return true;
+    } catch (error) {
+        console.error("Connection error:", error);
+        if (error.name === 'NotFoundError') {
+            showNotification("Tidak ada printer yang dipilih", 'error');
+        } else if (error.name === 'InvalidStateError') {
+            showNotification("Printer sudah terhubung", 'error');
+        } else {
+            showNotification("Gagal terhubung ke printer: " + error.message, 'error');
+        }
+        isPrinterConnected = false;
+        updatePrinterLED(false);
+        updatePrinterButton();
+        return false;
+    }
+}
+
+async function disconnectFromPrinter() {
+    try {
+        if (writer) {
+            writer.releaseLock();
+            writer = null;
+        }
+        if (port) {
+            await port.close();
+            port = null;
+        }
+        isPrinterConnected = false;
+        reconnectAttempts = 0;
+        updatePrinterLED(false);
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer disconnected', 'success');
+    } catch (error) {
+        console.error("Disconnection error:", error);
+        isPrinterConnected = false;
+        updatePrinterLED(false);
+        updatePrinterButton();
+        savePrinterConnection();
+        showNotification('Printer disconnected', 'success');
+    }
+}
+
+// ==================== BARCODE FUNCTIONS ====================
+function generateBarcode() {
+    if (!currentProduct) {
+        showNotification('Pilih produk terlebih dahulu!', 'error');
+        return;
+    }
+    
+    if (!weightValue || weightValue === '0') {
+        showNotification('Masukkan berat terlebih dahulu!', 'error');
+        return;
+    }
+    
+    currentBarcodeData =
+        currentProduct.flex.padStart(digitConfig.flex, '0') +
+        currentProduct.catcode.padStart(digitConfig.category, '0') +
+        currentProduct.code.padStart(digitConfig.product, '0') +
+        weightValue.padStart(digitConfig.weight, '0');
+    
+    const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+    if (currentBarcodeData.length !== totalDigits) {
+        showNotification(`Pastikan semua field terisi. Total harus ${totalDigits} digit`, 'error');
+        return;
+    }
+    
+    const barcodeSvg = document.getElementById('barcode-svg');
+    barcodeSvg.innerHTML = '';
+    try {
+        JsBarcode("#barcode-svg", currentBarcodeData, {
+            format: "CODE128",
+            displayValue: true,
+            fontSize: 16,
+            height: 60,
+            margin: 10,
+            background: "white",
+            lineColor: "#000000",
+            width: 2
+        });
+        document.getElementById('display-barcode').textContent = currentBarcodeData;
+        document.getElementById('current-barcode').textContent = currentBarcodeData;
+        showNotification('Barcode berhasil digenerate!', 'success');
+    } catch (error) {
+        console.error("Barcode generation error:", error);
+        showNotification('Gagal membuat barcode: ' + error.message, 'error');
+    }
+}
+
+async function printBarcode() {
+    try {
+        if (!currentProduct || !weightValue) {
+            showNotification('Harap isi berat terlebih dahulu dan generate barcode', 'error');
+            return;
+        }
+        
+        if (!currentBarcodeData) {
+            showNotification('Generate barcode terlebih dahulu!', 'error');
+            return;
+        }
+        
+        if (!isPrinterConnected || !writer) {
+            showNotification('Printer belum terhubung. Klik CONNECT dulu.', 'error');
+            return;
+        }
+        
+        showNotification("Mengirim data ke printer...", 'info');
+        
+        const esc = '\x1B';
+        const gs = '\x1D';
+        const lf = '\x0A';
+        
+        let data = esc + '@';
+        
+        // Set alignment center
+        data += esc + 'a' + '\x01';
+        
+        // Baris kosong pertama
+        data += lf;
+        
+        if (printDesign === 1) {
+            // Desain 1: Baris kosong, Nilai barcode (tengah), Barcode (tengah), Baris kosong, Potong
+            
+            // Print barcode value (centered)
+            data += currentBarcodeData + '\n';
+            
+            // Print barcode
+            data += gs + 'h' + '\x50'; // Barcode height
+            data += gs + 'w' + '\x02'; // Barcode width
+            data += gs + 'k' + '\x49'; // CODE128 barcode
+            data += String.fromCharCode(currentBarcodeData.length);
+            data += currentBarcodeData;
+            data += lf;
+            
+            // Baris kosong di bawah
+            data += lf;
+            
+        } else if (printDesign === 2) {
+            // Desain 2: Baris kosong, Nama produk (tengah), Barcode (tengah), Nilai barcode (tengah), Nilai berat (tengah), Baris kosong, Potong
+            
+            // Print separator line
+            data += '-----------------------------\n';
+            
+            // Print product name (centered)
+            const productName = currentProduct.name;
+            data += productName + '\n';
+            
+            // Print barcode
+            data += gs + 'h' + '\x50'; // Barcode height
+            data += gs + 'w' + '\x02'; // Barcode width
+            data += gs + 'k' + '\x49'; // CODE128 barcode
+            data += String.fromCharCode(currentBarcodeData.length);
+            data += currentBarcodeData;
+            data += lf;
+            
+            // Print barcode value
+            data += currentBarcodeData + '\n';
+            
+            // Print weight value
+            data += weightValue + ' gram\n';
+            
+            // Print separator line
+            data += '-----------------------------\n';
+        }
+        
+        // Baris kosong terakhir dan cut
+        data += lf + lf;
+        data += gs + 'V' + '\x41' + '\x00';
+        
+        const encoder = new TextEncoder();
+        const encodedData = encoder.encode(data);
+        await writer.write(encodedData);
+        
+        await savePrintHistory(currentBarcodeData, currentProduct.name, weightValue);
+        showNotification('Barcode berhasil dicetak!', 'success');
+    } catch (error) {
+        console.error("Print error:", error);
+        showNotification("Gagal mengirim ke printer: " + error.message, 'error');
+        if (error.message.includes("closed") || error.message.includes("disconnected") || error.name === 'NetworkError') {
+            handlePrinterDisconnect();
+        }
+    }
+}
+
+// ==================== SETTINGS MODAL FUNCTIONS ====================
+function showSettingsModal() {
+    const settingsContent = document.getElementById('settings-content');
+    const uniqueCategories = categories.filter(c => c !== 'all');
+    const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
+    const isValid = totalDigits === 13;
+    
+    let categoryListHTML = '';
+    if (uniqueCategories.length > 0) {
+        uniqueCategories.forEach(cat => {
+            categoryListHTML += `
+                <div class="category-item">
+                    <span style="font-weight:500;display:flex;align-items:center;gap:8px;">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;color:#006B54;">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                            <path d="M10 2v20"/>
+                        </svg>
+                        ${cat}
+                    </span>
+                    <div class="category-actions">
+                        <button style="padding:5px 10px;border:none;border-radius:15px;background:#006B54;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid #006B54;"
+                            onclick="editCategoryHandler('${cat}')">
+                            ${icons.edit}
+                            Edit
+                        </button>
+                        <button style="padding:5px 10px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid #ff6b6b;"
+                            onclick="deleteCategoryHandler('${cat}')">
+                            ${icons.delete}
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        categoryListHTML = '<div style="text-align:center;color:#999;padding:10px;">Belum ada kategori</div>';
+    }
+    
+    settingsContent.innerHTML = `
+        <div style="margin-bottom:20px;">
+            <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+                Konfigurasi Digit Barcode
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
+                <div>
+                    <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Flex</div>
+                    <input type="number" class="setting-input" id="flex-digits" value="${digitConfig.flex}" min="1" max="5">
+                </div>
+                <div>
+                    <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Kategori</div>
+                    <input type="number" class="setting-input" id="category-digits" value="${digitConfig.category}" min="1" max="5">
+                </div>
+                <div>
+                    <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Produk</div>
+                    <input type="number" class="setting-input" id="product-digits" value="${digitConfig.product}" min="1" max="5">
+                </div>
+                <div>
+                    <div style="color:#333333;margin-bottom:5px;font-weight:500;">Digit Berat</div>
+                    <input type="number" class="setting-input" id="weight-digits" value="${digitConfig.weight}" min="1" max="5">
+                </div>
+            </div>
+            <div class="digit-summary" style="background:${isValid ? '#f5f5f5' : '#ffe6e6'};border-color:${isValid ? '#d9d9d9' : '#ffcccc'};">
+                <div style="font-weight:600;margin-bottom:5px;color:${isValid ? '#155724' : '#721c24'}">
+                    Total Digit: ${totalDigits}
+                </div>
+                <div style="font-size:0.9rem;color:${isValid ? '#155724' : '#721c24'}">
+                    ${isValid ? '✓ Format barcode valid (13 digit)' : '⚠ Harus tepat 13 digit!'}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    ${icons.preset}
+                </svg>
+                Preset Berat (gram)
+            </div>
+            <div class="preset-settings-grid">
+                <div class="preset-setting-item">
+                    <div class="preset-setting-label">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                            <rect x="3" y="3" width="7" height="7"/>
+                        </svg>
+                        Preset 1
+                    </div>
+                    <input type="number" class="preset-setting-input" id="weight-preset1" value="${weightPresets.preset1}" min="0" step="1">
+                </div>
+                <div class="preset-setting-item">
+                    <div class="preset-setting-label">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                            <rect x="14" y="3" width="7" height="7"/>
+                        </svg>
+                        Preset 2
+                    </div>
+                    <input type="number" class="preset-setting-input" id="weight-preset2" value="${weightPresets.preset2}" min="0" step="1">
+                </div>
+                <div class="preset-setting-item">
+                    <div class="preset-setting-label">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        Preset 3
+                    </div>
+                    <input type="number" class="preset-setting-input" id="weight-preset3" value="${weightPresets.preset3}" min="0" step="1">
+                </div>
+                <div class="preset-setting-item">
+                    <div class="preset-setting-label">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                        Preset 4
+                    </div>
+                    <input type="number" class="preset-setting-input" id="weight-preset4" value="${weightPresets.preset4}" min="0" step="1">
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <polyline points="6 9 6 2 18 2 18 9"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1-2 2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Desain Cetak Barcode
+            </div>
+            <div style="margin-bottom:15px;">
+                <div style="color:#333333;margin-bottom:5px;font-weight:500;">Pilih Desain Cetak</div>
+                <select class="setting-select" id="print-design-select">
+                    <option value="1" ${printDesign === 1 ? 'selected' : ''}>Desain 1: Nilai barcode + Barcode</option>
+                    <option value="2" ${printDesign === 2 ? 'selected' : ''}>Desain 2: Nama produk + Barcode + Nilai + Berat</option>
+                </select>
+            </div>
+            <div style="background:#f5f5f5;padding:15px;border-radius:15px;margin-top:10px;">
+                <div style="font-weight:600;margin-bottom:10px;color:#006B54;display:flex;align-items:center;gap:8px;">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    Preview Desain
+                </div>
+                <div id="design-preview" style="background:white;padding:15px;border-radius:10px;border:1px solid #d9d9d9;">
+                    ${printDesign === 1 ? 
+                        '<div style="text-align:center;color:#333333;">' +
+                        '<div style="margin-bottom:10px;font-weight:600;">Desain 1</div>' +
+                        '<div>-----------------------------</div>' +
+                        '<div style="margin:10px 0;">[nilai barcode]</div>' +
+                        '<div style="margin:10px 0;font-size:0.9em;">[barcode image]</div>' +
+                        '<div>-----------------------------</div>' +
+                        '</div>' 
+                        : 
+                        '<div style="text-align:center;color:#333333;">' +
+                        '<div style="margin-bottom:10px;font-weight:600;">Desain 2</div>' +
+                        '<div>-----------------------------</div>' +
+                        '<div style="margin:10px 0;">[nama produk]</div>' +
+                        '<div style="margin:10px 0;font-size:0.9em;">[barcode image]</div>' +
+                        '<div style="margin:10px 0;">[nilai barcode]</div>' +
+                        '<div style="margin:10px 0;">[berat] gram</div>' +
+                        '<div>-----------------------------</div>' +
+                        '</div>'
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                    <path d="M10 2v20"/>
+                </svg>
+                Manajemen Kategori
+            </div>
+            <div style="background:#f5f5f5;padding:15px;border-radius:15px;margin-bottom:10px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;">
+                    <input type="text" class="form-input" id="new-category-input-settings" placeholder="Nama kategori baru">
+                    <button style="padding:10px 15px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;border:1px solid #006B54;"
+                        onclick="addNewCategoryFromSettings()">
+                        ${icons.add}
+                        Tambah
+                    </button>
+                </div>
+                <div style="max-height:200px;overflow-y:auto;margin-top:10px;" id="categories-list">
+                    ${categoryListHTML}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Manajemen Data
+            </div>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;"
+                onclick="exportData()">
+                ${icons.upload}
+                Export Data Produk
+            </button>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;"
+                onclick="importData()">
+                ${icons.download}
+                Import Data Produk
+            </button>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #ff6b6b;"
+                onclick="clearAllData()">
+                ${icons.delete}
+                Hapus Semua Data
+            </button>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#dc3545;color:white;font-weight:600;margin-top:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dc3545;"
+                onclick="forceResetDatabase()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+                Force Reset Database
+            </button>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button class="form-button-secondary" onclick="closeSettingsModal()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                BATAL
+            </button>
+            <button class="form-button-primary" onclick="saveSettingsConfig()">
+                <svg class="icon icon-sm icon-white" viewBox="0 0 24 24">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                SIMPAN
+            </button>
+        </div>
+    `;
+    
+    // Add event listener for design selection
+    const designSelect = document.getElementById('print-design-select');
+    if (designSelect) {
+        designSelect.addEventListener('change', function() {
+            updateDesignPreview(this.value);
+        });
+    }
+    
+    const inputs = ['flex-digits', 'category-digits', 'product-digits', 'weight-digits'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateDigitSummary);
+    });
+    
+    document.getElementById('settings-modal').style.display = 'flex';
+}
+
+function updateDesignPreview(design) {
+    const preview = document.getElementById('design-preview');
+    if (!preview) return;
+    
+    if (design === '1') {
+        preview.innerHTML = `
+            <div style="text-align:center;color:#333333;">
+                <div style="margin-bottom:10px;font-weight:600;">Desain 1</div>
+                <div>-----------------------------</div>
+                <div style="margin:10px 0;">[nilai barcode]</div>
+                <div style="margin:10px 0;font-size:0.9em;">[barcode image]</div>
+                <div>-----------------------------</div>
+            </div>
+        `;
+    } else {
+        preview.innerHTML = `
+            <div style="text-align:center;color:#333333;">
+                <div style="margin-bottom:10px;font-weight:600;">Desain 2</div>
+                <div>-----------------------------</div>
+                <div style="margin:10px 0;">[nama produk]</div>
+                <div style="margin:10px 0;font-size:0.9em;">[barcode image]</div>
+                <div style="margin:10px 0;">[nilai barcode]</div>
+                <div style="margin:10px 0;">[berat] gram</div>
+                <div>-----------------------------</div>
+            </div>
+        `;
+    }
+}
+
+async function addNewCategoryFromSettings() {
+    const input = document.getElementById('new-category-input-settings');
+    const category = input.value.trim();
+    
+    if (!category) {
+        showNotification('Masukkan nama kategori!', 'error');
+        return;
+    }
+    
+    if (category === 'all') {
+        showNotification('Kategori "all" tidak dapat digunakan', 'error');
+        return;
+    }
+    
+    try {
+        await saveCategoryToDB(category);
+        await loadCategories();
+        renderCategoryDropdown();
+        renderCategories();
+        
+        input.value = '';
+        showNotification(`Kategori "${category}" ditambahkan!`, 'success');
+        showSettingsModal();
+    } catch (error) {
+        console.error('Error adding category:', error);
+        showNotification('Gagal menambahkan kategori: ' + error.message, 'error');
+    }
+}
+
+async function editCategoryHandler(oldCategory) {
+    if (oldCategory === 'all') return;
+    
+    const newCategory = prompt('Edit nama kategori:', oldCategory);
+    if (newCategory && newCategory.trim() && newCategory !== oldCategory) {
+        if (newCategory === 'all') {
+            showNotification('Kategori "all" tidak dapat digunakan', 'error');
+            return;
+        }
+        
+        try {
+            await updateCategoryInDB(oldCategory, newCategory);
+            
+            await loadProducts();
+            await loadCategories();
+            
+            if (selectedCategory === oldCategory) {
+                selectedCategory = newCategory;
+            }
+            
+            renderCategoryDropdown();
+            renderCategories();
+            renderProducts();
+            showNotification('Kategori berhasil diubah!', 'success');
+        } catch (error) {
+            console.error('Error updating category:', error);
+            showNotification('Gagal mengubah kategori: ' + error.message, 'error');
+        }
+    }
+}
+
+async function deleteCategoryHandler(category) {
+    if (category === 'all') return;
+    
+    if (!confirm(`Hapus kategori "${category}"?\nProduk dalam kategori ini akan dipindahkan ke kategori "Lainnya".`)) {
+        return;
+    }
+    
+    try {
+        await deleteCategoryFromDB(category);
+        
+        await loadProducts();
+        await loadCategories();
+        
+        if (selectedCategory === category) {
+            selectedCategory = 'all';
+        }
+        
+        renderCategoryDropdown();
+        renderCategories();
+        renderProducts();
+        showNotification('Kategori berhasil dihapus!', 'success');
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        showNotification('Gagal menghapus kategori: ' + error.message, 'error');
+    }
+}
+
+function updateDigitSummary() {
+    const flex = parseInt(document.getElementById('flex-digits').value) || 0;
+    const category = parseInt(document.getElementById('category-digits').value) || 0;
+    const product = parseInt(document.getElementById('product-digits').value) || 0;
+    const weight = parseInt(document.getElementById('weight-digits').value) || 0;
+    const total = flex + category + product + weight;
+    const isValid = total === 13;
+    
+    const summary = document.querySelector('.digit-summary');
+    if (summary) {
+        summary.innerHTML = `
+            <div style="font-weight:600;margin-bottom:5px;color:${isValid ? '#155724' : '#721c24'}">
+                Total Digit: ${total}
+            </div>
+            <div style="font-size:0.9rem;color:${isValid ? '#155724' : '#721c24'}">
+                ${isValid ? '✓ Format barcode valid (13 digit)' : '⚠ Harus tepat 13 digit!'}
+            </div>
+        `;
+        summary.style.background = isValid ? '#f5f5f5' : '#ffe6e6';
+        summary.style.borderColor = isValid ? '#d9d9d9' : '#ffcccc';
+    }
+}
+
+function closeSettingsModal() {
+    document.getElementById('settings-modal').style.display = 'none';
+}
+
+async function saveSettingsConfig() {
+    const flex = parseInt(document.getElementById('flex-digits').value) || 2;
+    const category = parseInt(document.getElementById('category-digits').value) || 2;
+    const product = parseInt(document.getElementById('product-digits').value) || 4;
+    const weight = parseInt(document.getElementById('weight-digits').value) || 5;
+    const design = parseInt(document.getElementById('print-design-select').value) || 1;
+    
+    // Get weight presets
+    const preset1 = parseInt(document.getElementById('weight-preset1').value) || 0;
+    const preset2 = parseInt(document.getElementById('weight-preset2').value) || 0;
+    const preset3 = parseInt(document.getElementById('weight-preset3').value) || 0;
+    const preset4 = parseInt(document.getElementById('weight-preset4').value) || 0;
+    
+    const total = flex + category + product + weight;
+    if (total !== 13) {
+        showNotification('Total digit harus 13!', 'error');
+        return;
+    }
+    
+    // Update global variables
+    digitConfig = { flex, category, product, weight };
+    printDesign = design;
+    weightPresets = {
+        preset1,
+        preset2,
+        preset3,
+        preset4
+    };
+    
+    try {
+        showLoading();
+        await saveSettings();
+        updateWeightPresetButtons();
+        showNotification('Pengaturan berhasil disimpan!', 'success');
+        closeSettingsModal();
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        showNotification('Gagal menyimpan pengaturan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ==================== LONG PRESS HANDLING ====================
+function initLongPressEvents() {
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchcancel', handleTouchEnd);
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
+}
+
+function handleTouchStart(e) {
+    const categoryTab = e.target.closest('.category-tab');
+    if (categoryTab && categoryTab.dataset.category !== 'all') {
+        longPressCategory = categoryTab.dataset.category;
+        const indicator = document.getElementById('long-press-indicator');
+        indicator.style.display = 'block';
+        indicator.style.left = e.touches[0].clientX + 'px';
+        indicator.style.top = e.touches[0].clientY + 'px';
+        
+        longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            showCategoryContextMenu(longPressCategory, e.touches[0].clientX, e.touches[0].clientY);
+            indicator.style.display = 'none';
+        }, 800);
+        e.preventDefault();
+    }
+}
+
+function handleTouchEnd() {
+    clearTimeout(longPressTimer);
+    document.getElementById('long-press-indicator').style.display = 'none';
+}
+
+function handleMouseDown(e) {
+    if (e.button !== 0) return;
+    const categoryTab = e.target.closest('.category-tab');
+    if (categoryTab && categoryTab.dataset.category !== 'all') {
+        longPressCategory = categoryTab.dataset.category;
+        const indicator = document.getElementById('long-press-indicator');
+        indicator.style.display = 'block';
+        indicator.style.left = e.clientX + 'px';
+        indicator.style.top = e.clientY + 'px';
+        
+        longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            showCategoryContextMenu(longPressCategory, e.clientX, e.clientY);
+            indicator.style.display = 'none';
+        }, 800);
+    }
+}
+
+function handleMouseUp() {
+    clearTimeout(longPressTimer);
+    document.getElementById('long-press-indicator').style.display = 'none';
+}
+
+function showCategoryContextMenu(category, x, y) {
+    const menu = document.getElementById('category-context-menu');
+    menu.innerHTML = '';
+    
+    const editItem = document.createElement('div');
+    editItem.className = 'context-menu-item edit';
+    editItem.innerHTML = `
+        ${icons.edit}
+        Edit Kategori
+    `;
+    editItem.onclick = () => {
+        editCategoryHandler(category);
+        menu.style.display = 'none';
+    };
+    
+    const deleteItem = document.createElement('div');
+    deleteItem.className = 'context-menu-item delete';
+    deleteItem.innerHTML = `
+        ${icons.delete}
+        Hapus Kategori
+    `;
+    deleteItem.onclick = () => {
+        deleteCategoryHandler(category);
+        menu.style.display = 'none';
+    };
+    
+    menu.appendChild(editItem);
+    menu.appendChild(deleteItem);
+    
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
+    
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target)) {
+                menu.style.display = 'none';
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 100);
+}
+
+// ==================== NOTIFICATION SYSTEM ====================
+function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.style.background = type === 'error' ? '#ff6b6b' :
+                                  type === 'warning' ? '#ffc107' :
+                                  type === 'info' ? '#17a2b8' :
+                                  '#006B54';
+    notification.style.display = 'block';
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
+// ==================== EVENT LISTENERS ====================
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM fully loaded, initializing app...');
+    await initApp();
+});
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal-overlay')) {
+        event.target.style.display = 'none';
+        if (event.target.id === 'weight-modal') {
+            currentProduct = null;
+            weightValue = '';
+            document.querySelectorAll('.product-card.selected').forEach(c => {
+                c.classList.remove('selected');
+            });
+        } else if (event.target.id === 'product-modal') {
+            resetProductForm();
+        }
+    }
+};
+
+window.addEventListener('resize', function() {
+    if (window.innerWidth <= 768) {
+        showCategoryDropdownMobile();
+    } else {
+        showCategoryTabs();
+        document.querySelector('.category-switcher').style.display = 'flex';
+        document.querySelector('.category-dropdown-container').style.display = 'none';
+    }
+});
+
+// Handle page visibility changes for data refresh
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        console.log('Page became visible, refreshing data...');
+        refreshData();
+    }
+});
+
+async function refreshData() {
+    try {
+        showLoading();
+        await loadProducts();
+        await loadCategories();
+        renderCategories();
+        renderProducts();
+        console.log('Data refreshed successfully');
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+    } finally {
+        hideLoading();
+    }
+}
