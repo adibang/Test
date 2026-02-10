@@ -1465,348 +1465,6 @@ input::placeholder, textarea::placeholder {
     opacity: 0.6;
     cursor: not-allowed;
 }
-
-/* ==================== CATEGORY MANAGEMENT MODAL ==================== */
-.category-management-modal .modal-content {
-    max-width: 800px;
-    max-height: 80vh;
-}
-
-.category-management-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.category-management-title {
-    font-size: 1.2rem;
-    color: #006B54;
-    font-weight: 600;
-}
-
-.category-management-actions {
-    display: flex;
-    gap: 10px;
-}
-
-/* View Mode Toggle */
-.view-mode-toggle {
-    display: flex;
-    background: #f5f5f5;
-    border-radius: 15px;
-    overflow: hidden;
-    margin-bottom: 20px;
-}
-
-.view-mode-toggle button {
-    flex: 1;
-    padding: 10px 15px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-weight: 600;
-    color: #666666;
-    transition: all 0.2s;
-}
-
-.view-mode-toggle button.active {
-    background: #006B54;
-    color: white;
-}
-
-/* Category Grid/List */
-.category-grid-view {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.category-list-view {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.category-item-grid {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    border: 1px solid #e9ecef;
-    transition: all 0.2s;
-}
-
-.category-item-grid:hover {
-    border-color: #006B54;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-}
-
-.category-item-list {
-    display: flex;
-    align-items: center;
-    background: white;
-    border-radius: 15px;
-    padding: 12px 15px;
-    border: 1px solid #e9ecef;
-    transition: all 0.2s;
-}
-
-.category-item-list:hover {
-    border-color: #006B54;
-}
-
-.category-image-container {
-    width: 100px;
-    height: 100px;
-    background: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.category-item-grid .category-image-container {
-    width: 100%;
-    height: 120px;
-}
-
-.category-item-list .category-image-container {
-    width: 60px;
-    height: 60px;
-    margin-right: 15px;
-    flex-shrink: 0;
-}
-
-.category-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.category-info {
-    padding: 15px;
-    flex-grow: 1;
-}
-
-.category-item-list .category-info {
-    padding: 0;
-    flex-grow: 1;
-}
-
-.category-name {
-    font-weight: 600;
-    color: #333333;
-    margin-bottom: 5px;
-    font-size: 0.95rem;
-}
-
-.category-product-count {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-
-.category-actions {
-    display: flex;
-    gap: 8px;
-    padding: 10px 15px;
-    border-top: 1px solid #e9ecef;
-}
-
-.category-item-list .category-actions {
-    border-top: none;
-    padding: 0;
-    flex-shrink: 0;
-}
-
-.category-action-btn {
-    flex: 1;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    transition: all 0.2s;
-}
-
-.category-edit-btn {
-    background: #f0f9f6;
-    color: #006B54;
-    border: 1px solid #006B54;
-}
-
-.category-edit-btn:hover {
-    background: #006B54;
-    color: white;
-}
-
-.category-delete-btn {
-    background: #fff5f5;
-    color: #ff6b6b;
-    border: 1px solid #ff6b6b;
-}
-
-.category-delete-btn:hover {
-    background: #ff6b6b;
-    color: white;
-}
-
-/* Category Form */
-.category-form-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.category-form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.category-form-label {
-    font-weight: 500;
-    color: #333333;
-    font-size: 0.95rem;
-}
-
-.category-form-input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #333333;
-    border-radius: 15px;
-    font-size: 1rem;
-    background: #FFFFFF !important;
-}
-
-.category-form-input:focus {
-    outline: none;
-    border-color: #006B54;
-    box-shadow: 0 0 0 3px rgba(0, 107, 84, 0.1);
-}
-
-.category-image-upload {
-    border: 2px dashed #d9d9d9;
-    border-radius: 15px;
-    padding: 30px;
-    text-align: center;
-    cursor: pointer;
-    background: #f5f5f5;
-    transition: all 0.2s;
-}
-
-.category-image-upload:hover {
-    border-color: #006B54;
-    background: #f0f9f6;
-}
-
-.category-image-preview {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 10px;
-    object-fit: cover;
-}
-
-.category-form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-/* Manage Category Button in Product Form */
-.category-select-container {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.category-select-container select {
-    flex: 1;
-}
-
-.manage-category-btn {
-    padding: 12px 16px;
-    border: 2px solid #006B54;
-    background: #006B54;
-    color: white;
-    border-radius: 15px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.manage-category-btn:hover {
-    background: #005a46;
-    border-color: #005a46;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .category-management-modal .modal-content {
-        max-width: 95%;
-        max-height: 85vh;
-    }
-    
-    .category-grid-view {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 10px;
-    }
-    
-    .category-item-list {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 15px;
-    }
-    
-    .category-item-list .category-image-container {
-        width: 100%;
-        height: 80px;
-        margin-right: 0;
-        margin-bottom: 10px;
-    }
-    
-    .category-item-list .category-actions {
-        width: 100%;
-        margin-top: 10px;
-    }
-    
-    .category-select-container {
-        flex-direction: column;
-    }
-    
-    .manage-category-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .category-grid-view {
-        grid-template-columns: 1fr;
-    }
-    
-    .category-form-actions {
-        flex-direction: column;
-    }
-    
-    .category-form-actions button {
-        width: 100%;
-    }
-}
 </style>
 </head>
 <body>
@@ -2089,25 +1747,6 @@ input::placeholder, textarea::placeholder {
     </div>
 </div>
 
-<!-- ==================== CATEGORY MANAGEMENT MODAL ==================== -->
-<div class="modal-overlay" id="category-management-modal">
-    <div class="modal-content category-management-modal">
-        <div class="modal-header">
-            <h2 class="modal-title">
-                <svg class="icon icon-primary" viewBox="0 0 24 24">
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-                    <path d="M10 2v20"/>
-                </svg>
-                Manajemen Kategori
-            </h2>
-            <button class="category-modal-close" onclick="closeCategoryManagementModal()">×</button>
-        </div>
-        <div class="modal-body" id="category-management-body">
-            <!-- Konten akan dimuat secara dinamis -->
-        </div>
-    </div>
-</div>
-
 <!-- ==================== CATEGORY CONTEXT MENU ==================== -->
 <div id="category-context-menu" class="category-context-menu" style="display:none;"></div>
 
@@ -2120,7 +1759,7 @@ input::placeholder, textarea::placeholder {
 <script>
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSBarcodeDB';
-const DB_VERSION = 6;
+const DB_VERSION = 5;
 
 // Object store names
 const STORES = {
@@ -2153,10 +1792,6 @@ let longPressCategory = null;
 let isLongPress = false;
 let isFirstLoad = true;
 let categoryViewMode = 'tabs'; // 'tabs' or 'dropdown'
-
-// Category management variables
-let currentCategoryView = 'grid'; // 'grid' or 'list'
-let editingCategoryData = null;
 
 // Weight presets
 let weightPresets = {
@@ -2230,7 +1865,6 @@ function hideError() {
 }
 
 // ==================== DATABASE FUNCTIONS ====================
-
 async function initDatabase() {
     return new Promise((resolve, reject) => {
         // Check if browser supports IndexedDB
@@ -2279,7 +1913,6 @@ async function initDatabase() {
         request.onupgradeneeded = (event) => {
             console.log('Upgrading database from version', event.oldVersion, 'to', event.newVersion);
             const db = event.target.result;
-            const transaction = event.target.transaction;
             
             // Create object stores if they don't exist
             if (!db.objectStoreNames.contains(STORES.PRODUCTS)) {
@@ -2299,23 +1932,6 @@ async function initDatabase() {
                     autoIncrement: true 
                 });
                 categoryStore.createIndex('name', 'name', { unique: true });
-            } else if (event.oldVersion < 6) {
-                // Migrate existing categories to add image field
-                console.log('Migrating categories for version 6...');
-                const categoryStore = transaction.objectStore(STORES.CATEGORIES);
-                const getAllRequest = categoryStore.getAll();
-                
-                getAllRequest.onsuccess = () => {
-                    const categories = getAllRequest.result;
-                    categories.forEach(category => {
-                        if (!category.image) {
-                            category.image = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3C/svg%3E";
-                            category.updatedAt = new Date().toISOString();
-                            categoryStore.put(category);
-                        }
-                    });
-                    console.log('Categories migration completed');
-                };
             }
             
             if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
@@ -2341,12 +1957,13 @@ async function initDatabase() {
                 });
             }
             
-            transaction.oncomplete = () => {
+            event.target.transaction.oncomplete = () => {
                 console.log('Database upgrade completed');
             };
         };
     });
 }
+
 async function dbGetAll(storeName) {
     return new Promise((resolve, reject) => {
         if (!db) {
@@ -2722,66 +2339,52 @@ async function addDummyProducts() {
     }
 }
 
-
 async function loadCategories() {
     try {
         console.log('Loading categories...');
         const dbCategories = await dbGetAll(STORES.CATEGORIES);
         
-        // Ensure "all" and "Lainnya" categories exist with proper structure
-        const essentialCategories = [
-            { name: 'all', image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3C/svg%3E" },
-            { name: 'Lainnya', image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3C/svg%3E" }
-        ];
-        
-        for (const essentialCat of essentialCategories) {
-            const exists = dbCategories.some(cat => cat.name === essentialCat.name);
-            if (!exists) {
-                await dbAdd(STORES.CATEGORIES, {
-                    name: essentialCat.name,
-                    image: essentialCat.image,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                });
-                console.log('Added essential category:', essentialCat.name);
-            } else {
-                // Update existing essential categories with image if missing
-                const existingCat = dbCategories.find(cat => cat.name === essentialCat.name);
-                if (!existingCat.image) {
-                    existingCat.image = essentialCat.image;
-                    existingCat.updatedAt = new Date().toISOString();
-                    await dbPut(STORES.CATEGORIES, existingCat);
-                    console.log('Updated essential category with image:', essentialCat.name);
+        if (dbCategories.length === 0) {
+            console.log('No categories found, creating from products...');
+            
+            // Get unique categories from products
+            const uniqueCategories = [...new Set(products
+                .map(p => p.category)
+                .filter(category => category && category.trim() !== '')
+            )];
+            
+            console.log(`Found ${uniqueCategories.length} unique categories in products`);
+            
+            // Add each category to database
+            for (const categoryName of uniqueCategories) {
+                try {
+                    await dbAdd(STORES.CATEGORIES, {
+                        name: categoryName,
+                        createdAt: new Date().toISOString()
+                    });
+                    console.log('Added category:', categoryName);
+                } catch (error) {
+                    // Ignore duplicate errors
+                    if (error.message.includes('ConstraintError') || error.message.includes('key yang sama')) {
+                        console.log('Category already exists:', categoryName);
+                    } else {
+                        console.warn('Failed to add category:', categoryName, error);
+                    }
                 }
             }
+            
+            categories = ['all', ...uniqueCategories];
+        } else {
+            // Get category names from database
+            const categoryNames = dbCategories.map(c => c.name);
+            categories = ['all', ...categoryNames];
         }
-        
-        // Reload categories
-        const updatedCategories = await dbGetAll(STORES.CATEGORIES);
-        
-        // Ensure all categories have image field
-        for (const category of updatedCategories) {
-            if (!category.image) {
-                category.image = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3C/svg%3E";
-                category.updatedAt = new Date().toISOString();
-                await dbPut(STORES.CATEGORIES, category);
-            }
-        }
-        
-        // Final reload
-        const finalCategories = await dbGetAll(STORES.CATEGORIES);
-        const categoryNames = finalCategories.map(c => c.name);
-        
-        // Sort categories: 'all' first, then 'Lainnya', then others alphabetically
-        categories = ['all', 'Lainnya', ...categoryNames
-            .filter(name => !['all', 'Lainnya'].includes(name))
-            .sort()];
         
         console.log(`Loaded ${categories.length} categories`);
         
     } catch (error) {
         console.error('Error loading categories:', error);
-        categories = ['all', 'Lainnya'];
+        categories = ['all'];
         throw error;
     }
 }
@@ -3086,7 +2689,6 @@ async function importData() {
                     renderCategoryDropdown();
                     renderCategories();
                     renderProducts();
-                    updateCategoryDropdown();
                     
                     showNotification('Data berhasil diimport!', 'success');
                     resolve(true);
@@ -3123,13 +2725,12 @@ async function clearAllData() {
             await dbClear(STORES.APP_STATE);
             
             products = [];
-            categories = ['all', 'Lainnya'];
+            categories = ['all'];
             selectedCategory = 'all';
             
             renderCategoryDropdown();
             renderCategories();
             renderProducts();
-            updateCategoryDropdown();
             
             showNotification('Semua data berhasil dihapus!', 'success');
         } catch (error) {
@@ -3176,474 +2777,6 @@ async function forceResetDatabase() {
             showNotification('Error: ' + error.message, 'error');
             hideLoading();
         }
-    }
-}
-
-// ==================== CATEGORY MANAGEMENT FUNCTIONS ====================
-function showCategoryManagementModal(source = null) {
-    currentCategoryView = localStorage.getItem('categoryViewMode') || 'grid';
-    editingCategoryData = null;
-    renderCategoryManagementList();
-    document.getElementById('category-management-modal').style.display = 'flex';
-}
-
-function closeCategoryManagementModal() {
-    document.getElementById('category-management-modal').style.display = 'none';
-    editingCategoryData = null;
-    
-    // Update category dropdown in product form
-    updateCategoryDropdown();
-}
-
-async function renderCategoryManagementList() {
-    const body = document.getElementById('category-management-body');
-    if (!body) return;
-    
-    // Get categories from database (exclude 'all')
-    const dbCategories = await dbGetAll(STORES.CATEGORIES);
-    const filteredCategories = dbCategories.filter(cat => cat.name !== 'all' && cat.name !== 'Lainnya');
-    
-    // Count products per category
-    const categoryCounts = {};
-    products.forEach(product => {
-        if (product.category) {
-            categoryCounts[product.category] = (categoryCounts[product.category] || 0) + 1;
-        }
-    });
-    
-    // Get Lainnya category
-    const lainnyaCategory = dbCategories.find(cat => cat.name === 'Lainnya');
-    
-    body.innerHTML = `
-        <div style="margin-bottom:20px;">
-            <div class="view-mode-toggle">
-                <button class="${currentCategoryView === 'list' ? 'active' : ''}" onclick="switchCategoryView('list')">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24">
-                        <line x1="8" y1="6" x2="21" y2="6"/>
-                        <line x1="8" y1="12" x2="21" y2="12"/>
-                        <line x1="8" y1="18" x2="21" y2="18"/>
-                        <line x1="3" y1="6" x2="3.01" y2="6"/>
-                        <line x1="3" y1="12" x2="3.01" y2="12"/>
-                        <line x1="3" y1="18" x2="3.01" y2="18"/>
-                    </svg>
-                    List
-                </button>
-                <button class="${currentCategoryView === 'grid' ? 'active' : ''}" onclick="switchCategoryView('grid')">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24">
-                        <rect x="3" y="3" width="7" height="7"/>
-                        <rect x="14" y="3" width="7" height="7"/>
-                        <rect x="3" y="14" width="7" height="7"/>
-                        <rect x="14" y="14" width="7" height="7"/>
-                    </svg>
-                    Grid
-                </button>
-            </div>
-            
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                <h3 style="color:#333333;font-weight:600;font-size:1.1rem;">Daftar Kategori</h3>
-                <button class="form-button-primary" onclick="showCategoryForm()" style="padding:10px 15px;display:flex;align-items:center;gap:6px;">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="16"/>
-                        <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                    Tambah Kategori Baru
-                </button>
-            </div>
-        </div>
-        
-        ${lainnyaCategory ? `
-            <div style="margin-bottom:20px;">
-                <h4 style="color:#333333;font-weight:600;font-size:1rem;margin-bottom:10px;">Kategori Sistem</h4>
-                <div class="category-item-list" style="background:#f8f9fa;">
-                    <div class="category-image-container">
-                        <img src="${lainnyaCategory.image || 'data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 300\"%3E%3Crect width=\"300\" height=\"300\" fill=\"%23f5f5f5\"/%3E%3C/svg%3E'}" 
-                             alt="Lainnya" 
-                             class="category-image">
-                    </div>
-                    <div class="category-info">
-                        <div class="category-name">Lainnya</div>
-                        <div class="category-product-count">${categoryCounts['Lainnya'] || 0} produk</div>
-                    </div>
-                    <div class="category-actions">
-                        <div style="padding:8px 12px;color:#666;font-size:0.9rem;">
-                            Kategori Sistem
-                        </div>
-                    </div>
-                </div>
-            </div>
-        ` : ''}
-        
-        <div class="${currentCategoryView === 'grid' ? 'category-grid-view' : 'category-list-view'}" id="categories-container">
-            ${filteredCategories.map(category => {
-                const productCount = categoryCounts[category.name] || 0;
-                
-                return currentCategoryView === 'grid' ? `
-                    <div class="category-item-grid">
-                        <div class="category-image-container">
-                            <img src="${category.image || 'data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 300\"%3E%3Crect width=\"300\" height=\"300\" fill=\"%23f5f5f5\"/%3E%3C/svg%3E'}" 
-                                 alt="${category.name}" 
-                                 class="category-image">
-                        </div>
-                        <div class="category-info">
-                            <div class="category-name">${category.name}</div>
-                            <div class="category-product-count">${productCount} produk</div>
-                        </div>
-                        <div class="category-actions">
-                            <button class="category-action-btn category-edit-btn" onclick="editCategory('${category.name}')">
-                                ${icons.edit}
-                                Edit
-                            </button>
-                            <button class="category-action-btn category-delete-btn" onclick="deleteCategoryHandler('${category.name}')">
-                                ${icons.delete}
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-                ` : `
-                    <div class="category-item-list">
-                        <div class="category-image-container">
-                            <img src="${category.image || 'data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 300\"%3E%3Crect width=\"300\" height=\"300\" fill=\"%23f5f5f5\"/%3E%3C/svg%3E'}" 
-                                 alt="${category.name}" 
-                                 class="category-image">
-                        </div>
-                        <div class="category-info">
-                            <div class="category-name">${category.name}</div>
-                            <div class="category-product-count">${productCount} produk</div>
-                        </div>
-                        <div class="category-actions">
-                            <button class="category-action-btn category-edit-btn" onclick="editCategory('${category.name}')">
-                                ${icons.edit}
-                                Edit
-                            </button>
-                            <button class="category-action-btn category-delete-btn" onclick="deleteCategoryHandler('${category.name}')">
-                                ${icons.delete}
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-        
-        ${filteredCategories.length === 0 ? `
-            <div style="text-align:center;padding:40px 20px;color:#999;">
-                <svg class="icon" viewBox="0 0 24 24" style="width:60px;height:60px;color:#d9d9d9;margin-bottom:20px;">
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-                    <path d="M10 2v20"/>
-                </svg>
-                <h3 style="color:#666;margin-bottom:10px;">Belum ada kategori</h3>
-                <p>Tambahkan kategori baru dengan mengklik tombol "Tambah Kategori Baru"</p>
-            </div>
-        ` : ''}
-    `;
-}
-
-function switchCategoryView(view) {
-    currentCategoryView = view;
-    localStorage.setItem('categoryViewMode', view);
-    renderCategoryManagementList();
-}
-
-function showCategoryForm(categoryData = null) {
-    const body = document.getElementById('category-management-body');
-    editingCategoryData = categoryData;
-    
-    body.innerHTML = `
-        <div class="category-form-container">
-            <h3 style="color:#333333;font-weight:600;font-size:1.1rem;margin-bottom:20px;">
-                ${categoryData ? 'Edit Kategori' : 'Tambah Kategori Baru'}
-            </h3>
-            
-            <div class="category-form-group">
-                <label class="category-form-label">Nama Kategori *</label>
-                <input type="text" class="category-form-input" id="category-name-input" 
-                       value="${categoryData ? categoryData.name : ''}" 
-                       placeholder="Masukkan nama kategori" required>
-            </div>
-            
-            <div class="category-form-group">
-                <label class="category-form-label">Gambar Kategori (opsional)</label>
-                <div class="category-image-upload" onclick="document.getElementById('category-image-input').click()">
-                    <div id="category-image-preview">
-                        ${categoryData && categoryData.image ? 
-                            `<img src="${categoryData.image}" class="category-image-preview">` :
-                            `<div style="color:#666;">
-                                <div style="margin-bottom:5px;">
-                                    <svg class="icon" viewBox="0 0 24 24" style="width:40px;height:40px;color:#006B54;">
-                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                        <circle cx="12" cy="13" r="4"/>
-                                    </svg>
-                                </div>
-                                <div>Klik untuk upload gambar</div>
-                                <div style="font-size:12px;margin-top:5px;color:#999;">Rekomendasi: 300x300px</div>
-                            </div>`
-                        }
-                    </div>
-                </div>
-                <input type="file" id="category-image-input" accept="image/*" style="display:none">
-            </div>
-            
-            <div class="category-form-actions">
-                <button class="form-button-secondary" onclick="renderCategoryManagementList()">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                    BATAL
-                </button>
-                <button class="form-button-primary" onclick="saveCategoryHandler()">
-                    <svg class="icon icon-sm icon-white" viewBox="0 0 24 24">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                        <polyline points="17 21 17 13 7 13 7 21"/>
-                        <polyline points="7 3 7 8 15 8"/>
-                    </svg>
-                    SIMPAN
-                </button>
-            </div>
-        </div>
-    `;
-
-    // Setup image upload
-    const imageInput = document.getElementById('category-image-input');
-    const imagePreview = document.getElementById('category-image-preview');
-    
-    if (imageInput) {
-        imageInput.onchange = function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            if (!file.type.match('image.*')) {
-                showNotification('File harus gambar!', 'error');
-                return;
-            }
-            
-            if (file.size > 2 * 1024 * 1024) {
-                showNotification('Maksimal 2MB!', 'error');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                imagePreview.innerHTML = `<img src="${event.target.result}" class="category-image-preview">`;
-            };
-            reader.readAsDataURL(file);
-        };
-    }
-}
-
-async function editCategory(categoryName) {
-    try {
-        const dbCategories = await dbGetAll(STORES.CATEGORIES);
-        const category = dbCategories.find(cat => cat.name === categoryName);
-        if (category) {
-            showCategoryForm(category);
-        } else {
-            showNotification('Kategori tidak ditemukan', 'error');
-        }
-    } catch (error) {
-        console.error('Error loading category:', error);
-        showNotification('Gagal memuat kategori', 'error');
-    }
-}
-
-async function saveCategoryHandler() {
-    const nameInput = document.getElementById('category-name-input');
-    const categoryName = nameInput.value.trim();
-    
-    if (!categoryName) {
-        showNotification('Nama kategori harus diisi!', 'error');
-        return;
-    }
-    
-    // Validate category name
-    if (categoryName === 'all' || categoryName === 'Lainnya') {
-        showNotification(`Kategori "${categoryName}" tidak dapat digunakan`, 'error');
-        return;
-    }
-    
-    // Get image data
-    const imagePreview = document.querySelector('#category-image-preview img');
-    let imageData = '';
-    if (imagePreview && imagePreview.src) {
-        imageData = imagePreview.src;
-    } else if (editingCategoryData && editingCategoryData.image) {
-        imageData = editingCategoryData.image;
-    } else {
-        imageData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f5f5f5'/%3E%3C/svg%3E";
-    }
-    
-    try {
-        const dbCategories = await dbGetAll(STORES.CATEGORIES);
-        
-        if (editingCategoryData) {
-            // Update existing category
-            const existingCategory = dbCategories.find(cat => cat.name === editingCategoryData.name);
-            if (!existingCategory) {
-                showNotification('Kategori tidak ditemukan', 'error');
-                return;
-            }
-            
-            // Check if new name already exists (if name changed)
-            if (categoryName !== editingCategoryData.name) {
-                const nameExists = dbCategories.some(cat => cat.name === categoryName);
-                if (nameExists) {
-                    showNotification(`Kategori "${categoryName}" sudah ada!`, 'error');
-                    return;
-                }
-            }
-            
-            // Update category
-            existingCategory.name = categoryName;
-            existingCategory.image = imageData;
-            existingCategory.updatedAt = new Date().toISOString();
-            
-            await dbPut(STORES.CATEGORIES, existingCategory);
-            
-            // Update products with old category name
-            const productsToUpdate = products.filter(p => p.category === editingCategoryData.name);
-            for (const product of productsToUpdate) {
-                product.category = categoryName;
-                product.updatedAt = new Date().toISOString();
-                await dbPut(STORES.PRODUCTS, product);
-            }
-            
-            // Reload products if any were updated
-            if (productsToUpdate.length > 0) {
-                await loadProducts();
-            }
-            
-            showNotification(`Kategori "${editingCategoryData.name}" berhasil diubah menjadi "${categoryName}"!`, 'success');
-        } else {
-            // Add new category
-            const nameExists = dbCategories.some(cat => cat.name === categoryName);
-            if (nameExists) {
-                showNotification(`Kategori "${categoryName}" sudah ada!`, 'error');
-                return;
-            }
-            
-            const newCategory = {
-                name: categoryName,
-                image: imageData,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            
-            await dbAdd(STORES.CATEGORIES, newCategory);
-            showNotification(`Kategori "${categoryName}" berhasil ditambahkan!`, 'success');
-        }
-        
-        // Refresh data and UI
-        await loadCategories();
-        renderCategoryManagementList();
-        renderCategoryDropdown();
-        renderCategories();
-        renderProducts();
-        updateCategoryDropdown();
-        
-    } catch (error) {
-        console.error('Error saving category:', error);
-        showNotification('Gagal menyimpan kategori: ' + error.message, 'error');
-    }
-}
-
-async function deleteCategoryHandler(categoryName) {
-    if (categoryName === 'all' || categoryName === 'Lainnya') {
-        showNotification('Kategori ini tidak dapat dihapus!', 'error');
-        return;
-    }
-    
-    // Count products in this category
-    const productCount = products.filter(p => p.category === categoryName).length;
-    
-    let confirmMessage = `Hapus kategori "${categoryName}"?`;
-    if (productCount > 0) {
-        confirmMessage += `\n${productCount} produk dalam kategori ini akan dipindahkan ke kategori "Lainnya".`;
-    }
-    
-    if (!confirm(confirmMessage)) {
-        return;
-    }
-    
-    try {
-        // Get category from database
-        const dbCategories = await dbGetAll(STORES.CATEGORIES);
-        const categoryToDelete = dbCategories.find(cat => cat.name === categoryName);
-        
-        if (!categoryToDelete) {
-            showNotification('Kategori tidak ditemukan', 'error');
-            return;
-        }
-        
-        // Delete category from database
-        await dbDelete(STORES.CATEGORIES, categoryToDelete.id);
-        
-        // Move products to "Lainnya" category
-        if (productCount > 0) {
-            const productsToUpdate = products.filter(p => p.category === categoryName);
-            for (const product of productsToUpdate) {
-                product.category = "Lainnya";
-                product.updatedAt = new Date().toISOString();
-                await dbPut(STORES.PRODUCTS, product);
-            }
-            
-            // Ensure "Lainnya" category exists
-            const lainnyaExists = dbCategories.some(cat => cat.name === "Lainnya");
-            if (!lainnyaExists) {
-                await dbAdd(STORES.CATEGORIES, {
-                    name: "Lainnya",
-                    createdAt: new Date().toISOString()
-                });
-            }
-        }
-        
-        // Reload data
-        await loadProducts();
-        await loadCategories();
-        
-        // Update UI
-        if (selectedCategory === categoryName) {
-            selectedCategory = 'all';
-        }
-        
-        renderCategoryManagementList();
-        renderCategoryDropdown();
-        renderCategories();
-        renderProducts();
-        updateCategoryDropdown();
-        
-        showNotification('Kategori berhasil dihapus!', 'success');
-    } catch (error) {
-        console.error('Error deleting category:', error);
-        showNotification('Gagal menghapus kategori: ' + error.message, 'error');
-    }
-}
-
-function updateCategoryDropdown() {
-    const select = document.getElementById('product-category-select');
-    if (!select) return;
-    
-    // Save current value
-    const currentValue = select.value;
-    
-    // Clear options except first one
-    while (select.options.length > 1) {
-        select.remove(1);
-    }
-    
-    // Add categories (exclude 'all')
-    categories.forEach(category => {
-        if (category !== 'all') {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
-            select.appendChild(option);
-        }
-    });
-    
-    // Restore previous value if still valid
-    if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
-        select.value = currentValue;
     }
 }
 
@@ -3718,9 +2851,6 @@ async function initApp() {
         initLongPressEvents();
         setupSearch();
         setupCategoryViewMode();
-        
-        // Initialize category dropdown
-        updateCategoryDropdown();
         
         console.log('App initialized successfully');
         isFirstLoad = false;
@@ -4185,8 +3315,6 @@ function showProductModal(product = null) {
         return `<option value="${cat}" ${selected}>${cat}</option>`;
     }).join('');
     
-    categoryOptions = `<option value="">-- Pilih Kategori --</option>` + categoryOptions;
-    
     const formContent = document.getElementById('product-form-content');
     formContent.innerHTML = `
         <div style="margin-bottom:15px;">
@@ -4249,17 +3377,15 @@ function showProductModal(product = null) {
                 </svg>
                 Kategori
             </div>
-            <div class="category-select-container">
-                <select class="form-input" id="product-category-select" style="padding-right:40px;">
+            <div style="display:flex;gap:10px;">
+                <select class="form-input" id="product-category-select" onchange="handleCategorySelect()" style="padding-right:40px;">
+                    <option value="">-- Pilih Kategori --</option>
                     ${categoryOptions}
+                    <option value="_new">${icons.add} Tambah Kategori Baru</option>
                 </select>
-                <button class="manage-category-btn" onclick="showCategoryManagementModal('product-form')">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24">
-                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-                        <path d="M10 2v20"/>
-                    </svg>
-                    Kelola Kategori
-                </button>
+            </div>
+            <div id="new-category-input" style="margin-top:10px;display:none;">
+                <input type="text" class="form-input" id="product-category-new" placeholder="Nama kategori baru">
             </div>
         </div>
         
@@ -4394,11 +3520,29 @@ function checkDuplicateCode() {
     }
 }
 
+function handleCategorySelect() {
+    const select = document.getElementById('product-category-select');
+    const newCategoryDiv = document.getElementById('new-category-input');
+    
+    if (select.value === '_new') {
+        newCategoryDiv.style.display = 'block';
+        if (document.getElementById('product-category-new')) {
+            document.getElementById('product-category-new').focus();
+        }
+    } else {
+        newCategoryDiv.style.display = 'none';
+    }
+}
+
 async function saveProductHandler() {
     const name = document.getElementById('product-name-input')?.value.trim();
     const code = document.getElementById('product-code-input')?.value.trim();
     const categorySelect = document.getElementById('product-category-select');
     let category = categorySelect?.value;
+    
+    if (category === '_new') {
+        category = document.getElementById('product-category-new')?.value.trim();
+    }
     
     const flex = document.getElementById('product-flex-input')?.value.trim();
     const catcode = document.getElementById('product-catcode-input')?.value.trim();
@@ -4499,7 +3643,6 @@ async function saveProductHandler() {
         renderCategoryDropdown();
         renderCategories();
         renderProducts();
-        updateCategoryDropdown();
         
         showNotification(editingProductId ? 'Produk diperbarui!' : 'Produk ditambahkan!', 'success');
         closeProductModal();
@@ -4951,9 +4094,40 @@ async function printBarcode() {
 // ==================== SETTINGS MODAL FUNCTIONS ====================
 function showSettingsModal() {
     const settingsContent = document.getElementById('settings-content');
-    const uniqueCategories = categories.filter(c => c !== 'all' && c !== 'Lainnya');
+    const uniqueCategories = categories.filter(c => c !== 'all');
     const totalDigits = digitConfig.flex + digitConfig.category + digitConfig.product + digitConfig.weight;
     const isValid = totalDigits === 13;
+    
+    let categoryListHTML = '';
+    if (uniqueCategories.length > 0) {
+        uniqueCategories.forEach(cat => {
+            categoryListHTML += `
+                <div class="category-item">
+                    <span style="font-weight:500;display:flex;align-items:center;gap:8px;">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:14px;height:14px;opacity:0.7;color:#006B54;">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                            <path d="M10 2v20"/>
+                        </svg>
+                        ${cat}
+                    </span>
+                    <div class="category-actions">
+                        <button style="padding:5px 10px;border:none;border-radius:15px;background:#006B54;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid #006B54;"
+                            onclick="editCategoryHandler('${cat}')">
+                            ${icons.edit}
+                            Edit
+                        </button>
+                        <button style="padding:5px 10px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid #ff6b6b;"
+                            onclick="deleteCategoryHandler('${cat}')">
+                            ${icons.delete}
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        categoryListHTML = '<div style="text-align:center;color:#999;padding:10px;">Belum ada kategori</div>';
+    }
     
     settingsContent.innerHTML = `
         <div style="margin-bottom:20px;">
@@ -5090,6 +4264,29 @@ function showSettingsModal() {
         <div style="margin-bottom:20px;">
             <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
                 <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                    <path d="M10 2v20"/>
+                </svg>
+                Manajemen Kategori
+            </div>
+            <div style="background:#f5f5f5;padding:15px;border-radius:15px;margin-bottom:10px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;">
+                    <input type="text" class="form-input" id="new-category-input-settings" placeholder="Nama kategori baru">
+                    <button style="padding:10px 15px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;border:1px solid #006B54;"
+                        onclick="addNewCategoryFromSettings()">
+                        ${icons.add}
+                        Tambah
+                    </button>
+                </div>
+                <div style="max-height:200px;overflow-y:auto;margin-top:10px;" id="categories-list">
+                    ${categoryListHTML}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="17 8 12 3 7 8"/>
                     <line x1="12" y1="3" x2="12" y2="15"/>
@@ -5183,6 +4380,93 @@ function updateDesignPreview(design) {
                 <div>-----------------------------</div>
             </div>
         `;
+    }
+}
+
+async function addNewCategoryFromSettings() {
+    const input = document.getElementById('new-category-input-settings');
+    const category = input.value.trim();
+    
+    if (!category) {
+        showNotification('Masukkan nama kategori!', 'error');
+        return;
+    }
+    
+    if (category === 'all') {
+        showNotification('Kategori "all" tidak dapat digunakan', 'error');
+        return;
+    }
+    
+    try {
+        await saveCategoryToDB(category);
+        await loadCategories();
+        renderCategoryDropdown();
+        renderCategories();
+        
+        input.value = '';
+        showNotification(`Kategori "${category}" ditambahkan!`, 'success');
+        showSettingsModal();
+    } catch (error) {
+        console.error('Error adding category:', error);
+        showNotification('Gagal menambahkan kategori: ' + error.message, 'error');
+    }
+}
+
+async function editCategoryHandler(oldCategory) {
+    if (oldCategory === 'all') return;
+    
+    const newCategory = prompt('Edit nama kategori:', oldCategory);
+    if (newCategory && newCategory.trim() && newCategory !== oldCategory) {
+        if (newCategory === 'all') {
+            showNotification('Kategori "all" tidak dapat digunakan', 'error');
+            return;
+        }
+        
+        try {
+            await updateCategoryInDB(oldCategory, newCategory);
+            
+            await loadProducts();
+            await loadCategories();
+            
+            if (selectedCategory === oldCategory) {
+                selectedCategory = newCategory;
+            }
+            
+            renderCategoryDropdown();
+            renderCategories();
+            renderProducts();
+            showNotification('Kategori berhasil diubah!', 'success');
+        } catch (error) {
+            console.error('Error updating category:', error);
+            showNotification('Gagal mengubah kategori: ' + error.message, 'error');
+        }
+    }
+}
+
+async function deleteCategoryHandler(category) {
+    if (category === 'all') return;
+    
+    if (!confirm(`Hapus kategori "${category}"?\nProduk dalam kategori ini akan dipindahkan ke kategori "Lainnya".`)) {
+        return;
+    }
+    
+    try {
+        await deleteCategoryFromDB(category);
+        
+        await loadProducts();
+        await loadCategories();
+        
+        if (selectedCategory === category) {
+            selectedCategory = 'all';
+        }
+        
+        renderCategoryDropdown();
+        renderCategories();
+        renderProducts();
+        showNotification('Kategori berhasil dihapus!', 'success');
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        showNotification('Gagal menghapus kategori: ' + error.message, 'error');
     }
 }
 
@@ -5385,8 +4669,6 @@ window.onclick = function(event) {
             });
         } else if (event.target.id === 'product-modal') {
             resetProductForm();
-        } else if (event.target.id === 'category-management-modal') {
-            closeCategoryManagementModal();
         }
     }
 };
@@ -5416,7 +4698,6 @@ async function refreshData() {
         await loadCategories();
         renderCategories();
         renderProducts();
-        updateCategoryDropdown();
         console.log('Data refreshed successfully');
     } catch (error) {
         console.error('Error refreshing data:', error);
