@@ -905,8 +905,8 @@ button {
                 <input type="text" class="form-input" id="kasir-category-name" placeholder="">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <button class="form-button-secondary" onclick="closeKasirCategoryModal()">BATAL</button>
-                <button class="form-button-primary" onclick="saveKasirCategory()">SIMPAN</button>
+                <button type="button" class="form-button-secondary" onclick="closeKasirCategoryModal()">BATAL</button>
+                <button type="button" class="form-button-primary" onclick="saveKasirCategory()">SIMPAN</button>
             </div>
         </div>
     </div>
@@ -1063,8 +1063,8 @@ button {
                 </div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <button class="form-button-secondary" onclick="closeKasirItemModal()">BATAL</button>
-                    <button class="form-button-primary" onclick="saveKasirItem()">SIMPAN</button>
+                    <button type="button" class="form-button-secondary" onclick="closeKasirItemModal()">BATAL</button>
+                    <button type="button" class="form-button-primary" onclick="saveKasirItem()">SIMPAN</button>
                 </div>
             </form>
         </div>
@@ -1088,7 +1088,7 @@ button {
                 <!-- akan diisi javascript -->
             </div>
             <div style="margin-top:20px;">
-                <button class="form-button-secondary" style="width:100%;" onclick="closeListKasirCategoryModal()">Tutup</button>
+                <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeListKasirCategoryModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1112,7 +1112,7 @@ button {
                 <!-- akan diisi javascript -->
             </div>
             <div style="margin-top:20px;">
-                <button class="form-button-secondary" style="width:100%;" onclick="closeListKasirItemModal()">Tutup</button>
+                <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeListKasirItemModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1136,7 +1136,7 @@ button {
                 <!-- akan diisi javascript -->
             </div>
             <div style="margin-top:20px;">
-                <button class="form-button-secondary" style="width:100%;" onclick="closeListSatuanModal()">Tutup</button>
+                <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeListSatuanModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1161,8 +1161,8 @@ button {
                 <input type="text" class="form-input" id="satuan-name" placeholder="">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <button class="form-button-secondary" onclick="closeSatuanModal()">BATAL</button>
-                <button class="form-button-primary" onclick="saveSatuan()">SIMPAN</button>
+                <button type="button" class="form-button-secondary" onclick="closeSatuanModal()">BATAL</button>
+                <button type="button" class="form-button-primary" onclick="saveSatuan()">SIMPAN</button>
             </div>
         </div>
     </div>
@@ -1223,8 +1223,8 @@ button {
                 Total: <span id="cart-total">Rp 0</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <button class="form-button-secondary" onclick="closeTransaksiKasirModal()">Tutup</button>
-                <button class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
+                <button type="button" class="form-button-secondary" onclick="closeTransaksiKasirModal()">Tutup</button>
+                <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
             </div>
         </div>
     </div>
@@ -1725,6 +1725,7 @@ function openTambahItemKasirModal(editId = null) {
     const diskonInput = document.getElementById('kasir-item-diskon');
     const weighableCheck = document.getElementById('kasir-item-weighable');
     const levelContainer = document.getElementById('level-harga-container');
+    const errorDiv = document.getElementById('level-error');
     
     catSelect.innerHTML = '<option value="">-- Pilih Kategori --</option>';
     kasirCategories.forEach(cat => { catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`; });
@@ -1779,6 +1780,9 @@ function openTambahItemKasirModal(editId = null) {
         addLevelRow('', '', 2);
         addLevelRow('', '', 3);
     }
+
+    // Sembunyikan pesan error level saat modal dibuka
+    if (errorDiv) errorDiv.style.display = 'none';
     
     const convUnitSelect = document.getElementById('conv-unit');
     if (convUnitSelect) {
@@ -1791,7 +1795,6 @@ function openTambahItemKasirModal(editId = null) {
     renderConversionsList();
     hideConversionForm();
     modal.style.display = 'flex';
-    validateLevels();
 }
 
 function closeKasirItemModal() {
@@ -1809,12 +1812,11 @@ function addLevelRow(qty = '', price = '', levelNumber = null) {
     const number = levelNumber || (container.children.length + 1);
     div.innerHTML = `
         <span class="level-number">Level ${number}</span>
-        <input type="number" class="form-input level-qty" placeholder="" value="${qty}" min="0" step="any" oninput="validateLevels()">
-        <input type="number" class="form-input level-price" placeholder="" value="${price}" min="0" step="0.01" oninput="validateLevels()">
+        <input type="number" class="form-input level-qty" placeholder="" value="${qty}" min="0" step="any">
+        <input type="number" class="form-input level-price" placeholder="" value="${price}" min="0" step="0.01">
         <button type="button" class="level-harga-remove" onclick="hapusLevelHarga(this)">×</button>
     `;
     container.appendChild(div);
-    validateLevels();
 }
 
 function hapusLevelHarga(btn) {
@@ -1824,7 +1826,6 @@ function hapusLevelHarga(btn) {
     }
     btn.closest('.level-harga-item').remove();
     renumberLevels();
-    validateLevels();
 }
 
 function renumberLevels() {
