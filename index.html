@@ -111,13 +111,11 @@ body {
     display: block;
 }
 
-/* Adjust main content when drawer is open */
 body.drawer-open .app-header,
 body.drawer-open .main-content {
     margin-left: 0;
 }
 
-/* Responsive: drawer tetap sama */
 @media (max-width: 768px) {
     .sidebar {
         width: 60px;
@@ -167,7 +165,6 @@ body.drawer-open .main-content {
     align-items: center;
 }
 
-/* ==================== HEADER BUTTONS ==================== */
 .header-actions button {
     background: #FFFFFF;
     color: #006B54;
@@ -252,7 +249,6 @@ body.drawer-open .main-content {
     }
 }
 
-/* Modal Header */
 .modal-header {
     padding: 12px 20px;
     color: #006B54;
@@ -274,7 +270,6 @@ body.drawer-open .main-content {
     color: #006B54;
 }
 
-/* Modal Body */
 .modal-body {
     padding: 20px;
     max-height: calc(90vh - 60px);
@@ -282,7 +277,6 @@ body.drawer-open .main-content {
     background: #FFFFFF;
 }
 
-/* ==================== INPUT FIELDS (seragam) ==================== */
 input, textarea, select {
     width: 100%;
     padding: 12px 16px;
@@ -304,7 +298,6 @@ input::placeholder, textarea::placeholder {
     color: #999999 !important;
 }
 
-/* ==================== FORM BUTTONS (seragam) ==================== */
 button {
     border-radius: 15px;
     padding: 12px 16px;
@@ -340,7 +333,6 @@ button {
     background: #cccccc;
 }
 
-/* Tombol aksi kecil (edit, hapus) */
 .action-btn {
     width: 36px;
     height: 36px;
@@ -371,7 +363,6 @@ button {
     color: white;
 }
 
-/* Tombol dalam tabel di transaksi */
 #cart-items button {
     padding: 4px 8px;
     font-size: 0.8rem;
@@ -381,7 +372,6 @@ button {
     border: none;
 }
 
-/* ==================== ICON STYLES ==================== */
 .icon {
     width: 20px;
     height: 20px;
@@ -409,7 +399,6 @@ button {
     color: #ff6b6b;
 }
 
-/* ==================== LOADING & ERROR ==================== */
 .loading-overlay {
     display: none;
     position: fixed;
@@ -466,7 +455,6 @@ button {
     gap: 8px;
 }
 
-/* ==================== AUDIO NOTIFICATION STYLES ==================== */
 .audio-notification {
     position: absolute;
     width: 1px;
@@ -479,7 +467,6 @@ button {
     border: 0;
 }
 
-/* ==================== MODAL KASIR ITEM ==================== */
 .level-harga-container {
     border: 1px solid #d9d9d9;
     border-radius: 15px;
@@ -534,7 +521,6 @@ button {
     font-size: 0.9rem;
 }
 
-/* ==================== KONVERSI SATUAN ==================== */
 .conversions-section {
     margin-bottom: 15px;
 }
@@ -617,7 +603,6 @@ button {
     color: #ff6b6b;
 }
 
-/* Form tambah/edit konversi */
 #conversion-form-container {
     background: #f5f5f5;
     border-radius: 15px;
@@ -651,7 +636,6 @@ button {
     margin-top: 10px;
 }
 
-/* ==================== MENU TITIK TIGA ==================== */
 .three-dots-menu {
     position: relative;
     display: inline-block;
@@ -709,7 +693,6 @@ button {
     color: #ff6b6b;
 }
 
-/* ==================== MODAL TRANSAKSI KASIR (dengan list/grid produk) ==================== */
 #cart-items td, #cart-items th {
     padding: 8px;
     border-bottom: 1px solid #eee;
@@ -719,7 +702,6 @@ button {
     background-color: #f5f5f5;
 }
 
-/* Toggle tombol list/grid */
 .view-toggle {
     display: flex;
     gap: 5px;
@@ -744,7 +726,6 @@ button {
     color: white;
 }
 
-/* Container produk */
 #product-container {
     max-height: 300px;
     overflow-y: auto;
@@ -754,56 +735,78 @@ button {
     padding: 10px;
 }
 
-/* Tampilan grid */
+/* ==================== PERBAIKAN GRID PRODUK ==================== */
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 5px;
 }
+
 .product-card {
     border: 1px solid #006B54;
     border-radius: 15px;
     padding: 10px;
-    text-align: center;
-    cursor: pointer;
     background: white;
-    transition: all 0.2s;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
 }
+
 .product-card:hover {
     background: #f0f9f6;
 }
+
+.product-card .product-image svg {
+    width: 60px;
+    height: 60px;
+    color: #006B54;
+    opacity: 0.8;
+    margin-bottom: 5px;
+}
+
 .product-card .name {
     font-weight: 600;
     color: #006B54;
-    margin: 5px 0;
-}
-.product-card .price {
     font-size: 0.9rem;
+    margin: 5px 0;
+    line-height: 1.2;
+    min-height: 2.4em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    width: 100%;
+}
+
+.product-card .price {
+    font-size: 0.85rem;
     color: #333;
+    font-weight: 500;
 }
+
 .product-card .stock {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #666;
+    margin-bottom: 5px;
 }
-.product-card .product-image svg {
-    width: 48px;
-    height: 48px;
-    color: #006B54;
-    opacity: 0.7;
-}
-.qty-control {
+
+.product-card .qty-control {
     display: flex;
-    gap: 5px;
+    gap: 4px;
     align-items: center;
     justify-content: center;
+    width: 100%;
     margin-top: 5px;
 }
-.qty-control button {
-    width: 30px;
-    height: 30px;
-    border-radius: 15px;
+
+.product-card .qty-control button {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
     border: 1px solid #006B54;
     background: white;
     color: #006B54;
@@ -811,15 +814,20 @@ button {
     cursor: pointer;
     padding: 0;
     min-height: auto;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
-.qty-control input {
-    width: 60px;
+
+.product-card .qty-control input {
+    width: 45px;
     text-align: center;
-    padding: 5px;
-    border-radius: 10px;
+    padding: 4px;
+    border-radius: 8px;
     border: 1px solid #006B54;
+    font-size: 0.85rem;
 }
 
 /* Tampilan list */
@@ -847,7 +855,32 @@ button {
     margin-top: 4px;
 }
 .product-list-item .qty-control {
+    display: flex;
     justify-content: flex-end;
+    gap: 4px;
+    align-items: center;
+    margin-top: 4px;
+}
+.product-list-item .qty-control button {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    border: 1px solid #006B54;
+    background: white;
+    color: #006B54;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    min-height: auto;
+    font-size: 1.1rem;
+}
+.product-list-item .qty-control input {
+    width: 45px;
+    text-align: center;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #006B54;
+    font-size: 0.85rem;
 }
 
 /* ==================== NOTIFICATION ==================== */
@@ -904,7 +937,6 @@ button {
 
 <!-- ==================== DRAWER SIDEBAR ==================== -->
 <div class="sidebar" id="sidebar">
-    <!-- Bagian Master Data Kasir -->
     <div class="menu-section">MASTER DATA KASIR</div>
     <button onclick="openTambahItemKasirModal()">
         <svg class="icon" viewBox="0 0 24 24">
@@ -953,7 +985,6 @@ button {
         </svg>
         <span>Daftar Satuan</span>
     </button>
-    <!-- Bagian Transaksi -->
     <div class="menu-section">TRANSAKSI</div>
     <button onclick="openTransaksiKasirModal()">
         <svg class="icon" viewBox="0 0 24 24">
@@ -964,7 +995,6 @@ button {
         <span>Transaksi Kasir</span>
     </button>
 
-    <!-- Bagian Inventory -->
     <div class="menu-section">INVENTORY</div>
     <button onclick="openInventoryStokModal()">
         <svg class="icon" viewBox="0 0 24 24">
@@ -994,7 +1024,7 @@ button {
 </div>
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 
-<!-- ==================== AUDIO ELEMENTS FOR NOTIFICATION SOUNDS ==================== -->
+<!-- ==================== AUDIO ELEMENTS ==================== -->
 <audio id="notification-success" class="audio-notification" preload="auto">
     <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
 </audio>
@@ -1032,7 +1062,7 @@ button {
     </button>
 </div>
 
-<!-- ==================== MAIN CONTENT (kosong, hanya petunjuk) ==================== -->
+<!-- ==================== MAIN CONTENT ==================== -->
 <main class="main-content">
     <div class="placeholder-icon">
         <svg class="icon" viewBox="0 0 24 24" width="80" height="80">
@@ -1071,7 +1101,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL TAMBAH ITEM KASIR (dengan stok) ==================== -->
+<!-- ==================== MODAL TAMBAH ITEM KASIR ==================== -->
 <div class="modal-overlay" id="kasir-item-modal">
     <div class="modal-content" style="max-width:600px;">
         <div class="modal-header">
@@ -1235,7 +1265,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL DAFTAR KATEGORI KASIR (DENGAN TITIK TIGA) ==================== -->
+<!-- ==================== MODAL DAFTAR KATEGORI KASIR ==================== -->
 <div class="modal-overlay" id="list-kasir-category-modal">
     <div class="modal-content" style="max-width:500px;">
         <div class="modal-header">
@@ -1248,9 +1278,7 @@ button {
             </h2>
         </div>
         <div class="modal-body">
-            <div id="kasir-category-list-container" style="max-height:400px; overflow-y:auto;">
-                <!-- akan diisi javascript -->
-            </div>
+            <div id="kasir-category-list-container" style="max-height:400px; overflow-y:auto;"></div>
             <div style="margin-top:20px;">
                 <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeListKasirCategoryModal()">Tutup</button>
             </div>
@@ -1258,7 +1286,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL DAFTAR ITEM KASIR (dengan stok) ==================== -->
+<!-- ==================== MODAL DAFTAR ITEM KASIR ==================== -->
 <div class="modal-overlay" id="list-kasir-item-modal">
     <div class="modal-content" style="max-width:700px;">
         <div class="modal-header">
@@ -1272,9 +1300,7 @@ button {
             </h2>
         </div>
         <div class="modal-body">
-            <div id="kasir-item-list-container" style="max-height:400px; overflow-y:auto;">
-                <!-- akan diisi javascript -->
-            </div>
+            <div id="kasir-item-list-container" style="max-height:400px; overflow-y:auto;"></div>
             <div style="margin-top:20px;">
                 <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeListKasirItemModal()">Tutup</button>
             </div>
@@ -1296,9 +1322,7 @@ button {
             </h2>
         </div>
         <div class="modal-body">
-            <div id="satuan-list-container" style="max-height:400px; overflow-y:auto;">
-                <!-- akan diisi javascript -->
-            </div>
+            <div id="satuan-list-container" style="max-height:400px; overflow-y:auto;"></div>
             <div style="margin-top:20px;">
                 <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeListSatuanModal()">Tutup</button>
             </div>
@@ -1345,14 +1369,12 @@ button {
             </h2>
         </div>
         <div class="modal-body">
-            <div id="settings-content">
-                <!-- Settings akan diisi JavaScript -->
-            </div>
+            <div id="settings-content"></div>
         </div>
     </div>
 </div>
 
-<!-- ==================== MODAL TRANSAKSI KASIR (dengan list/grid produk) ==================== -->
+<!-- ==================== MODAL TRANSAKSI KASIR ==================== -->
 <div class="modal-overlay" id="transaksi-kasir-modal">
     <div class="modal-content" style="max-width:800px;">
         <div class="modal-header">
@@ -1402,7 +1424,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL INVENTORY (UNTUK SEMUA SUB-MENU) ==================== -->
+<!-- ==================== MODAL INVENTORY ==================== -->
 <div class="modal-overlay" id="inventory-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -1415,9 +1437,7 @@ button {
             </h2>
         </div>
         <div class="modal-body" id="inventory-modal-body">
-            <!-- Konten dinamis dari JavaScript -->
         </div>
-        <!-- Tombol tutup akan disertakan dalam konten dinamis -->
     </div>
 </div>
 
@@ -1824,7 +1844,6 @@ async function dbClear(storeName) {
     });
 }
 
-// Fungsi untuk load barcodeConfig dari database
 async function loadBarcodeConfig() {
     try {
         const transaction = db.transaction([STORES.SETTINGS], 'readonly');
@@ -1848,7 +1867,6 @@ async function loadBarcodeConfig() {
     }
 }
 
-// Fungsi untuk save barcodeConfig
 async function saveBarcodeConfig(config) {
     try {
         const transaction = db.transaction([STORES.SETTINGS], 'readwrite');
@@ -1868,7 +1886,6 @@ async function saveBarcodeConfig(config) {
     }
 }
 
-// ==================== LOAD DATA KASIR (dengan stok) ====================
 async function loadKasirCategories() {
     try { kasirCategories = await dbGetAll(STORES.KASIR_CATEGORIES); kasirCategories.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading kasir categories:', error); kasirCategories = []; }
 }
@@ -1876,7 +1893,6 @@ async function loadKasirCategories() {
 async function loadKasirItems() {
     try { 
         kasirItems = await dbGetAll(STORES.KASIR_ITEMS); 
-        // pastikan setiap item memiliki field stock, default 0 jika tidak ada
         kasirItems.forEach(item => { if (item.stock === undefined) item.stock = 0; });
         kasirItems.sort((a,b) => a.name.localeCompare(b.name)); 
     } catch (error) { console.error('Error loading kasir items:', error); kasirItems = []; }
@@ -2032,7 +2048,6 @@ function openTambahItemKasirModal(editId = null) {
         addLevelRow('', '', 3);
     }
 
-    // Sembunyikan pesan error level saat modal dibuka
     if (errorDiv) errorDiv.style.display = 'none';
     
     const convUnitSelect = document.getElementById('conv-unit');
@@ -2319,7 +2334,6 @@ function openDaftarItemKasirModal() {
 
 function closeListKasirItemModal() { document.getElementById('list-kasir-item-modal').style.display = 'none'; }
 
-// ==================== FUNGSI SATUAN ====================
 function openTambahSatuanModal(editId = null) {
     const modal = document.getElementById('satuan-modal');
     const title = document.getElementById('satuan-modal-title');
@@ -2417,7 +2431,6 @@ function openDaftarSatuanModal() {
 
 function closeListSatuanModal() { document.getElementById('list-satuan-modal').style.display = 'none'; }
 
-// ==================== FUNGSI KONVERSI SATUAN ====================
 function showConversionForm(index = -1) {
     const formContainer = document.getElementById('conversion-form-container');
     const selectUnit = document.getElementById('conv-unit');
@@ -2659,7 +2672,6 @@ async function forceResetDatabase() {
     }
 }
 
-// Tampilkan modal settings dengan konfigurasi barcode
 function showSettingsModal() {
     const settingsContent = document.getElementById('settings-content');
     settingsContent.innerHTML = `
@@ -2699,7 +2711,6 @@ function showSettingsModal() {
             <button class="form-button-secondary" onclick="closeSettingsModal()"><svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> TUTUP</button>
         </div>
     `;
-    // Event listener untuk menghitung total
     const flexLen = document.getElementById('barcode-flex-length');
     const prodLen = document.getElementById('barcode-product-length');
     const weightLen = document.getElementById('barcode-weight-length');
@@ -2719,7 +2730,6 @@ function showSettingsModal() {
     document.getElementById('settings-modal').style.display = 'flex';
 }
 
-// Simpan konfigurasi dari UI
 async function saveBarcodeConfigFromUI() {
     const flexLength = parseInt(document.getElementById('barcode-flex-length').value);
     const flexValue = document.getElementById('barcode-flex-value').value.trim();
@@ -2752,12 +2762,11 @@ async function saveBarcodeConfigFromUI() {
 
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 
-// ==================== FUNGSI TRANSAKSI KASIR (dengan validasi stok dan list/grid produk) ====================
+// ==================== FUNGSI TRANSAKSI KASIR ====================
 function openTransaksiKasirModal() {
     const modal = document.getElementById('transaksi-kasir-modal');
     cart = [];
     renderCart();
-    // Set default mode list
     setProductViewMode('list');
     modal.style.display = 'flex';
     setTimeout(() => document.getElementById('barcode-input').focus(), 100);
@@ -2767,50 +2776,43 @@ function closeTransaksiKasirModal() {
     document.getElementById('transaksi-kasir-modal').style.display = 'none';
 }
 
-// Fungsi untuk mendapatkan harga berdasarkan level (qty break)
 function getPriceForQty(item, qty) {
     if (!item.priceLevels || item.priceLevels.length === 0) {
         return item.hargaJual;
     }
-    // Urutkan descending agar mudah mencari level terbesar yang memenuhi
     const sorted = [...item.priceLevels].sort((a, b) => b.minQty - a.minQty);
     for (let level of sorted) {
         if (qty >= level.minQty) {
             return level.price;
         }
     }
-    return item.hargaJual; // fallback
+    return item.hargaJual;
 }
 
-// validasi stok sebelum menambah ke keranjang
 function addToCart(item, qty, unitConversion = null, weightGram = 0) {
-    // Hitung kebutuhan stok dalam unit dasar
     let requiredStock;
     if (weightGram > 0) {
-        requiredStock = qty; // qty dalam kg
+        requiredStock = qty;
     } else if (unitConversion) {
-        requiredStock = qty * unitConversion.value; // konversi ke unit dasar
+        requiredStock = qty * unitConversion.value;
     } else {
         requiredStock = qty;
     }
     
-    // Cek stok
     if (item.stock < requiredStock) {
         showNotification(`Stok ${item.name} tidak cukup. Tersedia: ${item.stock}`, 'error');
         return;
     }
     
-    // Tentukan harga per unit
     let pricePerUnit;
     if (unitConversion) {
-        pricePerUnit = unitConversion.sellPrice; // harga dari konversi
+        pricePerUnit = unitConversion.sellPrice;
     } else if (weightGram > 0) {
-        pricePerUnit = getPriceForQty(item, qty); // qty dalam kg
+        pricePerUnit = getPriceForQty(item, qty);
     } else {
-        pricePerUnit = getPriceForQty(item, qty); // level harga
+        pricePerUnit = getPriceForQty(item, qty);
     }
 
-    // Cari apakah item dengan kombinasi satuan yang sama sudah ada di keranjang
     const existingIndex = cart.findIndex(c => 
         c.item.id === item.id && 
         c.unitConversion?.barcode === unitConversion?.barcode &&
@@ -2818,14 +2820,12 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
     );
 
     if (existingIndex >= 0) {
-        // Gabungkan kuantitas
         const existing = cart[existingIndex];
         const newQty = existing.qty + qty;
 
-        // Hitung ulang harga jika perlu (karena level harga bisa berubah)
         let newPricePerUnit;
         if (unitConversion) {
-            newPricePerUnit = unitConversion.sellPrice; // tetap
+            newPricePerUnit = unitConversion.sellPrice;
         } else if (weightGram > 0) {
             newPricePerUnit = getPriceForQty(item, newQty);
         } else {
@@ -2836,7 +2836,6 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
         existing.pricePerUnit = newPricePerUnit;
         existing.subtotal = newQty * newPricePerUnit;
     } else {
-        // Tambah item baru ke keranjang
         cart.push({
             item,
             qty,
@@ -2849,13 +2848,11 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
     renderCart();
 }
 
-// Proses barcode dengan konfigurasi yang dapat diatur
 function processBarcode() {
     const input = document.getElementById('barcode-input');
     const barcode = input.value.trim();
     if (!barcode) return;
 
-    // 1. Cari sebagai item biasa (code atau barcode)
     let item = kasirItems.find(i => i.code === barcode || i.barcode === barcode);
     if (item) {
         addToCart(item, 1, null, 0);
@@ -2863,7 +2860,6 @@ function processBarcode() {
         return;
     }
 
-    // 2. Cari di semua konversi satuan
     for (let it of kasirItems) {
         if (it.unitConversions) {
             const conv = it.unitConversions.find(c => c.barcode === barcode);
@@ -2875,11 +2871,9 @@ function processBarcode() {
         }
     }
 
-    // 3. Parsing barcode timbangan dengan konfigurasi
     if (barcode.length === 13) {
         const flex = barcode.substr(0, barcodeConfig.flexLength);
         if (flex !== barcodeConfig.flexValue) {
-            // bukan barcode timbangan yang dikenali
             showNotification('Barcode tidak dikenal', 'error');
             input.value = '';
             return;
@@ -2914,7 +2908,6 @@ function renderCart() {
         const row = document.createElement('tr');
         const nama = c.item.name;
 
-        // Tentukan tampilan satuan
         let satuanTeks = '';
         if (c.unitConversion) {
             const unitName = kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name || '?';
@@ -2950,7 +2943,6 @@ function formatRupiah(angka) {
     return 'Rp ' + angka.toLocaleString('id-ID');
 }
 
-// MODIFIKASI: kurangi stok saat transaksi berhasil
 async function bayarTransaksi() {
     if (cart.length === 0) {
         showNotification('Keranjang masih kosong', 'warning');
@@ -2959,7 +2951,6 @@ async function bayarTransaksi() {
     
     try {
         showLoading();
-        // Kurangi stok untuk setiap item
         for (let c of cart) {
             let requiredStock;
             if (c.weightGram > 0) {
@@ -2976,9 +2967,7 @@ async function bayarTransaksi() {
                 await dbPut(STORES.KASIR_ITEMS, item);
             }
         }
-        // Reload items untuk memperbarui cache
         await loadKasirItems();
-        // Perbarui tampilan produk di modal
         renderProductList();
         showNotification('Transaksi berhasil', 'success');
         cart = [];
@@ -2991,7 +2980,6 @@ async function bayarTransaksi() {
     }
 }
 
-// ==================== FUNGSI UNTUK MODAL INVENTORY (STOK BARANG, OPNAME, LAPORAN) ====================
 function openInventoryStokModal() {
     document.getElementById('inventory-modal-title').innerHTML = `
         <svg class="icon icon-primary" viewBox="0 0 24 24">
@@ -3018,7 +3006,6 @@ function openInventoryStokModal() {
 }
 
 function openInventoryOpnameModal() {
-    // Langsung arahkan ke daftar stok dengan tombol sesuaikan
     openInventoryStokModal();
 }
 
@@ -3062,7 +3049,7 @@ async function updateStock(itemId) {
             await dbPut(STORES.KASIR_ITEMS, item);
             await loadKasirItems();
             showNotification('Stok diperbarui', 'success');
-            openInventoryStokModal(); // kembali ke daftar stok
+            openInventoryStokModal();
         }
     } catch (error) {
         showNotification('Gagal update stok: ' + error.message, 'error');
@@ -3096,22 +3083,17 @@ function closeInventoryModal() {
     document.getElementById('inventory-modal').style.display = 'none';
 }
 
-// ==================== FUNGSI TAMBAHAN UNTUK LIST/GRID PRODUK ====================
 function setProductViewMode(mode) {
     productViewMode = mode;
     const listBtn = document.getElementById('view-list-btn');
     const gridBtn = document.getElementById('view-grid-btn');
     if (listBtn && gridBtn) {
         if (mode === 'list') {
-            listBtn.style.background = '#006B54';
-            listBtn.style.color = 'white';
-            gridBtn.style.background = 'white';
-            gridBtn.style.color = '#006B54';
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
         } else {
-            gridBtn.style.background = '#006B54';
-            gridBtn.style.color = 'white';
-            listBtn.style.background = 'white';
-            listBtn.style.color = '#006B54';
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
         }
     }
     renderProductList();
@@ -3150,10 +3132,10 @@ function renderProductList() {
             html += `
                 <div class="product-card" onclick="addToCartFromProductWithQty(${item.id}, this)">
                     <div class="product-image">
-                        <svg class="icon" viewBox="0 0 24 24" width="48" height="48">
-                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                            <line x1="2" y1="10" x2="22" y2="10"/>
-                            <line x1="7" y1="15" x2="12" y2="15"/>
+                        <svg viewBox="0 0 24 24" width="48" height="48">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="currentColor" fill="none"/>
+                            <line x1="2" y1="10" x2="22" y2="10" stroke="currentColor"/>
+                            <line x1="7" y1="15" x2="12" y2="15" stroke="currentColor"/>
                         </svg>
                     </div>
                     <div class="name"><strong>${item.name}</strong></div>
@@ -3184,7 +3166,6 @@ function adjustQty(btn, delta, itemId) {
         if (newVal > max) newVal = max;
         input.value = newVal;
     }
-    // event.stopPropagation() sudah di inline
 }
 
 function addToCartFromProductWithQty(itemId, element) {
@@ -3200,7 +3181,6 @@ function addToCartFromProductWithQty(itemId, element) {
     }
 }
 
-// ==================== UTILITY ====================
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
     notification.textContent = message;
@@ -3237,7 +3217,6 @@ async function initApp() {
 
 async function retryAppLoad() { await initApp(); }
 
-// ==================== EVENT LISTENERS ====================
 document.addEventListener('DOMContentLoaded', async () => { console.log('DOM fully loaded, initializing app...'); await initApp(); });
 
 window.onclick = function(event) {
