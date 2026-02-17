@@ -1818,6 +1818,12 @@ input::placeholder, textarea::placeholder {
     flex: 1;
 }
 
+.level-number {
+    font-weight: 600;
+    min-width: 60px;
+    color: #006B54;
+}
+
 .level-harga-remove {
     background: #ff6b6b;
     color: white;
@@ -2349,13 +2355,13 @@ input::placeholder, textarea::placeholder {
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nama Item</label>
                     <input type="text" class="form-input" id="kasir-item-name" placeholder="Nama item" required>
                 </div>
-                <!-- Kode Item (MODIFIKASI: tambah penjelasan) -->
+                <!-- Kode Item -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Kode Item</label>
                     <input type="text" class="form-input" id="kasir-item-code" placeholder="Kode unik untuk barcode timbangan" required>
                     <small style="color:#666; display:block; margin-top:4px;">Kode untuk barcode timbangan (produk ditimbang)</small>
                 </div>
-                <!-- Barcode Item (MODIFIKASI: tambah penjelasan) -->
+                <!-- Barcode Item -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Barcode Item</label>
                     <input type="text" class="form-input" id="kasir-item-barcode" placeholder="Kosongkan jika sama dengan kode">
@@ -2460,13 +2466,14 @@ input::placeholder, textarea::placeholder {
                     </div>
                 </div>
 
-                <!-- Level Harga -->
+                <!-- Level Harga (Qty Break Pricing) -->
                 <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Level Harga</label>
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Level Harga (Qty Break)</label>
                     <div class="level-harga-container" id="level-harga-container">
-                        <!-- Level 1,2,3 akan diisi javascript -->
+                        <!-- Level akan diisi javascript -->
                     </div>
-                    <button type="button" class="btn-add-level" onclick="tambahLevelHarga()">
+                    <div id="level-error" style="color:#dc3545; font-size:0.85rem; margin-top:5px; display:none;"></div>
+                    <button type="button" class="btn-add-level" onclick="addLevelRow(0,0)">
                         <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                         Tambah Level
                     </button>
@@ -3632,11 +3639,9 @@ function openTambahItemKasirModal(editId = null) {
     beratInput.value = '0';
     satuanSelect.value = '';
     diskonInput.value = '0';
-    levelContainer.innerHTML = '';
-    for (let i = 1; i <= 3; i++) { tambahLevelHarga(`Level ${i}`, 0); }
     
-    // Inisialisasi konversi
-    tempUnitConversions = [];
+    // Inisialisasi level harga
+    levelContainer.innerHTML = '';
     if (editId) {
         const item = kasirItems.find(i => i.id === editId);
         if (item) {
@@ -3649,12 +3654,19 @@ function openTambahItemKasirModal(editId = null) {
             beratInput.value = item.berat || 0;
             satuanSelect.value = item.satuanId || '';
             diskonInput.value = item.diskon || 0;
-            levelContainer.innerHTML = '';
-            if (item.levelHarga && item.levelHarga.length > 0) {
-                item.levelHarga.forEach(l => tambahLevelHarga(l.nama, l.harga));
+            
+            // Load level harga
+            if (item.priceLevels && item.priceLevels.length > 0) {
+                item.priceLevels.forEach(l => {
+                    addLevelRow(l.minQty, l.price, l.level);
+                });
             } else {
-                for (let i = 1; i <= 3; i++) { tambahLevelHarga(`Level ${i}`, 0); }
+                // Default 3 level
+                addLevelRow(1, 0, 1);
+                addLevelRow(12, 0, 2);
+                addLevelRow(24, 0, 3);
             }
+            
             // Ambil konversi dari item
             tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
             editingKasirItemId = editId;
@@ -3663,6 +3675,10 @@ function openTambahItemKasirModal(editId = null) {
     } else {
         editingKasirItemId = null;
         title.innerHTML = `<svg class="icon icon-primary" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Tambah Item Kasir`;
+        // Default 3 level
+        addLevelRow(1, 0, 1);
+        addLevelRow(12, 0, 2);
+        addLevelRow(24, 0, 3);
     }
     
     // Render dropdown satuan untuk form konversi
@@ -3677,6 +3693,7 @@ function openTambahItemKasirModal(editId = null) {
     renderConversionsList();
     hideConversionForm();
     modal.style.display = 'flex';
+    validateLevels(); // validasi awal
 }
 
 function closeKasirItemModal() {
@@ -3686,16 +3703,107 @@ function closeKasirItemModal() {
     hideConversionForm();
 }
 
-function tambahLevelHarga(nama = '', harga = 0) {
+// ==================== FUNGSI LEVEL HARGA (QTY BREAK) ====================
+function addLevelRow(qty = 0, price = 0, levelNumber = null) {
     const container = document.getElementById('level-harga-container');
     const div = document.createElement('div');
     div.className = 'level-harga-item';
+    const number = levelNumber || (container.children.length + 1);
     div.innerHTML = `
-        <input type="text" class="form-input" placeholder="Nama Level" value="${nama}" style="flex:2;">
-        <input type="number" class="form-input" placeholder="Harga" value="${harga}" min="0" style="flex:2;">
-        <button type="button" class="level-harga-remove" onclick="this.parentElement.remove()">×</button>
+        <span class="level-number">Level ${number}</span>
+        <input type="number" class="form-input level-qty" placeholder="Qty" value="${qty}" min="0" step="any" oninput="validateLevels()">
+        <input type="number" class="form-input level-price" placeholder="Harga" value="${price}" min="0" step="0.01" oninput="validateLevels()">
+        <button type="button" class="level-harga-remove" onclick="hapusLevelHarga(this)">×</button>
     `;
     container.appendChild(div);
+    validateLevels();
+}
+
+function hapusLevelHarga(btn) {
+    if (document.querySelectorAll('.level-harga-item').length <= 1) {
+        showNotification('Minimal harus ada 1 level harga', 'error');
+        return;
+    }
+    btn.closest('.level-harga-item').remove();
+    renumberLevels();
+    validateLevels();
+}
+
+function renumberLevels() {
+    const items = document.querySelectorAll('.level-harga-item');
+    items.forEach((item, index) => {
+        const span = item.querySelector('.level-number');
+        span.textContent = `Level ${index + 1}`;
+    });
+}
+
+function validateLevels() {
+    const items = document.querySelectorAll('.level-harga-item');
+    const errorDiv = document.getElementById('level-error');
+    if (!errorDiv) return true;
+
+    let errors = [];
+    let levels = [];
+
+    items.forEach((item, idx) => {
+        const qtyInput = item.querySelector('.level-qty');
+        const priceInput = item.querySelector('.level-price');
+        const qty = parseFloat(qtyInput.value);
+        const price = parseFloat(priceInput.value);
+
+        // Validasi tiap baris
+        if (isNaN(qty) || qty < 0) {
+            errors.push(`Level ${idx+1}: Qty harus angka positif`);
+        }
+        if (isNaN(price) || price < 0) {
+            errors.push(`Level ${idx+1}: Harga harus ≥ 0`);
+        }
+
+        levels.push({ qty, price, idx });
+    });
+
+    // Validasi qty unik
+    const qtyValues = levels.map(l => l.qty);
+    const duplicateQty = qtyValues.filter((q, i) => qtyValues.indexOf(q) !== i);
+    if (duplicateQty.length > 0) {
+        errors.push('Qty antar level tidak boleh sama');
+    }
+
+    // Validasi urutan naik
+    let sorted = true;
+    for (let i = 0; i < levels.length - 1; i++) {
+        if (levels[i].qty > levels[i+1].qty) {
+            sorted = false;
+            break;
+        }
+    }
+    if (!sorted) {
+        errors.push('Qty harus berurutan naik (ascending)');
+    }
+
+    if (errors.length > 0) {
+        errorDiv.style.display = 'block';
+        errorDiv.innerHTML = errors.join('<br>');
+        return false;
+    } else {
+        errorDiv.style.display = 'none';
+        return true;
+    }
+}
+
+function getPriceLevelsFromDOM() {
+    const items = document.querySelectorAll('.level-harga-item');
+    const priceLevels = [];
+    items.forEach((item, index) => {
+        const qty = parseFloat(item.querySelector('.level-qty').value) || 0;
+        const price = parseFloat(item.querySelector('.level-price').value) || 0;
+        priceLevels.push({
+            level: index + 1,
+            minQty: qty,
+            price: price
+        });
+    });
+    return priceLevels;
 }
 
 async function saveKasirItem() {
@@ -3709,16 +3817,11 @@ async function saveKasirItem() {
     const satuanId = document.getElementById('kasir-item-satuan').value || null;
     const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || 0;
     
-    const levelHarga = [];
-    const levelItems = document.querySelectorAll('#level-harga-container .level-harga-item');
-    levelItems.forEach(item => {
-        const inputs = item.querySelectorAll('input');
-        if (inputs.length >= 2) {
-            const nama = inputs[0].value.trim();
-            const harga = parseFloat(inputs[1].value) || 0;
-            if (nama) levelHarga.push({ nama, harga });
-        }
-    });
+    const priceLevels = getPriceLevelsFromDOM();
+    if (!validateLevels()) {
+        showNotification('Level harga tidak valid, periksa kembali', 'error');
+        return;
+    }
     
     if (!name || !code) { showNotification('Nama dan kode harus diisi!', 'error'); return; }
     
@@ -3745,7 +3848,7 @@ async function saveKasirItem() {
                 item.berat = berat;
                 item.satuanId = satuanId;
                 item.diskon = diskon;
-                item.levelHarga = levelHarga;
+                item.priceLevels = priceLevels;
                 item.unitConversions = unitConversions;
                 item.updatedAt = now;
                 await dbPut(STORES.KASIR_ITEMS, item);
@@ -3753,7 +3856,7 @@ async function saveKasirItem() {
         } else {
             const newItem = {
                 name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
-                diskon, levelHarga, unitConversions,
+                diskon, priceLevels, unitConversions,
                 createdAt: now, updatedAt: now
             };
             const id = await dbAdd(STORES.KASIR_ITEMS, newItem);
