@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POS Barcode Generator + Master Data Kasir</title>
+<title>POS Barcode Generator + Transaksi Kasir</title>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <style>
 /* ==================== RESET & BASE STYLES ==================== */
@@ -2031,6 +2031,16 @@ input::placeholder, textarea::placeholder {
 .three-dots-dropdown .dropdown-item.delete {
     color: #ff6b6b;
 }
+
+/* ==================== MODAL TRANSAKSI KASIR ==================== */
+#cart-items td, #cart-items th {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+#cart-items th {
+    text-align: left;
+    background-color: #f5f5f5;
+}
 </style>
 </head>
 <body>
@@ -2091,7 +2101,7 @@ input::placeholder, textarea::placeholder {
         <span>Tambah Produk</span>
     </button>
     
-    <!-- Bagian Master Data Kasir (MODIFIKASI: urutan diubah) -->
+    <!-- Bagian Master Data Kasir -->
     <div class="menu-section">MASTER DATA KASIR</div>
     <button onclick="openTambahItemKasirModal()">
         <svg class="icon" viewBox="0 0 24 24">
@@ -2139,6 +2149,16 @@ input::placeholder, textarea::placeholder {
             <line x1="9" y1="21" x2="9" y2="9"/>
         </svg>
         <span>Daftar Satuan</span>
+    </button>
+    <!-- Bagian Transaksi -->
+    <div class="menu-section">TRANSAKSI</div>
+    <button onclick="openTransaksiKasirModal()">
+        <svg class="icon" viewBox="0 0 24 24">
+            <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+            <line x1="7" y1="15" x2="12" y2="15"/>
+        </svg>
+        <span>Transaksi Kasir</span>
     </button>
 </div>
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -2382,7 +2402,7 @@ input::placeholder, textarea::placeholder {
                     </div>
                     <div>
                         <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Harga Jual</label>
-                        <input type="number" class="form-input" id="kasir-item-harga-jual" min="0" value="0">
+                        <input type="number" class="form-input" id="kasir-item-harga-jual" min="0" value="0" step="0.01">
                     </div>
                 </div>
                 <!-- Berat dan Satuan -->
@@ -2402,6 +2422,12 @@ input::placeholder, textarea::placeholder {
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Diskon (%) *opsional</label>
                     <input type="number" class="form-input" id="kasir-item-diskon" min="0" max="100" value="0" step="0.1">
+                </div>
+                <!-- Produk Timbangan? -->
+                <div style="margin-bottom:15px;">
+                    <label>
+                        <input type="checkbox" id="kasir-item-weighable"> Produk Timbangan (harga per kg)
+                    </label>
                 </div>
 
                 <!-- ==================== BAGIAN KONVERSI SATUAN BARU ==================== -->
@@ -2755,6 +2781,48 @@ input::placeholder, textarea::placeholder {
 <!-- ==================== LONG PRESS INDICATOR ==================== -->
 <div id="long-press-indicator" class="long-press-indicator" style="display:none;">Tahan untuk edit/hapus</div>
 
+<!-- ==================== MODAL TRANSAKSI KASIR ==================== -->
+<div class="modal-overlay" id="transaksi-kasir-modal">
+    <div class="modal-content" style="max-width:800px;">
+        <div class="modal-header">
+            <h2 class="modal-title">
+                <svg class="icon icon-primary" viewBox="0 0 24 24">
+                    <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
+                    <line x1="2" y1="10" x2="22" y2="10"/>
+                    <line x1="7" y1="15" x2="12" y2="15"/>
+                </svg>
+                Transaksi Kasir
+            </h2>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom:15px;">
+                <input type="text" id="barcode-input" class="form-input" placeholder="Scan atau ketik barcode..." onkeypress="if(event.key==='Enter') processBarcode()">
+            </div>
+            <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Harga Satuan</th>
+                            <th>Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items"></tbody>
+                </table>
+            </div>
+            <div style="text-align:right; font-size:1.2rem; margin-bottom:20px;">
+                Total: <span id="cart-total">Rp 0</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button class="form-button-secondary" onclick="closeTransaksiKasirModal()">Tutup</button>
+                <button class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ==================== NOTIFICATION ==================== -->
 <div id="notification"></div>
 
@@ -2954,7 +3022,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSBarcodeDB';
-const DB_VERSION = 7;
+const DB_VERSION = 8; // increment karena ada field baru
 const STORES = {
     PRODUCTS: 'products',
     CATEGORIES: 'categories',
@@ -3003,6 +3071,9 @@ let editingSatuanId = null;
 // Variabel untuk konversi satuan (baru)
 let tempUnitConversions = [];
 let editingConversionIndex = -1;
+
+// Keranjang transaksi
+let cart = []; // { item, qty, weightGram, subtotal }
 
 // Icon definitions
 const icons = {
@@ -3622,6 +3693,7 @@ function openTambahItemKasirModal(editId = null) {
     const beratInput = document.getElementById('kasir-item-berat');
     const satuanSelect = document.getElementById('kasir-item-satuan');
     const diskonInput = document.getElementById('kasir-item-diskon');
+    const weighableCheck = document.getElementById('kasir-item-weighable');
     const levelContainer = document.getElementById('level-harga-container');
     
     catSelect.innerHTML = '<option value="">-- Pilih Kategori --</option>';
@@ -3639,6 +3711,7 @@ function openTambahItemKasirModal(editId = null) {
     beratInput.value = '0';
     satuanSelect.value = '';
     diskonInput.value = '0';
+    weighableCheck.checked = false;
     
     // Inisialisasi level harga
     levelContainer.innerHTML = '';
@@ -3654,6 +3727,7 @@ function openTambahItemKasirModal(editId = null) {
             beratInput.value = item.berat || 0;
             satuanSelect.value = item.satuanId || '';
             diskonInput.value = item.diskon || 0;
+            weighableCheck.checked = item.isWeighable || false;
             
             // Load level harga
             if (item.priceLevels && item.priceLevels.length > 0) {
@@ -3816,6 +3890,7 @@ async function saveKasirItem() {
     const berat = parseFloat(document.getElementById('kasir-item-berat').value) || 0;
     const satuanId = document.getElementById('kasir-item-satuan').value || null;
     const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || 0;
+    const isWeighable = document.getElementById('kasir-item-weighable').checked;
     
     const priceLevels = getPriceLevelsFromDOM();
     if (!validateLevels()) {
@@ -3848,6 +3923,7 @@ async function saveKasirItem() {
                 item.berat = berat;
                 item.satuanId = satuanId;
                 item.diskon = diskon;
+                item.isWeighable = isWeighable;
                 item.priceLevels = priceLevels;
                 item.unitConversions = unitConversions;
                 item.updatedAt = now;
@@ -3856,7 +3932,7 @@ async function saveKasirItem() {
         } else {
             const newItem = {
                 name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
-                diskon, priceLevels, unitConversions,
+                diskon, isWeighable, priceLevels, unitConversions,
                 createdAt: now, updatedAt: now
             };
             const id = await dbAdd(STORES.KASIR_ITEMS, newItem);
@@ -3951,6 +4027,7 @@ function openDaftarItemKasirModal() {
                         Harga Jual: Rp ${item.hargaJual.toLocaleString()} | Kategori: ${item.categoryId ? catMap[item.categoryId] || '-' : '-'}<br>
                         Berat: ${item.berat} ${item.satuanId ? satuanMap[item.satuanId] : ''}
                         ${item.diskon ? ' | Diskon: '+item.diskon+'%' : ''}
+                        ${item.isWeighable ? ' | Timbangan' : ''}
                     </span>
                 </div>
                 <div>
@@ -5042,13 +5119,134 @@ function showCategoryContextMenu(category, x, y) {
     setTimeout(() => { document.addEventListener('click', function closeMenu(e) { if (!menu.contains(e.target)) { menu.style.display = 'none'; document.removeEventListener('click', closeMenu); } }); }, 100);
 }
 
-// ==================== NOTIFICATION SYSTEM ====================
-function showNotification(message, type = 'success') {
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.style.background = type === 'error' ? '#ff6b6b' : type === 'warning' ? '#ffc107' : type === 'info' ? '#17a2b8' : '#006B54';
-    notification.style.display = 'block';
-    setTimeout(() => { notification.style.display = 'none'; }, 3000);
+// ==================== FUNGSI TRANSAKSI KASIR ====================
+function openTransaksiKasirModal() {
+    const modal = document.getElementById('transaksi-kasir-modal');
+    cart = [];
+    renderCart();
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('barcode-input').focus(), 100);
+}
+
+function closeTransaksiKasirModal() {
+    document.getElementById('transaksi-kasir-modal').style.display = 'none';
+}
+
+function processBarcode() {
+    const input = document.getElementById('barcode-input');
+    const barcode = input.value.trim();
+    if (!barcode) return;
+
+    // 1. Cari sebagai barcode reguler (kode item)
+    let item = kasirItems.find(i => i.code === barcode);
+    if (item) {
+        // Item reguler
+        addToCart(item, 1, 0);
+        input.value = '';
+        return;
+    }
+
+    // 2. Coba parsing sebagai barcode timbangan (13 digit)
+    if (barcode.length === 13) {
+        const flexLen = digitConfig.flex || 2;
+        const catLen = digitConfig.category || 2;
+        const prodLen = digitConfig.product || 4;
+        const weightLen = digitConfig.weight || 5;
+
+        const productCode = barcode.substr(flexLen + catLen, prodLen);
+        const weightStr = barcode.substr(flexLen + catLen + prodLen, weightLen);
+        const weightGram = parseInt(weightStr, 10);
+
+        if (!isNaN(weightGram) && weightGram > 0) {
+            item = kasirItems.find(i => i.code === productCode && i.isWeighable === true);
+            if (item) {
+                // Item timbangan: hargaJual per kg
+                const qtyKg = weightGram / 1000;
+                addToCart(item, qtyKg, weightGram);
+                input.value = '';
+                return;
+            }
+        }
+    }
+
+    // 3. Tidak ditemukan
+    showNotification('Produk tidak ditemukan', 'error');
+    input.value = '';
+}
+
+function addToCart(item, qty, weightGram) {
+    // Cek apakah item sudah ada di keranjang
+    const existing = cart.find(c => c.item.id === item.id && c.weightGram === weightGram);
+    if (existing) {
+        if (weightGram > 0) {
+            // Produk timbangan: jika berat sama, tambah qty kg
+            existing.qty += qty;
+            existing.subtotal = existing.qty * item.hargaJual;
+        } else {
+            // Produk reguler: tambah quantity
+            existing.qty += qty;
+            existing.subtotal = existing.qty * item.hargaJual;
+        }
+    } else {
+        cart.push({
+            item,
+            qty,
+            weightGram,
+            subtotal: qty * item.hargaJual
+        });
+    }
+    renderCart();
+}
+
+function renderCart() {
+    const tbody = document.getElementById('cart-items');
+    const totalEl = document.getElementById('cart-total');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    let total = 0;
+    cart.forEach((c, idx) => {
+        const row = document.createElement('tr');
+        const nama = c.item.name;
+        const hargaSatuan = formatRupiah(c.item.hargaJual);
+        let jumlahStr = '';
+        if (c.weightGram > 0) {
+            jumlahStr = `${c.weightGram} g (${c.qty.toFixed(3)} kg)`;
+        } else {
+            jumlahStr = `${c.qty}`;
+        }
+        const subtotalStr = formatRupiah(c.subtotal);
+        row.innerHTML = `
+            <td>${nama}</td>
+            <td>${jumlahStr}</td>
+            <td>${hargaSatuan}</td>
+            <td>${subtotalStr}</td>
+            <td><button onclick="removeFromCart(${idx})">Hapus</button></td>
+        `;
+        tbody.appendChild(row);
+        total += c.subtotal;
+    });
+    totalEl.textContent = formatRupiah(total);
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    renderCart();
+}
+
+function formatRupiah(angka) {
+    return 'Rp ' + angka.toLocaleString('id-ID');
+}
+
+function bayarTransaksi() {
+    if (cart.length === 0) {
+        showNotification('Keranjang masih kosong', 'warning');
+        return;
+    }
+    // Simulasi pembayaran (bisa dikembangkan lebih lanjut)
+    showNotification('Transaksi berhasil (simulasi)', 'success');
+    cart = [];
+    renderCart();
+    // Bisa juga cetak struk, simpan ke database, dll.
 }
 
 // ==================== UTILITY FUNCTIONS ====================
@@ -5068,6 +5266,7 @@ window.onclick = function(event) {
         else if (event.target.id === 'list-kasir-item-modal') closeListKasirItemModal();
         else if (event.target.id === 'list-satuan-modal') closeListSatuanModal();
         else if (event.target.id === 'satuan-modal') closeSatuanModal();
+        else if (event.target.id === 'transaksi-kasir-modal') closeTransaksiKasirModal();
     }
 };
 window.addEventListener('resize', function() {
