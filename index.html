@@ -902,7 +902,7 @@ button {
         <div class="modal-body">
             <div style="margin-bottom:15px;">
                 <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nama Kategori</label>
-                <input type="text" class="form-input" id="kasir-category-name" placeholder="Misal: Makanan, Minuman">
+                <input type="text" class="form-input" id="kasir-category-name" placeholder="">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <button class="form-button-secondary" onclick="closeKasirCategoryModal()">BATAL</button>
@@ -930,18 +930,18 @@ button {
                 <!-- Nama Item -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nama Item</label>
-                    <input type="text" class="form-input" id="kasir-item-name" placeholder="Nama item" required>
+                    <input type="text" class="form-input" id="kasir-item-name" placeholder="" required>
                 </div>
                 <!-- Kode Item -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Kode Item</label>
-                    <input type="text" class="form-input" id="kasir-item-code" placeholder="Kode unik untuk barcode timbangan" required>
+                    <input type="text" class="form-input" id="kasir-item-code" placeholder="" required>
                     <small style="color:#666; display:block; margin-top:4px;">Kode untuk barcode timbangan (produk ditimbang)</small>
                 </div>
                 <!-- Barcode Item -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Barcode Item</label>
-                    <input type="text" class="form-input" id="kasir-item-barcode" placeholder="Kosongkan jika sama dengan kode">
+                    <input type="text" class="form-input" id="kasir-item-barcode" placeholder="">
                     <small style="color:#666; display:block; margin-top:4px;">Barcode untuk produk kemasan (jika berbeda dengan kode)</small>
                 </div>
                 <!-- Kategori Kasir -->
@@ -1010,15 +1010,15 @@ button {
                             </div>
                             <div class="form-row">
                                 <label>Nilai Satuan</label>
-                                <input type="number" id="conv-value" class="form-input" placeholder="Contoh: 1, 12, 100" min="0.01" step="0.01">
+                                <input type="number" id="conv-value" class="form-input" placeholder="" min="0.01" step="0.01">
                             </div>
                             <div class="form-row">
                                 <label>Barcode Satuan</label>
-                                <input type="text" id="conv-barcode" class="form-input" placeholder="Contoh: PCS, BOX, PACK" required>
+                                <input type="text" id="conv-barcode" class="form-input" placeholder="" required>
                             </div>
                             <div class="form-row">
                                 <label>SKU (Opsional)</label>
-                                <input type="text" id="conv-sku" class="form-input" placeholder="SKU">
+                                <input type="text" id="conv-sku" class="form-input" placeholder="">
                             </div>
                             <div class="form-row">
                                 <label>Harga Dasar</label>
@@ -1158,7 +1158,7 @@ button {
         <div class="modal-body">
             <div style="margin-bottom:15px;">
                 <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nama Satuan</label>
-                <input type="text" class="form-input" id="satuan-name" placeholder="Contoh: kg, pcs, liter">
+                <input type="text" class="form-input" id="satuan-name" placeholder="">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <button class="form-button-secondary" onclick="closeSatuanModal()">BATAL</button>
@@ -1203,7 +1203,7 @@ button {
         </div>
         <div class="modal-body">
             <div style="margin-bottom:15px;">
-                <input type="text" id="barcode-input" class="form-input" placeholder="Scan atau ketik barcode..." onkeypress="if(event.key==='Enter') processBarcode()">
+                <input type="text" id="barcode-input" class="form-input" placeholder="" onkeypress="if(event.key==='Enter') processBarcode()">
             </div>
             <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
                 <table style="width:100%; border-collapse:collapse;">
@@ -1809,8 +1809,8 @@ function addLevelRow(qty = 0, price = 0, levelNumber = null) {
     const number = levelNumber || (container.children.length + 1);
     div.innerHTML = `
         <span class="level-number">Level ${number}</span>
-        <input type="number" class="form-input level-qty" placeholder="Qty" value="${qty}" min="0" step="any" oninput="validateLevels()">
-        <input type="number" class="form-input level-price" placeholder="Harga" value="${price}" min="0" step="0.01" oninput="validateLevels()">
+        <input type="number" class="form-input level-qty" placeholder="" value="${qty}" min="0" step="any" oninput="validateLevels()">
+        <input type="number" class="form-input level-price" placeholder="" value="${price}" min="0" step="0.01" oninput="validateLevels()">
         <button type="button" class="level-harga-remove" onclick="hapusLevelHarga(this)">×</button>
     `;
     container.appendChild(div);
