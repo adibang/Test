@@ -211,7 +211,27 @@ body.drawer-open .main-content {
     color: #999;
 }
 
-/* ==================== MODAL OVERLAY ==================== */
+/* ==================== HALAMAN TRANSAKSI (BARU) ==================== */
+#transaksi-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: none;
+}
+
+.transaksi-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.transaksi-header h2 {
+    flex: 1;
+    color: #006B54;
+    font-size: 1.5rem;
+}
+
+/* ==================== MODAL OVERLAY (untuk form lainnya) ==================== */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -226,7 +246,6 @@ body.drawer-open .main-content {
     padding: 15px;
 }
 
-/* ==================== MODAL CONTENT ==================== */
 .modal-content {
     background: #FFFFFF;
     border-radius: 15px;
@@ -986,7 +1005,7 @@ button {
         <span>Daftar Satuan</span>
     </button>
     <div class="menu-section">TRANSAKSI</div>
-    <button onclick="openTransaksiKasirModal()">
+    <button onclick="openTransaksiPage()"> <!-- Ubah ke halaman baru -->
         <svg class="icon" viewBox="0 0 24 24">
             <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
             <line x1="2" y1="10" x2="22" y2="10"/>
@@ -1074,6 +1093,46 @@ button {
     <h2>Selamat datang di POS Kasir</h2>
     <p>Gunakan menu di samping untuk memulai transaksi atau mengelola data.</p>
 </main>
+
+<!-- ==================== HALAMAN TRANSAKSI (BARU) ==================== -->
+<div id="transaksi-page">
+    <div class="transaksi-header">
+        <h2>Transaksi Kasir</h2>
+        <button class="form-button-secondary" onclick="closeTransaksiPage()">Kembali ke Beranda</button>
+    </div>
+    <!-- Baris pencarian dan toggle -->
+    <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px;">
+        <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 1;">
+        <div class="view-toggle">
+            <button id="view-list-btn" onclick="setProductViewMode('list')" title="Tampilan List">📋</button>
+            <button id="view-grid-btn" onclick="setProductViewMode('grid')" title="Tampilan Grid">🔲</button>
+        </div>
+    </div>
+    <!-- Container produk -->
+    <div id="product-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 15px; padding: 10px;"></div>
+    <!-- Keranjang -->
+    <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th>Produk</th>
+                    <th>Jumlah</th>
+                    <th>Harga Satuan</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="cart-items"></tbody>
+        </table>
+    </div>
+    <div style="text-align:right; font-size:1.2rem; margin-bottom:20px;">
+        Total: <span id="cart-total">Rp 0</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button type="button" class="form-button-secondary" onclick="closeTransaksiPage()">Tutup</button>
+        <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
+    </div>
+</div>
 
 <!-- ==================== MODAL TAMBAH KATEGORI KASIR ==================== -->
 <div class="modal-overlay" id="kasir-category-modal">
@@ -1370,56 +1429,6 @@ button {
         </div>
         <div class="modal-body">
             <div id="settings-content"></div>
-        </div>
-    </div>
-</div>
-
-<!-- ==================== MODAL TRANSAKSI KASIR ==================== -->
-<div class="modal-overlay" id="transaksi-kasir-modal">
-    <div class="modal-content" style="max-width:800px;">
-        <div class="modal-header">
-            <h2 class="modal-title">
-                <svg class="icon icon-primary" viewBox="0 0 24 24">
-                    <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
-                    <line x1="2" y1="10" x2="22" y2="10"/>
-                    <line x1="7" y1="15" x2="12" y2="15"/>
-                </svg>
-                Transaksi Kasir
-            </h2>
-        </div>
-        <div class="modal-body">
-            <!-- Baris pencarian dan toggle -->
-            <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px;">
-                <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 1;">
-                <div class="view-toggle">
-                    <button id="view-list-btn" onclick="setProductViewMode('list')" title="Tampilan List">📋</button>
-                    <button id="view-grid-btn" onclick="setProductViewMode('grid')" title="Tampilan Grid">🔲</button>
-                </div>
-            </div>
-            <!-- Container produk -->
-            <div id="product-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 15px; padding: 10px;"></div>
-            <!-- Keranjang -->
-            <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
-                <table style="width:100%; border-collapse:collapse;">
-                    <thead>
-                        <tr>
-                            <th>Produk</th>
-                            <th>Jumlah</th>
-                            <th>Harga Satuan</th>
-                            <th>Subtotal</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="cart-items"></tbody>
-                </table>
-            </div>
-            <div style="text-align:right; font-size:1.2rem; margin-bottom:20px;">
-                Total: <span id="cart-total">Rp 0</span>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <button type="button" class="form-button-secondary" onclick="closeTransaksiKasirModal()">Tutup</button>
-                <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
-            </div>
         </div>
     </div>
 </div>
@@ -2762,18 +2771,20 @@ async function saveBarcodeConfigFromUI() {
 
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 
-// ==================== FUNGSI TRANSAKSI KASIR ====================
-function openTransaksiKasirModal() {
-    const modal = document.getElementById('transaksi-kasir-modal');
+// ==================== FUNGSI TRANSAKSI KASIR (HALAMAN BARU) ====================
+function openTransaksiPage() {
+    // Sembunyikan main content, tampilkan halaman transaksi
+    document.querySelector('.main-content').style.display = 'none';
+    document.getElementById('transaksi-page').style.display = 'block';
     cart = [];
     renderCart();
     setProductViewMode('list');
-    modal.style.display = 'flex';
     setTimeout(() => document.getElementById('barcode-input').focus(), 100);
 }
 
-function closeTransaksiKasirModal() {
-    document.getElementById('transaksi-kasir-modal').style.display = 'none';
+function closeTransaksiPage() {
+    document.getElementById('transaksi-page').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
 }
 
 function getPriceForQty(item, qty) {
@@ -3228,7 +3239,6 @@ window.onclick = function(event) {
         else if (event.target.id === 'list-kasir-item-modal') closeListKasirItemModal();
         else if (event.target.id === 'list-satuan-modal') closeListSatuanModal();
         else if (event.target.id === 'satuan-modal') closeSatuanModal();
-        else if (event.target.id === 'transaksi-kasir-modal') closeTransaksiKasirModal();
         else if (event.target.id === 'settings-modal') closeSettingsModal();
         else if (event.target.id === 'inventory-modal') closeInventoryModal();
     }
