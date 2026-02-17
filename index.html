@@ -1198,7 +1198,7 @@ button {
 
 <!-- ==================== SETTINGS MODAL ==================== -->
 <div class="modal-overlay" id="settings-modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:500px;">
         <div class="modal-header">
             <h2 class="modal-title">
                 <svg class="icon icon-primary settings-icon" viewBox="0 0 24 24">
@@ -1210,7 +1210,7 @@ button {
         </div>
         <div class="modal-body">
             <div id="settings-content">
-                <!-- Settings akan diisi JavaScript (hanya manajemen data) -->
+                <!-- Settings akan diisi JavaScript -->
             </div>
         </div>
     </div>
@@ -1231,7 +1231,7 @@ button {
         </div>
         <div class="modal-body">
             <div style="margin-bottom:15px;">
-                <input type="text" id="barcode-input" class="form-input" placeholder="" onkeypress="if(event.key==='Enter') processBarcode()">
+                <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()">
             </div>
             <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
                 <table style="width:100%; border-collapse:collapse;">
@@ -1479,7 +1479,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-const DB_VERSION = 9; 
+const DB_VERSION = 10; // NEW: increment version for settings changes
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -1490,7 +1490,13 @@ const STORES = {
 
 // ==================== GLOBAL VARIABLES ====================
 let db = null;
-let digitConfig = { flex: 2, category: 2, product: 4, weight: 5 }; // tetap untuk parsing barcode
+// NEW: barcodeConfig diganti dengan struktur baru
+let barcodeConfig = {
+    flexLength: 2,
+    flexValue: '02',
+    productLength: 5,
+    weightLength: 6
+}; // default total 13 digit
 let kasirCategories = [];
 let kasirItems = [];
 let kasirSatuan = [];
@@ -1673,6 +1679,50 @@ async function dbClear(storeName) {
             request.onerror = (e) => reject(e.target.error);
         } catch (error) { reject(error); }
     });
+}
+
+// NEW: Fungsi untuk load barcodeConfig dari database
+async function loadBarcodeConfig() {
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readonly');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const request = store.get('barcodeConfig');
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                if (request.result) {
+                    barcodeConfig = request.result.value;
+                } else {
+                    // gunakan default
+                    barcodeConfig = { flexLength: 2, flexValue: '02', productLength: 5, weightLength: 6 };
+                }
+                resolve();
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    } catch (error) {
+        console.error('Error loading barcode config:', error);
+        barcodeConfig = { flexLength: 2, flexValue: '02', productLength: 5, weightLength: 6 };
+    }
+}
+
+// NEW: Fungsi untuk save barcodeConfig
+async function saveBarcodeConfig(config) {
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readwrite');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const data = { key: 'barcodeConfig', value: config };
+        const request = store.put(data);
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                barcodeConfig = config;
+                resolve();
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    } catch (error) {
+        console.error('Error saving barcode config:', error);
+        throw error;
+    }
 }
 
 // ==================== LOAD DATA KASIR ====================
@@ -2455,6 +2505,7 @@ async function forceResetDatabase() {
     }
 }
 
+// NEW: Tampilkan modal settings dengan konfigurasi barcode
 function showSettingsModal() {
     const settingsContent = document.getElementById('settings-content');
     settingsContent.innerHTML = `
@@ -2467,11 +2518,82 @@ function showSettingsModal() {
             <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #ff6b6b;" onclick="clearAllData()">${icons.delete} Hapus Semua Data</button>
             <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#dc3545;color:white;font-weight:600;margin-top:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dc3545;" onclick="forceResetDatabase()"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Force Reset Database</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="margin-bottom:20px; border-top:1px solid #ddd; padding-top:20px;">
+            <div style="color:#333333;margin-bottom:15px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Konfigurasi Barcode Timbangan
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Panjang Digit Flex</label>
+                <input type="number" id="barcode-flex-length" class="form-input" value="${barcodeConfig.flexLength}" min="1" max="5">
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Nilai Flex (misal 02)</label>
+                <input type="text" id="barcode-flex-value" class="form-input" value="${barcodeConfig.flexValue}" maxlength="5">
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Panjang Digit Kode Item</label>
+                <input type="number" id="barcode-product-length" class="form-input" value="${barcodeConfig.productLength}" min="1" max="10">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px;">Panjang Digit Berat</label>
+                <input type="number" id="barcode-weight-length" class="form-input" value="${barcodeConfig.weightLength}" min="1" max="10">
+            </div>
+            <div style="color:#666; font-size:0.85rem; margin-bottom:10px;">Total panjang harus 13 digit. Saat ini: <span id="total-digits-display">${barcodeConfig.flexLength + barcodeConfig.productLength + barcodeConfig.weightLength}</span></div>
+            <button class="form-button-primary" style="width:100%;" onclick="saveBarcodeConfigFromUI()">Simpan Konfigurasi Barcode</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-top:20px;">
             <button class="form-button-secondary" onclick="closeSettingsModal()"><svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> TUTUP</button>
         </div>
     `;
+    // Event listener untuk menghitung total
+    const flexLen = document.getElementById('barcode-flex-length');
+    const prodLen = document.getElementById('barcode-product-length');
+    const weightLen = document.getElementById('barcode-weight-length');
+    const totalSpan = document.getElementById('total-digits-display');
+    function updateTotal() {
+        const total = (parseInt(flexLen.value) || 0) + (parseInt(prodLen.value) || 0) + (parseInt(weightLen.value) || 0);
+        totalSpan.textContent = total;
+        if (total !== 13) {
+            totalSpan.style.color = 'red';
+        } else {
+            totalSpan.style.color = 'green';
+        }
+    }
+    flexLen.addEventListener('input', updateTotal);
+    prodLen.addEventListener('input', updateTotal);
+    weightLen.addEventListener('input', updateTotal);
     document.getElementById('settings-modal').style.display = 'flex';
+}
+
+// NEW: Simpan konfigurasi dari UI
+async function saveBarcodeConfigFromUI() {
+    const flexLength = parseInt(document.getElementById('barcode-flex-length').value);
+    const flexValue = document.getElementById('barcode-flex-value').value.trim();
+    const productLength = parseInt(document.getElementById('barcode-product-length').value);
+    const weightLength = parseInt(document.getElementById('barcode-weight-length').value);
+
+    if (isNaN(flexLength) || flexLength < 1) { showNotification('Panjang Flex harus angka positif', 'error'); return; }
+    if (!flexValue) { showNotification('Nilai Flex harus diisi', 'error'); return; }
+    if (isNaN(productLength) || productLength < 1) { showNotification('Panjang Kode Item harus angka positif', 'error'); return; }
+    if (isNaN(weightLength) || weightLength < 1) { showNotification('Panjang Berat harus angka positif', 'error'); return; }
+
+    const total = flexLength + productLength + weightLength;
+    if (total !== 13) {
+        showNotification(`Total panjang harus 13 digit, saat ini ${total}`, 'error');
+        return;
+    }
+
+    const newConfig = { flexLength, flexValue, productLength, weightLength };
+    try {
+        showLoading();
+        await saveBarcodeConfig(newConfig);
+        showNotification('Konfigurasi barcode tersimpan', 'success');
+        closeSettingsModal();
+    } catch (error) {
+        showNotification('Gagal menyimpan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
@@ -2555,6 +2677,7 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
     renderCart();
 }
 
+// NEW: Proses barcode dengan konfigurasi yang dapat diatur
 function processBarcode() {
     const input = document.getElementById('barcode-input');
     const barcode = input.value.trim();
@@ -2580,15 +2703,18 @@ function processBarcode() {
         }
     }
 
-    // 3. Parsing barcode timbangan 13 digit
+    // 3. Parsing barcode timbangan dengan konfigurasi
     if (barcode.length === 13) {
-        const flexLen = digitConfig.flex || 2;
-        const catLen = digitConfig.category || 2;
-        const prodLen = digitConfig.product || 4;
-        const weightLen = digitConfig.weight || 5;
+        const flex = barcode.substr(0, barcodeConfig.flexLength);
+        if (flex !== barcodeConfig.flexValue) {
+            // bukan barcode timbangan yang dikenali
+            showNotification('Barcode tidak dikenal', 'error');
+            input.value = '';
+            return;
+        }
 
-        const productCode = barcode.substr(flexLen + catLen, prodLen);
-        const weightStr = barcode.substr(flexLen + catLen + prodLen, weightLen);
+        const productCode = barcode.substr(barcodeConfig.flexLength, barcodeConfig.productLength);
+        const weightStr = barcode.substr(barcodeConfig.flexLength + barcodeConfig.productLength, barcodeConfig.weightLength);
         const weightGram = parseInt(weightStr, 10);
 
         if (!isNaN(weightGram) && weightGram > 0) {
@@ -2720,6 +2846,7 @@ async function initApp() {
         showLoading();
         hideError();
         await initDatabase();
+        await loadBarcodeConfig(); // NEW: load konfigurasi barcode
         await loadKasirCategories();
         await loadKasirItems();
         await loadKasirSatuan();
@@ -2751,7 +2878,7 @@ window.onclick = function(event) {
         else if (event.target.id === 'satuan-modal') closeSatuanModal();
         else if (event.target.id === 'transaksi-kasir-modal') closeTransaksiKasirModal();
         else if (event.target.id === 'settings-modal') closeSettingsModal();
-        else if (event.target.id === 'inventory-modal') closeInventoryModal(); // NEW
+        else if (event.target.id === 'inventory-modal') closeInventoryModal();
     }
 };
 
