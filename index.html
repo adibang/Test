@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POS Kasir Murni</title>
+<title>POSPLUS</title>
 <style>
 /* ==================== RESET & BASE STYLES ==================== */
 * {
@@ -757,7 +757,7 @@ button {
                     <line x1="12" y1="22.08" x2="12" y2="12"/>
                 </svg>
             </div>
-            <span>POS Kasir Murni</span>
+            <span>POSPLUS</span>
         </div>
         <div class="header-actions">
             <button onclick="showSettingsModal()">
@@ -955,18 +955,18 @@ button {
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
                     <div>
                         <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Harga Dasar</label>
-                        <input type="number" class="form-input" id="kasir-item-harga-dasar" min="0" value="0">
+                        <input type="number" class="form-input" id="kasir-item-harga-dasar" min="0" value="">
                     </div>
                     <div>
                         <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Harga Jual</label>
-                        <input type="number" class="form-input" id="kasir-item-harga-jual" min="0" value="0" step="0.01">
+                        <input type="number" class="form-input" id="kasir-item-harga-jual" min="0" value="" step="0.01">
                     </div>
                 </div>
                 <!-- Berat dan Satuan -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
                     <div>
                         <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Berat</label>
-                        <input type="number" class="form-input" id="kasir-item-berat" min="0" value="0" step="0.01">
+                        <input type="number" class="form-input" id="kasir-item-berat" min="0" value="" step="0.01">
                     </div>
                     <div>
                         <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Satuan</label>
@@ -978,7 +978,7 @@ button {
                 <!-- Diskon Opsional -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Diskon (%) *opsional</label>
-                    <input type="number" class="form-input" id="kasir-item-diskon" min="0" max="100" value="0" step="0.1">
+                    <input type="number" class="form-input" id="kasir-item-diskon" min="0" max="100" value="" step="0.1">
                 </div>
                 <!-- Produk Timbangan? -->
                 <div style="margin-bottom:15px;">
@@ -1022,19 +1022,19 @@ button {
                             </div>
                             <div class="form-row">
                                 <label>Harga Dasar</label>
-                                <input type="number" id="conv-base-price" class="form-input" min="0" value="0">
+                                <input type="number" id="conv-base-price" class="form-input" min="0" value="">
                             </div>
                             <div class="form-row">
                                 <label>Harga Jual</label>
-                                <input type="number" id="conv-sell-price" class="form-input" min="0" value="0">
+                                <input type="number" id="conv-sell-price" class="form-input" min="0" value="">
                             </div>
                             <div class="form-row">
                                 <label>Poin Pelanggan (Opsional)</label>
-                                <input type="number" id="conv-points" class="form-input" min="0" value="0">
+                                <input type="number" id="conv-points" class="form-input" min="0" value="">
                             </div>
                             <div class="form-row">
                                 <label>Komisi Sales (Opsional)</label>
-                                <input type="number" id="conv-commission" class="form-input" min="0" value="0">
+                                <input type="number" id="conv-commission" class="form-input" min="0" value="">
                             </div>
                             <div class="form-buttons">
                                 <button type="button" class="form-button-secondary" onclick="hideConversionForm()">Batal</button>
@@ -1736,11 +1736,11 @@ function openTambahItemKasirModal(editId = null) {
     codeInput.value = '';
     barcodeInput.value = '';
     catSelect.value = '';
-    hargaDasarInput.value = '0';
-    hargaJualInput.value = '0';
-    beratInput.value = '0';
+    hargaDasarInput.value = '';
+    hargaJualInput.value = '';
+    beratInput.value = '';
     satuanSelect.value = '';
-    diskonInput.value = '0';
+    diskonInput.value = '';
     weighableCheck.checked = false;
     
     levelContainer.innerHTML = '';
@@ -1751,11 +1751,11 @@ function openTambahItemKasirModal(editId = null) {
             codeInput.value = item.code;
             barcodeInput.value = item.barcode || item.code;
             catSelect.value = item.categoryId || '';
-            hargaDasarInput.value = item.hargaDasar || 0;
-            hargaJualInput.value = item.hargaJual || 0;
-            beratInput.value = item.berat || 0;
+            hargaDasarInput.value = item.hargaDasar || '';
+            hargaJualInput.value = item.hargaJual || '';
+            beratInput.value = item.berat || '';
             satuanSelect.value = item.satuanId || '';
-            diskonInput.value = item.diskon || 0;
+            diskonInput.value = item.diskon || '';
             weighableCheck.checked = item.isWeighable || false;
             
             if (item.priceLevels && item.priceLevels.length > 0) {
@@ -1763,9 +1763,9 @@ function openTambahItemKasirModal(editId = null) {
                     addLevelRow(l.minQty, l.price, l.level);
                 });
             } else {
-                addLevelRow(1, 0, 1);
-                addLevelRow(12, 0, 2);
-                addLevelRow(24, 0, 3);
+                addLevelRow('', '', 1);
+                addLevelRow('', '', 2);
+                addLevelRow('', '', 3);
             }
             
             tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
@@ -1775,9 +1775,9 @@ function openTambahItemKasirModal(editId = null) {
     } else {
         editingKasirItemId = null;
         title.innerHTML = `<svg class="icon icon-primary" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Tambah Item Kasir`;
-        addLevelRow(1, 0, 1);
-        addLevelRow(12, 0, 2);
-        addLevelRow(24, 0, 3);
+        addLevelRow('', '', 1);
+        addLevelRow('', '', 2);
+        addLevelRow('', '', 3);
     }
     
     const convUnitSelect = document.getElementById('conv-unit');
@@ -1802,7 +1802,7 @@ function closeKasirItemModal() {
 }
 
 // ==================== FUNGSI LEVEL HARGA ====================
-function addLevelRow(qty = 0, price = 0, levelNumber = null) {
+function addLevelRow(qty = '', price = '', levelNumber = null) {
     const container = document.getElementById('level-harga-container');
     const div = document.createElement('div');
     div.className = 'level-harga-item';
@@ -1906,11 +1906,11 @@ async function saveKasirItem() {
     const code = document.getElementById('kasir-item-code').value.trim();
     const barcode = document.getElementById('kasir-item-barcode').value.trim() || code;
     const categoryId = document.getElementById('kasir-item-category').value || null;
-    const hargaDasar = parseFloat(document.getElementById('kasir-item-harga-dasar').value) || 0;
-    const hargaJual = parseFloat(document.getElementById('kasir-item-harga-jual').value) || 0;
-    const berat = parseFloat(document.getElementById('kasir-item-berat').value) || 0;
+    const hargaDasar = parseFloat(document.getElementById('kasir-item-harga-dasar').value) || '';
+    const hargaJual = parseFloat(document.getElementById('kasir-item-harga-jual').value) || '';
+    const berat = parseFloat(document.getElementById('kasir-item-berat').value) || '';
     const satuanId = document.getElementById('kasir-item-satuan').value || null;
-    const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || 0;
+    const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || '';
     const isWeighable = document.getElementById('kasir-item-weighable').checked;
     
     const priceLevels = getPriceLevelsFromDOM();
@@ -2188,18 +2188,18 @@ function showConversionForm(index = -1) {
         skuInput.value = conv.sku || '';
         basePriceInput.value = conv.basePrice;
         sellPriceInput.value = conv.sellPrice;
-        pointsInput.value = conv.customerPoint || 0;
-        commissionInput.value = conv.salesCommission || 0;
+        pointsInput.value = conv.customerPoint || '';
+        commissionInput.value = conv.salesCommission || '';
     } else {
         editingConversionIndex = -1;
         selectUnit.value = '';
         valueInput.value = '';
         barcodeInput.value = '';
         skuInput.value = '';
-        basePriceInput.value = 0;
-        sellPriceInput.value = 0;
-        pointsInput.value = 0;
-        commissionInput.value = 0;
+        basePriceInput.value = '';
+        sellPriceInput.value = '';
+        pointsInput.value = '';
+        commissionInput.value = '';
     }
 
     formContainer.style.display = 'block';
@@ -2215,10 +2215,10 @@ function saveConversion() {
     const value = parseFloat(document.getElementById('conv-value').value);
     const barcode = document.getElementById('conv-barcode').value.trim();
     const sku = document.getElementById('conv-sku').value.trim();
-    const basePrice = parseFloat(document.getElementById('conv-base-price').value) || 0;
-    const sellPrice = parseFloat(document.getElementById('conv-sell-price').value) || 0;
-    const customerPoint = parseFloat(document.getElementById('conv-points').value) || 0;
-    const salesCommission = parseFloat(document.getElementById('conv-commission').value) || 0;
+    const basePrice = parseFloat(document.getElementById('conv-base-price').value) || '';
+    const sellPrice = parseFloat(document.getElementById('conv-sell-price').value) || '';
+    const customerPoint = parseFloat(document.getElementById('conv-points').value) || '';
+    const salesCommission = parseFloat(document.getElementById('conv-commission').value) || '';
 
     if (!unit) { showNotification('Satuan harus dipilih!', 'error'); return; }
     if (!value || value <= 0) { showNotification('Nilai satuan harus lebih dari 0!', 'error'); return; }
