@@ -832,6 +832,34 @@ button {
         </svg>
         <span>Transaksi Kasir</span>
     </button>
+
+    <!-- NEW: Bagian Inventory -->
+    <div class="menu-section">INVENTORY</div>
+    <button onclick="openInventoryStokModal()">
+        <svg class="icon" viewBox="0 0 24 24">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+        </svg>
+        <span>Stok Barang</span>
+    </button>
+    <button onclick="openInventoryOpnameModal()">
+        <svg class="icon" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        <span>Stok Opname</span>
+    </button>
+    <button onclick="openInventoryLaporanModal()">
+        <svg class="icon" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Laporan Stok</span>
+    </button>
 </div>
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -1226,6 +1254,28 @@ button {
                 <button type="button" class="form-button-secondary" onclick="closeTransaksiKasirModal()">Tutup</button>
                 <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== NEW: MODAL INVENTORY (UNTUK SEMUA SUB-MENU) ==================== -->
+<div class="modal-overlay" id="inventory-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="inventory-modal-title">
+                <svg class="icon icon-primary" viewBox="0 0 24 24">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+                Inventory
+            </h2>
+        </div>
+        <div class="modal-body" id="inventory-modal-body">
+            <!-- Konten dinamis dari JavaScript -->
+            <p style="text-align:center; padding:20px;">Fitur dalam pengembangan.</p>
+        </div>
+        <div style="padding:20px; text-align:center;">
+            <button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button>
         </div>
     </div>
 </div>
@@ -2612,6 +2662,45 @@ function bayarTransaksi() {
     renderCart();
 }
 
+// ==================== NEW: FUNGSI UNTUK MODAL INVENTORY ====================
+function openInventoryStokModal() {
+    document.getElementById('inventory-modal-title').innerHTML = `
+        <svg class="icon icon-primary" viewBox="0 0 24 24">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+        </svg> Stok Barang`;
+    document.getElementById('inventory-modal-body').innerHTML = '<p style="text-align:center; padding:20px;">Fitur Stok Barang akan segera hadir.</p>';
+    document.getElementById('inventory-modal').style.display = 'flex';
+}
+
+function openInventoryOpnameModal() {
+    document.getElementById('inventory-modal-title').innerHTML = `
+        <svg class="icon icon-primary" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg> Stok Opname`;
+    document.getElementById('inventory-modal-body').innerHTML = '<p style="text-align:center; padding:20px;">Fitur Stok Opname akan segera hadir.</p>';
+    document.getElementById('inventory-modal').style.display = 'flex';
+}
+
+function openInventoryLaporanModal() {
+    document.getElementById('inventory-modal-title').innerHTML = `
+        <svg class="icon icon-primary" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg> Laporan Stok`;
+    document.getElementById('inventory-modal-body').innerHTML = '<p style="text-align:center; padding:20px;">Fitur Laporan Stok akan segera hadir.</p>';
+    document.getElementById('inventory-modal').style.display = 'flex';
+}
+
+function closeInventoryModal() {
+    document.getElementById('inventory-modal').style.display = 'none';
+}
+
 // ==================== UTILITY ====================
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
@@ -2662,6 +2751,7 @@ window.onclick = function(event) {
         else if (event.target.id === 'satuan-modal') closeSatuanModal();
         else if (event.target.id === 'transaksi-kasir-modal') closeTransaksiKasirModal();
         else if (event.target.id === 'settings-modal') closeSettingsModal();
+        else if (event.target.id === 'inventory-modal') closeInventoryModal(); // NEW
     }
 };
 
