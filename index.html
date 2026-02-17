@@ -768,6 +768,8 @@ button {
     cursor: pointer;
     background: white;
     transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
 }
 .product-card:hover {
     background: #f0f9f6;
@@ -775,6 +777,7 @@ button {
 .product-card .name {
     font-weight: 600;
     color: #006B54;
+    margin: 5px 0;
 }
 .product-card .price {
     font-size: 0.9rem;
@@ -784,18 +787,67 @@ button {
     font-size: 0.8rem;
     color: #666;
 }
+.product-card .product-image svg {
+    width: 48px;
+    height: 48px;
+    color: #006B54;
+    opacity: 0.7;
+}
+.qty-control {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 5px;
+}
+.qty-control button {
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    border: 1px solid #006B54;
+    background: white;
+    color: #006B54;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    min-height: auto;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+.qty-control input {
+    width: 60px;
+    text-align: center;
+    padding: 5px;
+    border-radius: 10px;
+    border: 1px solid #006B54;
+}
 
 /* Tampilan list */
 .product-list-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     padding: 10px;
     border-bottom: 1px solid #eee;
     cursor: pointer;
 }
 .product-list-item:hover {
     background: #f5f5f5;
+}
+.product-list-item .name {
+    font-weight: 600;
+    color: #006B54;
+}
+.product-list-item .price {
+    font-size: 0.9rem;
+    color: #333;
+}
+.product-list-item .stock {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+}
+.product-list-item .qty-control {
+    justify-content: flex-end;
 }
 
 /* ==================== NOTIFICATION ==================== */
@@ -3076,30 +3128,75 @@ function renderProductList() {
     if (productViewMode === 'list') {
         html = '<div class="product-list">';
         kasirItems.forEach(item => {
-            html += `<div class="product-list-item" onclick="addToCartFromProduct(${item.id})">
-                <span><strong>${item.name}</strong> - ${formatRupiah(item.hargaJual)}</span>
-                <span style="color:${item.stock > 0 ? '#006B54' : '#ff6b6b'}">Stok: ${item.stock}</span>
-            </div>`;
+            html += `
+                <div class="product-list-item" onclick="addToCartFromProductWithQty(${item.id}, this)">
+                    <div class="name"><strong>${item.name}</strong></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0;">
+                        <span class="price" style="font-size: 0.9rem;">${formatRupiah(item.hargaJual)}</span>
+                        <div class="qty-control">
+                            <button class="qty-minus" onclick="event.stopPropagation(); adjustQty(this, -1, ${item.id})">-</button>
+                            <input type="number" class="qty-input" value="1" min="1" max="${item.stock}" data-id="${item.id}" onclick="event.stopPropagation();" onchange="event.stopPropagation();">
+                            <button class="qty-plus" onclick="event.stopPropagation(); adjustQty(this, 1, ${item.id})">+</button>
+                        </div>
+                    </div>
+                    <div class="stock" style="font-size: 0.8rem; color: ${item.stock > 0 ? '#006B54' : '#ff6b6b'}">Stok: ${item.stock}</div>
+                </div>
+            `;
         });
         html += '</div>';
     } else {
         html = '<div class="product-grid">';
         kasirItems.forEach(item => {
-            html += `<div class="product-card" onclick="addToCartFromProduct(${item.id})">
-                <div class="name">${item.name}</div>
-                <div class="price">${formatRupiah(item.hargaJual)}</div>
-                <div class="stock">Stok: ${item.stock}</div>
-            </div>`;
+            html += `
+                <div class="product-card" onclick="addToCartFromProductWithQty(${item.id}, this)">
+                    <div class="product-image">
+                        <svg class="icon" viewBox="0 0 24 24" width="48" height="48">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                            <line x1="7" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <div class="name"><strong>${item.name}</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                        <span class="price">${formatRupiah(item.hargaJual)}</span>
+                        <span class="stock" style="color: ${item.stock > 0 ? '#006B54' : '#ff6b6b'}">Stok: ${item.stock}</span>
+                    </div>
+                    <div class="qty-control" style="display: flex; justify-content: center; gap: 5px; margin-top: 5px;">
+                        <button class="qty-minus" onclick="event.stopPropagation(); adjustQty(this, -1, ${item.id})">-</button>
+                        <input type="number" class="qty-input" value="1" min="1" max="${item.stock}" data-id="${item.id}" style="width: 50px; text-align: center;" onclick="event.stopPropagation();" onchange="event.stopPropagation();">
+                        <button class="qty-plus" onclick="event.stopPropagation(); adjustQty(this, 1, ${item.id})">+</button>
+                    </div>
+                </div>
+            `;
         });
         html += '</div>';
     }
     container.innerHTML = html;
 }
 
-function addToCartFromProduct(itemId) {
+function adjustQty(btn, delta, itemId) {
+    const container = btn.closest('.product-list-item, .product-card');
+    const input = container.querySelector('.qty-input');
+    if (input) {
+        let newVal = parseInt(input.value) + delta;
+        const max = parseInt(input.max);
+        if (newVal < 1) newVal = 1;
+        if (newVal > max) newVal = max;
+        input.value = newVal;
+    }
+    // event.stopPropagation() sudah di inline
+}
+
+function addToCartFromProductWithQty(itemId, element) {
+    const input = element.querySelector('.qty-input');
+    let qty = 1;
+    if (input) {
+        qty = parseFloat(input.value);
+        if (isNaN(qty) || qty < 1) qty = 1;
+    }
     const item = kasirItems.find(i => i.id === itemId);
     if (item) {
-        addToCart(item, 1, null, 0);
+        addToCart(item, qty, null, 0);
     }
 }
 
