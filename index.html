@@ -709,7 +709,7 @@ button {
     color: #ff6b6b;
 }
 
-/* ==================== MODAL TRANSAKSI KASIR ==================== */
+/* ==================== MODAL TRANSAKSI KASIR (dengan list/grid produk) ==================== */
 #cart-items td, #cart-items th {
     padding: 8px;
     border-bottom: 1px solid #eee;
@@ -717,6 +717,85 @@ button {
 #cart-items th {
     text-align: left;
     background-color: #f5f5f5;
+}
+
+/* Toggle tombol list/grid */
+.view-toggle {
+    display: flex;
+    gap: 5px;
+}
+.view-toggle button {
+    width: 40px;
+    height: 40px;
+    border-radius: 15px;
+    border: 1px solid #006B54;
+    background: white;
+    color: #006B54;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    min-height: auto;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.view-toggle button.active {
+    background: #006B54;
+    color: white;
+}
+
+/* Container produk */
+#product-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+/* Tampilan grid */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+.product-card {
+    border: 1px solid #006B54;
+    border-radius: 15px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s;
+}
+.product-card:hover {
+    background: #f0f9f6;
+}
+.product-card .name {
+    font-weight: 600;
+    color: #006B54;
+}
+.product-card .price {
+    font-size: 0.9rem;
+    color: #333;
+}
+.product-card .stock {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Tampilan list */
+.product-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+.product-list-item:hover {
+    background: #f5f5f5;
 }
 
 /* ==================== NOTIFICATION ==================== */
@@ -1008,7 +1087,7 @@ button {
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Diskon (%) *opsional</label>
                     <input type="number" class="form-input" id="kasir-item-diskon" min="0" max="100" value="" step="0.1">
                 </div>
-                <!-- MODIFIKASI: Stok Awal -->
+                <!-- Stok Awal -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Stok Awal</label>
                     <input type="number" class="form-input" id="kasir-item-stock" min="0" value="0" step="any">
@@ -1221,7 +1300,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL TRANSAKSI KASIR ==================== -->
+<!-- ==================== MODAL TRANSAKSI KASIR (dengan list/grid produk) ==================== -->
 <div class="modal-overlay" id="transaksi-kasir-modal">
     <div class="modal-content" style="max-width:800px;">
         <div class="modal-header">
@@ -1235,9 +1314,17 @@ button {
             </h2>
         </div>
         <div class="modal-body">
-            <div style="margin-bottom:15px;">
-                <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()">
+            <!-- Baris pencarian dan toggle -->
+            <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px;">
+                <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 1;">
+                <div class="view-toggle">
+                    <button id="view-list-btn" onclick="setProductViewMode('list')" title="Tampilan List">📋</button>
+                    <button id="view-grid-btn" onclick="setProductViewMode('grid')" title="Tampilan Grid">🔲</button>
+                </div>
             </div>
+            <!-- Container produk -->
+            <div id="product-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 15px; padding: 10px;"></div>
+            <!-- Keranjang -->
             <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
                 <table style="width:100%; border-collapse:collapse;">
                     <thead>
@@ -1481,7 +1568,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-const DB_VERSION = 11; // MODIFIKASI: naikkan versi karena ada perubahan struktur (stok)
+const DB_VERSION = 11;
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -1511,6 +1598,9 @@ let editingConversionIndex = -1;
 
 // Keranjang transaksi
 let cart = []; // { item, qty, unitConversion, weightGram, pricePerUnit, subtotal }
+
+// Mode tampilan produk di transaksi
+let productViewMode = 'list'; // 'list' atau 'grid'
 
 // Icon definitions
 const icons = {
@@ -1607,7 +1697,6 @@ async function initDatabase() {
                 const satuanStore = db.createObjectStore(STORES.KASIR_SATUAN, { keyPath: 'id', autoIncrement: true });
                 satuanStore.createIndex('name', 'name', { unique: true });
             }
-            // MODIFIKASI: tidak perlu mengubah struktur lama, field stok akan otomatis ada saat menyimpan item baru
             event.target.transaction.oncomplete = () => console.log('Database upgrade completed');
         };
     });
@@ -1735,7 +1824,7 @@ async function loadKasirCategories() {
 async function loadKasirItems() {
     try { 
         kasirItems = await dbGetAll(STORES.KASIR_ITEMS); 
-        // MODIFIKASI: pastikan setiap item memiliki field stock, default 0 jika tidak ada
+        // pastikan setiap item memiliki field stock, default 0 jika tidak ada
         kasirItems.forEach(item => { if (item.stock === undefined) item.stock = 0; });
         kasirItems.sort((a,b) => a.name.localeCompare(b.name)); 
     } catch (error) { console.error('Error loading kasir items:', error); kasirItems = []; }
@@ -1830,7 +1919,7 @@ function openTambahItemKasirModal(editId = null) {
     const beratInput = document.getElementById('kasir-item-berat');
     const satuanSelect = document.getElementById('kasir-item-satuan');
     const diskonInput = document.getElementById('kasir-item-diskon');
-    const stockInput = document.getElementById('kasir-item-stock'); // MODIFIKASI
+    const stockInput = document.getElementById('kasir-item-stock');
     const weighableCheck = document.getElementById('kasir-item-weighable');
     const levelContainer = document.getElementById('level-harga-container');
     const errorDiv = document.getElementById('level-error');
@@ -1850,7 +1939,7 @@ function openTambahItemKasirModal(editId = null) {
     beratInput.value = '';
     satuanSelect.value = '';
     diskonInput.value = '';
-    stockInput.value = '0'; // MODIFIKASI: default 0
+    stockInput.value = '0';
     weighableCheck.checked = false;
     
     levelContainer.innerHTML = '';
@@ -1866,7 +1955,7 @@ function openTambahItemKasirModal(editId = null) {
             beratInput.value = item.berat || '';
             satuanSelect.value = item.satuanId || '';
             diskonInput.value = item.diskon || '';
-            stockInput.value = item.stock || 0; // MODIFIKASI: isi stok
+            stockInput.value = item.stock || 0;
             weighableCheck.checked = item.isWeighable || false;
             
             if (item.priceLevels && item.priceLevels.length > 0) {
@@ -2022,7 +2111,7 @@ async function saveKasirItem() {
     const berat = parseFloat(document.getElementById('kasir-item-berat').value) || '';
     const satuanId = document.getElementById('kasir-item-satuan').value || null;
     const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || '';
-    const stock = parseFloat(document.getElementById('kasir-item-stock').value) || 0; // MODIFIKASI: ambil stok
+    const stock = parseFloat(document.getElementById('kasir-item-stock').value) || 0;
     const isWeighable = document.getElementById('kasir-item-weighable').checked;
     
     const priceLevels = getPriceLevelsFromDOM();
@@ -2056,7 +2145,7 @@ async function saveKasirItem() {
                 item.berat = berat;
                 item.satuanId = satuanId;
                 item.diskon = diskon;
-                item.stock = stock; // MODIFIKASI: simpan stok
+                item.stock = stock;
                 item.isWeighable = isWeighable;
                 item.priceLevels = priceLevels;
                 item.unitConversions = unitConversions;
@@ -2066,7 +2155,7 @@ async function saveKasirItem() {
         } else {
             const newItem = {
                 name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
-                diskon, stock, isWeighable, priceLevels, unitConversions, // MODIFIKASI: tambah stock
+                diskon, stock, isWeighable, priceLevels, unitConversions,
                 createdAt: now, updatedAt: now
             };
             const id = await dbAdd(STORES.KASIR_ITEMS, newItem);
@@ -2153,7 +2242,6 @@ function openDaftarItemKasirModal() {
             div.style.alignItems = 'center';
             div.style.padding = '10px';
             div.style.borderBottom = '1px solid #eee';
-            // MODIFIKASI: tampilkan stok
             div.innerHTML = `
                 <div style="flex:1;">
                     <strong>${item.name}</strong><br>
@@ -2612,11 +2700,13 @@ async function saveBarcodeConfigFromUI() {
 
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 
-// ==================== FUNGSI TRANSAKSI KASIR (dengan validasi stok) ====================
+// ==================== FUNGSI TRANSAKSI KASIR (dengan validasi stok dan list/grid produk) ====================
 function openTransaksiKasirModal() {
     const modal = document.getElementById('transaksi-kasir-modal');
     cart = [];
     renderCart();
+    // Set default mode list
+    setProductViewMode('list');
     modal.style.display = 'flex';
     setTimeout(() => document.getElementById('barcode-input').focus(), 100);
 }
@@ -2640,7 +2730,7 @@ function getPriceForQty(item, qty) {
     return item.hargaJual; // fallback
 }
 
-// MODIFIKASI: validasi stok sebelum menambah ke keranjang
+// validasi stok sebelum menambah ke keranjang
 function addToCart(item, qty, unitConversion = null, weightGram = 0) {
     // Hitung kebutuhan stok dalam unit dasar
     let requiredStock;
@@ -2836,6 +2926,8 @@ async function bayarTransaksi() {
         }
         // Reload items untuk memperbarui cache
         await loadKasirItems();
+        // Perbarui tampilan produk di modal
+        renderProductList();
         showNotification('Transaksi berhasil', 'success');
         cart = [];
         renderCart();
@@ -2950,6 +3042,65 @@ function openInventoryLaporanModal() {
 
 function closeInventoryModal() {
     document.getElementById('inventory-modal').style.display = 'none';
+}
+
+// ==================== FUNGSI TAMBAHAN UNTUK LIST/GRID PRODUK ====================
+function setProductViewMode(mode) {
+    productViewMode = mode;
+    const listBtn = document.getElementById('view-list-btn');
+    const gridBtn = document.getElementById('view-grid-btn');
+    if (listBtn && gridBtn) {
+        if (mode === 'list') {
+            listBtn.style.background = '#006B54';
+            listBtn.style.color = 'white';
+            gridBtn.style.background = 'white';
+            gridBtn.style.color = '#006B54';
+        } else {
+            gridBtn.style.background = '#006B54';
+            gridBtn.style.color = 'white';
+            listBtn.style.background = 'white';
+            listBtn.style.color = '#006B54';
+        }
+    }
+    renderProductList();
+}
+
+function renderProductList() {
+    const container = document.getElementById('product-container');
+    if (!container) return;
+    if (!kasirItems || kasirItems.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px;">Tidak ada produk</div>';
+        return;
+    }
+    let html = '';
+    if (productViewMode === 'list') {
+        html = '<div class="product-list">';
+        kasirItems.forEach(item => {
+            html += `<div class="product-list-item" onclick="addToCartFromProduct(${item.id})">
+                <span><strong>${item.name}</strong> - ${formatRupiah(item.hargaJual)}</span>
+                <span style="color:${item.stock > 0 ? '#006B54' : '#ff6b6b'}">Stok: ${item.stock}</span>
+            </div>`;
+        });
+        html += '</div>';
+    } else {
+        html = '<div class="product-grid">';
+        kasirItems.forEach(item => {
+            html += `<div class="product-card" onclick="addToCartFromProduct(${item.id})">
+                <div class="name">${item.name}</div>
+                <div class="price">${formatRupiah(item.hargaJual)}</div>
+                <div class="stock">Stok: ${item.stock}</div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+    container.innerHTML = html;
+}
+
+function addToCartFromProduct(itemId) {
+    const item = kasirItems.find(i => i.id === itemId);
+    if (item) {
+        addToCart(item, 1, null, 0);
+    }
 }
 
 // ==================== UTILITY ====================
