@@ -1453,7 +1453,7 @@ let tempUnitConversions = [];
 let editingConversionIndex = -1;
 
 // Keranjang transaksi
-let cart = []; // { item, qty, weightGram, subtotal }
+let cart = []; // { item, qty, unitConversion, weightGram, pricePerUnit, subtotal }
 
 // Icon definitions
 const icons = {
@@ -2438,20 +2438,98 @@ function closeTransaksiKasirModal() {
     document.getElementById('transaksi-kasir-modal').style.display = 'none';
 }
 
+// Fungsi untuk mendapatkan harga berdasarkan level (qty break)
+function getPriceForQty(item, qty) {
+    if (!item.priceLevels || item.priceLevels.length === 0) {
+        return item.hargaJual;
+    }
+    // Urutkan descending agar mudah mencari level terbesar yang memenuhi
+    const sorted = [...item.priceLevels].sort((a, b) => b.minQty - a.minQty);
+    for (let level of sorted) {
+        if (qty >= level.minQty) {
+            return level.price;
+        }
+    }
+    return item.hargaJual; // fallback
+}
+
+// Fungsi menambah item ke keranjang dengan dukungan konversi, timbangan, dan level harga
+function addToCart(item, qty, unitConversion = null, weightGram = 0) {
+    // Tentukan harga per unit
+    let pricePerUnit;
+    if (unitConversion) {
+        pricePerUnit = unitConversion.sellPrice; // harga dari konversi
+    } else if (weightGram > 0) {
+        pricePerUnit = item.hargaJual; // harga per kg untuk timbangan
+    } else {
+        pricePerUnit = getPriceForQty(item, qty); // level harga
+    }
+
+    // Cari apakah item dengan kombinasi satuan yang sama sudah ada di keranjang
+    const existingIndex = cart.findIndex(c => 
+        c.item.id === item.id && 
+        c.unitConversion?.barcode === unitConversion?.barcode &&
+        c.weightGram === weightGram
+    );
+
+    if (existingIndex >= 0) {
+        // Gabungkan kuantitas
+        const existing = cart[existingIndex];
+        const newQty = existing.qty + qty;
+
+        // Hitung ulang harga jika perlu (karena level harga bisa berubah)
+        let newPricePerUnit;
+        if (unitConversion) {
+            newPricePerUnit = unitConversion.sellPrice; // tetap
+        } else if (weightGram > 0) {
+            newPricePerUnit = item.hargaJual; // tetap
+        } else {
+            newPricePerUnit = getPriceForQty(item, newQty);
+        }
+
+        existing.qty = newQty;
+        existing.pricePerUnit = newPricePerUnit;
+        existing.subtotal = newQty * newPricePerUnit;
+    } else {
+        // Tambah item baru ke keranjang
+        cart.push({
+            item,
+            qty,
+            unitConversion,
+            weightGram,
+            pricePerUnit,
+            subtotal: qty * pricePerUnit
+        });
+    }
+    renderCart();
+}
+
 function processBarcode() {
     const input = document.getElementById('barcode-input');
     const barcode = input.value.trim();
     if (!barcode) return;
 
-    // 1. Cari sebagai barcode reguler (kode item)
-    let item = kasirItems.find(i => i.code === barcode);
+    // 1. Cari sebagai item biasa (code atau barcode)
+    let item = kasirItems.find(i => i.code === barcode || i.barcode === barcode);
     if (item) {
-        addToCart(item, 1, 0);
+        addToCart(item, 1, null, 0);
         input.value = '';
         return;
     }
 
-    // 2. Coba parsing sebagai barcode timbangan (13 digit)
+    // 2. Cari di semua konversi satuan
+    for (let it of kasirItems) {
+        if (it.unitConversions) {
+            const conv = it.unitConversions.find(c => c.barcode === barcode);
+            if (conv) {
+                addToCart(it, 1, conv, 0);
+                input.value = '';
+                return;
+            }
+        }
+    }
+
+    // 3. Parsing barcode timbangan 13 digit
     if (barcode.length === 13) {
         const flexLen = digitConfig.flex || 2;
         const catLen = digitConfig.category || 2;
@@ -2466,7 +2544,7 @@ function processBarcode() {
             item = kasirItems.find(i => i.code === productCode && i.isWeighable === true);
             if (item) {
                 const qtyKg = weightGram / 1000;
-                addToCart(item, qtyKg, weightGram);
+                addToCart(item, qtyKg, null, weightGram);
                 input.value = '';
                 return;
             }
@@ -2475,27 +2553,6 @@ function processBarcode() {
 
     showNotification('Produk tidak ditemukan', 'error');
     input.value = '';
-}
-
-function addToCart(item, qty, weightGram) {
-    const existing = cart.find(c => c.item.id === item.id && c.weightGram === weightGram);
-    if (existing) {
-        if (weightGram > 0) {
-            existing.qty += qty;
-            existing.subtotal = existing.qty * item.hargaJual;
-        } else {
-            existing.qty += qty;
-            existing.subtotal = existing.qty * item.hargaJual;
-        }
-    } else {
-        cart.push({
-            item,
-            qty,
-            weightGram,
-            subtotal: qty * item.hargaJual
-        });
-    }
-    renderCart();
 }
 
 function renderCart() {
@@ -2507,17 +2564,24 @@ function renderCart() {
     cart.forEach((c, idx) => {
         const row = document.createElement('tr');
         const nama = c.item.name;
-        const hargaSatuan = formatRupiah(c.item.hargaJual);
-        let jumlahStr = '';
-        if (c.weightGram > 0) {
-            jumlahStr = `${c.weightGram} g (${c.qty.toFixed(3)} kg)`;
+
+        // Tentukan tampilan satuan
+        let satuanTeks = '';
+        if (c.unitConversion) {
+            const unitName = kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name || '?';
+            satuanTeks = `${unitName} (${c.qty})`;
+        } else if (c.weightGram > 0) {
+            satuanTeks = `${c.weightGram} g (${c.qty.toFixed(3)} kg)`;
         } else {
-            jumlahStr = `${c.qty}`;
+            satuanTeks = `${c.qty}`;
         }
+
+        const hargaSatuan = formatRupiah(c.pricePerUnit);
         const subtotalStr = formatRupiah(c.subtotal);
+
         row.innerHTML = `
             <td>${nama}</td>
-            <td>${jumlahStr}</td>
+            <td>${satuanTeks}</td>
             <td>${hargaSatuan}</td>
             <td>${subtotalStr}</td>
             <td><button onclick="removeFromCart(${idx})">Hapus</button></td>
