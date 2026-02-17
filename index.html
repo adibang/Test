@@ -833,7 +833,7 @@ button {
         <span>Transaksi Kasir</span>
     </button>
 
-    <!-- NEW: Bagian Inventory -->
+    <!-- Bagian Inventory -->
     <div class="menu-section">INVENTORY</div>
     <button onclick="openInventoryStokModal()">
         <svg class="icon" viewBox="0 0 24 24">
@@ -1258,7 +1258,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== NEW: MODAL INVENTORY (UNTUK SEMUA SUB-MENU) ==================== -->
+<!-- ==================== MODAL INVENTORY (UNTUK SEMUA SUB-MENU) ==================== -->
 <div class="modal-overlay" id="inventory-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -1479,7 +1479,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-const DB_VERSION = 10; // NEW: increment version for settings changes
+const DB_VERSION = 10;
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -1490,7 +1490,6 @@ const STORES = {
 
 // ==================== GLOBAL VARIABLES ====================
 let db = null;
-// NEW: barcodeConfig diganti dengan struktur baru
 let barcodeConfig = {
     flexLength: 2,
     flexValue: '02',
@@ -1681,7 +1680,7 @@ async function dbClear(storeName) {
     });
 }
 
-// NEW: Fungsi untuk load barcodeConfig dari database
+// Fungsi untuk load barcodeConfig dari database
 async function loadBarcodeConfig() {
     try {
         const transaction = db.transaction([STORES.SETTINGS], 'readonly');
@@ -1705,7 +1704,7 @@ async function loadBarcodeConfig() {
     }
 }
 
-// NEW: Fungsi untuk save barcodeConfig
+// Fungsi untuk save barcodeConfig
 async function saveBarcodeConfig(config) {
     try {
         const transaction = db.transaction([STORES.SETTINGS], 'readwrite');
@@ -2505,7 +2504,7 @@ async function forceResetDatabase() {
     }
 }
 
-// NEW: Tampilkan modal settings dengan konfigurasi barcode
+// Tampilkan modal settings dengan konfigurasi barcode
 function showSettingsModal() {
     const settingsContent = document.getElementById('settings-content');
     settingsContent.innerHTML = `
@@ -2565,7 +2564,7 @@ function showSettingsModal() {
     document.getElementById('settings-modal').style.display = 'flex';
 }
 
-// NEW: Simpan konfigurasi dari UI
+// Simpan konfigurasi dari UI
 async function saveBarcodeConfigFromUI() {
     const flexLength = parseInt(document.getElementById('barcode-flex-length').value);
     const flexValue = document.getElementById('barcode-flex-value').value.trim();
@@ -2633,7 +2632,8 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
     if (unitConversion) {
         pricePerUnit = unitConversion.sellPrice; // harga dari konversi
     } else if (weightGram > 0) {
-        pricePerUnit = item.hargaJual; // harga per kg untuk timbangan
+        // FIX: Gunakan level harga berdasarkan qty dalam kg
+        pricePerUnit = getPriceForQty(item, qty); // qty sudah dalam kg
     } else {
         pricePerUnit = getPriceForQty(item, qty); // level harga
     }
@@ -2655,7 +2655,8 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
         if (unitConversion) {
             newPricePerUnit = unitConversion.sellPrice; // tetap
         } else if (weightGram > 0) {
-            newPricePerUnit = item.hargaJual; // tetap
+            // FIX: Gunakan level harga berdasarkan qty baru (kg)
+            newPricePerUnit = getPriceForQty(item, newQty);
         } else {
             newPricePerUnit = getPriceForQty(item, newQty);
         }
@@ -2677,7 +2678,7 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
     renderCart();
 }
 
-// NEW: Proses barcode dengan konfigurasi yang dapat diatur
+// Proses barcode dengan konfigurasi yang dapat diatur
 function processBarcode() {
     const input = document.getElementById('barcode-input');
     const barcode = input.value.trim();
@@ -2788,7 +2789,7 @@ function bayarTransaksi() {
     renderCart();
 }
 
-// ==================== NEW: FUNGSI UNTUK MODAL INVENTORY ====================
+// ==================== FUNGSI UNTUK MODAL INVENTORY ====================
 function openInventoryStokModal() {
     document.getElementById('inventory-modal-title').innerHTML = `
         <svg class="icon icon-primary" viewBox="0 0 24 24">
@@ -2846,7 +2847,7 @@ async function initApp() {
         showLoading();
         hideError();
         await initDatabase();
-        await loadBarcodeConfig(); // NEW: load konfigurasi barcode
+        await loadBarcodeConfig();
         await loadKasirCategories();
         await loadKasirItems();
         await loadKasirSatuan();
