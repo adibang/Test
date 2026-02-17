@@ -940,7 +940,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL TAMBAH ITEM KASIR ==================== -->
+<!-- ==================== MODAL TAMBAH ITEM KASIR (dengan stok) ==================== -->
 <div class="modal-overlay" id="kasir-item-modal">
     <div class="modal-content" style="max-width:600px;">
         <div class="modal-header">
@@ -1008,6 +1008,11 @@ button {
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Diskon (%) *opsional</label>
                     <input type="number" class="form-input" id="kasir-item-diskon" min="0" max="100" value="" step="0.1">
                 </div>
+                <!-- MODIFIKASI: Stok Awal -->
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Stok Awal</label>
+                    <input type="number" class="form-input" id="kasir-item-stock" min="0" value="0" step="any">
+                </div>
                 <!-- Produk Timbangan? -->
                 <div style="margin-bottom:15px;">
                     <label>
@@ -1037,7 +1042,7 @@ button {
                                 </select>
                             </div>
                             <div class="form-row">
-                                <label>Nilai Satuan</label>
+                                <label>Nilai Satuan (berapa unit dasar per satuan ini)</label>
                                 <input type="number" id="conv-value" class="form-input" placeholder="" min="0.01" step="0.01">
                             </div>
                             <div class="form-row">
@@ -1122,7 +1127,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL DAFTAR ITEM KASIR ==================== -->
+<!-- ==================== MODAL DAFTAR ITEM KASIR (dengan stok) ==================== -->
 <div class="modal-overlay" id="list-kasir-item-modal">
     <div class="modal-content" style="max-width:700px;">
         <div class="modal-header">
@@ -1272,11 +1277,8 @@ button {
         </div>
         <div class="modal-body" id="inventory-modal-body">
             <!-- Konten dinamis dari JavaScript -->
-            <p style="text-align:center; padding:20px;">Fitur dalam pengembangan.</p>
         </div>
-        <div style="padding:20px; text-align:center;">
-            <button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button>
-        </div>
+        <!-- Tombol tutup akan disertakan dalam konten dinamis -->
     </div>
 </div>
 
@@ -1479,7 +1481,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-const DB_VERSION = 10;
+const DB_VERSION = 11; // MODIFIKASI: naikkan versi karena ada perubahan struktur (stok)
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -1605,6 +1607,7 @@ async function initDatabase() {
                 const satuanStore = db.createObjectStore(STORES.KASIR_SATUAN, { keyPath: 'id', autoIncrement: true });
                 satuanStore.createIndex('name', 'name', { unique: true });
             }
+            // MODIFIKASI: tidak perlu mengubah struktur lama, field stok akan otomatis ada saat menyimpan item baru
             event.target.transaction.oncomplete = () => console.log('Database upgrade completed');
         };
     });
@@ -1724,13 +1727,18 @@ async function saveBarcodeConfig(config) {
     }
 }
 
-// ==================== LOAD DATA KASIR ====================
+// ==================== LOAD DATA KASIR (dengan stok) ====================
 async function loadKasirCategories() {
     try { kasirCategories = await dbGetAll(STORES.KASIR_CATEGORIES); kasirCategories.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading kasir categories:', error); kasirCategories = []; }
 }
 
 async function loadKasirItems() {
-    try { kasirItems = await dbGetAll(STORES.KASIR_ITEMS); kasirItems.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading kasir items:', error); kasirItems = []; }
+    try { 
+        kasirItems = await dbGetAll(STORES.KASIR_ITEMS); 
+        // MODIFIKASI: pastikan setiap item memiliki field stock, default 0 jika tidak ada
+        kasirItems.forEach(item => { if (item.stock === undefined) item.stock = 0; });
+        kasirItems.sort((a,b) => a.name.localeCompare(b.name)); 
+    } catch (error) { console.error('Error loading kasir items:', error); kasirItems = []; }
 }
 
 async function loadKasirSatuan() {
@@ -1822,6 +1830,7 @@ function openTambahItemKasirModal(editId = null) {
     const beratInput = document.getElementById('kasir-item-berat');
     const satuanSelect = document.getElementById('kasir-item-satuan');
     const diskonInput = document.getElementById('kasir-item-diskon');
+    const stockInput = document.getElementById('kasir-item-stock'); // MODIFIKASI
     const weighableCheck = document.getElementById('kasir-item-weighable');
     const levelContainer = document.getElementById('level-harga-container');
     const errorDiv = document.getElementById('level-error');
@@ -1841,6 +1850,7 @@ function openTambahItemKasirModal(editId = null) {
     beratInput.value = '';
     satuanSelect.value = '';
     diskonInput.value = '';
+    stockInput.value = '0'; // MODIFIKASI: default 0
     weighableCheck.checked = false;
     
     levelContainer.innerHTML = '';
@@ -1856,6 +1866,7 @@ function openTambahItemKasirModal(editId = null) {
             beratInput.value = item.berat || '';
             satuanSelect.value = item.satuanId || '';
             diskonInput.value = item.diskon || '';
+            stockInput.value = item.stock || 0; // MODIFIKASI: isi stok
             weighableCheck.checked = item.isWeighable || false;
             
             if (item.priceLevels && item.priceLevels.length > 0) {
@@ -2011,6 +2022,7 @@ async function saveKasirItem() {
     const berat = parseFloat(document.getElementById('kasir-item-berat').value) || '';
     const satuanId = document.getElementById('kasir-item-satuan').value || null;
     const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || '';
+    const stock = parseFloat(document.getElementById('kasir-item-stock').value) || 0; // MODIFIKASI: ambil stok
     const isWeighable = document.getElementById('kasir-item-weighable').checked;
     
     const priceLevels = getPriceLevelsFromDOM();
@@ -2044,6 +2056,7 @@ async function saveKasirItem() {
                 item.berat = berat;
                 item.satuanId = satuanId;
                 item.diskon = diskon;
+                item.stock = stock; // MODIFIKASI: simpan stok
                 item.isWeighable = isWeighable;
                 item.priceLevels = priceLevels;
                 item.unitConversions = unitConversions;
@@ -2053,7 +2066,7 @@ async function saveKasirItem() {
         } else {
             const newItem = {
                 name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
-                diskon, isWeighable, priceLevels, unitConversions,
+                diskon, stock, isWeighable, priceLevels, unitConversions, // MODIFIKASI: tambah stock
                 createdAt: now, updatedAt: now
             };
             const id = await dbAdd(STORES.KASIR_ITEMS, newItem);
@@ -2140,6 +2153,7 @@ function openDaftarItemKasirModal() {
             div.style.alignItems = 'center';
             div.style.padding = '10px';
             div.style.borderBottom = '1px solid #eee';
+            // MODIFIKASI: tampilkan stok
             div.innerHTML = `
                 <div style="flex:1;">
                     <strong>${item.name}</strong><br>
@@ -2149,6 +2163,7 @@ function openDaftarItemKasirModal() {
                         Berat: ${item.berat} ${item.satuanId ? satuanMap[item.satuanId] : ''}
                         ${item.diskon ? ' | Diskon: '+item.diskon+'%' : ''}
                         ${item.isWeighable ? ' | Timbangan' : ''}
+                        | Stok: ${item.stock !== undefined ? item.stock : 0}
                     </span>
                 </div>
                 <div>
@@ -2597,7 +2612,7 @@ async function saveBarcodeConfigFromUI() {
 
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 
-// ==================== FUNGSI TRANSAKSI KASIR ====================
+// ==================== FUNGSI TRANSAKSI KASIR (dengan validasi stok) ====================
 function openTransaksiKasirModal() {
     const modal = document.getElementById('transaksi-kasir-modal');
     cart = [];
@@ -2625,15 +2640,30 @@ function getPriceForQty(item, qty) {
     return item.hargaJual; // fallback
 }
 
-// Fungsi menambah item ke keranjang dengan dukungan konversi, timbangan, dan level harga
+// MODIFIKASI: validasi stok sebelum menambah ke keranjang
 function addToCart(item, qty, unitConversion = null, weightGram = 0) {
+    // Hitung kebutuhan stok dalam unit dasar
+    let requiredStock;
+    if (weightGram > 0) {
+        requiredStock = qty; // qty dalam kg
+    } else if (unitConversion) {
+        requiredStock = qty * unitConversion.value; // konversi ke unit dasar
+    } else {
+        requiredStock = qty;
+    }
+    
+    // Cek stok
+    if (item.stock < requiredStock) {
+        showNotification(`Stok ${item.name} tidak cukup. Tersedia: ${item.stock}`, 'error');
+        return;
+    }
+    
     // Tentukan harga per unit
     let pricePerUnit;
     if (unitConversion) {
         pricePerUnit = unitConversion.sellPrice; // harga dari konversi
     } else if (weightGram > 0) {
-        // FIX: Gunakan level harga berdasarkan qty dalam kg
-        pricePerUnit = getPriceForQty(item, qty); // qty sudah dalam kg
+        pricePerUnit = getPriceForQty(item, qty); // qty dalam kg
     } else {
         pricePerUnit = getPriceForQty(item, qty); // level harga
     }
@@ -2655,7 +2685,6 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
         if (unitConversion) {
             newPricePerUnit = unitConversion.sellPrice; // tetap
         } else if (weightGram > 0) {
-            // FIX: Gunakan level harga berdasarkan qty baru (kg)
             newPricePerUnit = getPriceForQty(item, newQty);
         } else {
             newPricePerUnit = getPriceForQty(item, newQty);
@@ -2779,17 +2808,46 @@ function formatRupiah(angka) {
     return 'Rp ' + angka.toLocaleString('id-ID');
 }
 
-function bayarTransaksi() {
+// MODIFIKASI: kurangi stok saat transaksi berhasil
+async function bayarTransaksi() {
     if (cart.length === 0) {
         showNotification('Keranjang masih kosong', 'warning');
         return;
     }
-    showNotification('Transaksi berhasil (simulasi)', 'success');
-    cart = [];
-    renderCart();
+    
+    try {
+        showLoading();
+        // Kurangi stok untuk setiap item
+        for (let c of cart) {
+            let requiredStock;
+            if (c.weightGram > 0) {
+                requiredStock = c.qty;
+            } else if (c.unitConversion) {
+                requiredStock = c.qty * c.unitConversion.value;
+            } else {
+                requiredStock = c.qty;
+            }
+            const item = kasirItems.find(i => i.id === c.item.id);
+            if (item) {
+                item.stock -= requiredStock;
+                item.updatedAt = new Date().toISOString();
+                await dbPut(STORES.KASIR_ITEMS, item);
+            }
+        }
+        // Reload items untuk memperbarui cache
+        await loadKasirItems();
+        showNotification('Transaksi berhasil', 'success');
+        cart = [];
+        renderCart();
+    } catch (error) {
+        console.error('Error processing payment:', error);
+        showNotification('Gagal memproses transaksi: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
-// ==================== FUNGSI UNTUK MODAL INVENTORY ====================
+// ==================== FUNGSI UNTUK MODAL INVENTORY (STOK BARANG, OPNAME, LAPORAN) ====================
 function openInventoryStokModal() {
     document.getElementById('inventory-modal-title').innerHTML = `
         <svg class="icon icon-primary" viewBox="0 0 24 24">
@@ -2797,20 +2855,76 @@ function openInventoryStokModal() {
             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
             <line x1="12" y1="11" x2="12" y2="17"/>
         </svg> Stok Barang`;
-    document.getElementById('inventory-modal-body').innerHTML = '<p style="text-align:center; padding:20px;">Fitur Stok Barang akan segera hadir.</p>';
+    
+    let html = '<div style="max-height:400px; overflow-y:auto;">';
+    html += '<table style="width:100%; border-collapse:collapse;">';
+    html += '<thead><tr><th>Nama Item</th><th>Stok</th><th>Aksi</th></tr></thead><tbody>';
+    kasirItems.forEach(item => {
+        html += `<tr>
+            <td>${item.name}</td>
+            <td>${item.stock !== undefined ? item.stock : 0}</td>
+            <td><button class="action-btn edit-btn" onclick="openStockOpnameForItem(${item.id})">Sesuaikan</button></td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    html += '<div style="margin-top:20px;"><button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button></div>';
+    
+    document.getElementById('inventory-modal-body').innerHTML = html;
     document.getElementById('inventory-modal').style.display = 'flex';
 }
 
 function openInventoryOpnameModal() {
+    // Langsung arahkan ke daftar stok dengan tombol sesuaikan
+    openInventoryStokModal();
+}
+
+function openStockOpnameForItem(itemId) {
+    const item = kasirItems.find(i => i.id === itemId);
+    if (!item) return;
+    
     document.getElementById('inventory-modal-title').innerHTML = `
         <svg class="icon icon-primary" viewBox="0 0 24 24">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
             <line x1="12" y1="18" x2="12" y2="12"/>
             <line x1="9" y1="15" x2="15" y2="15"/>
-        </svg> Stok Opname`;
-    document.getElementById('inventory-modal-body').innerHTML = '<p style="text-align:center; padding:20px;">Fitur Stok Opname akan segera hadir.</p>';
-    document.getElementById('inventory-modal').style.display = 'flex';
+        </svg> Stok Opname: ${item.name}`;
+    
+    const html = `
+        <div style="padding:20px;">
+            <label>Stok Saat Ini: ${item.stock}</label>
+            <input type="number" id="opname-stock-value" class="form-input" value="${item.stock}" step="any" min="0">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-top:20px;">
+                <button class="form-button-secondary" onclick="openInventoryStokModal()">Batal</button>
+                <button class="form-button-primary" onclick="updateStock(${item.id})">Simpan</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('inventory-modal-body').innerHTML = html;
+}
+
+async function updateStock(itemId) {
+    const newStock = parseFloat(document.getElementById('opname-stock-value').value);
+    if (isNaN(newStock) || newStock < 0) {
+        showNotification('Stok harus angka positif', 'error');
+        return;
+    }
+    try {
+        showLoading();
+        const item = kasirItems.find(i => i.id === itemId);
+        if (item) {
+            item.stock = newStock;
+            item.updatedAt = new Date().toISOString();
+            await dbPut(STORES.KASIR_ITEMS, item);
+            await loadKasirItems();
+            showNotification('Stok diperbarui', 'success');
+            openInventoryStokModal(); // kembali ke daftar stok
+        }
+    } catch (error) {
+        showNotification('Gagal update stok: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
 function openInventoryLaporanModal() {
@@ -2820,7 +2934,17 @@ function openInventoryLaporanModal() {
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
         </svg> Laporan Stok`;
-    document.getElementById('inventory-modal-body').innerHTML = '<p style="text-align:center; padding:20px;">Fitur Laporan Stok akan segera hadir.</p>';
+    
+    let html = '<div style="max-height:400px; overflow-y:auto;">';
+    html += '<table style="width:100%; border-collapse:collapse;">';
+    html += '<thead><tr><th>Nama Item</th><th>Stok</th></tr></thead><tbody>';
+    kasirItems.forEach(item => {
+        html += `<tr><td>${item.name}</td><td>${item.stock !== undefined ? item.stock : 0}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    html += '<div style="margin-top:20px;"><button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button></div>';
+    
+    document.getElementById('inventory-modal-body').innerHTML = html;
     document.getElementById('inventory-modal').style.display = 'flex';
 }
 
