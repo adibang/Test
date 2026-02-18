@@ -4362,7 +4362,7 @@ async function generateTransactionNumber() {
                     if (data.date === dateStr) {
                         lastCounter = data.counter;
                     } else {
-                        lastCounter = 0;
+                       lastCounter = 0;
                     }
                 }
                 resolve();
@@ -4388,6 +4388,7 @@ async function generateTransactionNumber() {
     return transactionNumber;
 }
 
+// ==================== FUNGSI PEMBAYARAN (MODIFIKASI) ====================
 async function executePayment(method, paidAmount, outstandingAdded) {
     try {
         showLoading();
@@ -4423,6 +4424,7 @@ async function executePayment(method, paidAmount, outstandingAdded) {
         const discount = 0;
         const tax = 0;
         const total = subtotal - discount + tax;
+        const change = paidAmount - total; // Hitung kembalian
 
         const items = cart.map(c => ({
             itemId: c.item.id,
@@ -4444,7 +4446,7 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             total,
             paymentMethod: method,
             paidAmount,
-            change: paidAmount - total,
+            change,
             outstandingAdded,
             customerId: selectedCustomer ? selectedCustomer.id : null,
             customerName: selectedCustomer ? selectedCustomer.name : null
@@ -4452,7 +4454,7 @@ async function executePayment(method, paidAmount, outstandingAdded) {
 
         await dbAdd(STORES.SALES, salesData);
 
-        // MODIFIKASI: Simpan data struk sebelum cart direset
+        // Simpan data struk sebelum cart direset
         lastTransactionData = {
             items: cart.map(c => ({
                 name: c.item.name,
@@ -4462,7 +4464,8 @@ async function executePayment(method, paidAmount, outstandingAdded) {
                 subtotal: c.subtotal
             })),
             total: total,
-            change: change,
+            paidAmount: paidAmount,   // Tambahkan paidAmount
+            change: change,           // Simpan change
             date: new Date().toLocaleString('id-ID')
         };
 
@@ -4471,7 +4474,7 @@ async function executePayment(method, paidAmount, outstandingAdded) {
         renderProductList();
         showNotification(`Pembayaran berhasil via ${method === 'cash' ? 'Tunai' : method === 'card' ? 'Kartu' : 'Transfer'}${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
         
-        // Aktifkan tombol print (sudah ada)
+        // Aktifkan tombol print
         document.getElementById('print-receipt-btn').disabled = false;
         
         // Kosongkan cart dan hapus dari localStorage
@@ -4479,7 +4482,7 @@ async function executePayment(method, paidAmount, outstandingAdded) {
         selectedCustomer = null;
         document.getElementById('customer-badge').style.display = 'none';
         renderCartPage();
-        saveCartToLocalStorage(); // simpan keranjang kosong
+        saveCartToLocalStorage();
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
@@ -4561,7 +4564,7 @@ async function printReceipt() {
         return;
     }
 
-    // MODIFIKASI: Gunakan data terakhir jika ada, jika tidak gunakan cart (misal preview)
+    // Gunakan data transaksi terakhir jika ada
     let dataToPrint = lastTransactionData;
     if (!dataToPrint) {
         // Fallback: cetak dari cart yang masih ada (misal untuk preview sebelum bayar)
@@ -4569,6 +4572,8 @@ async function printReceipt() {
             showNotification('Tidak ada data untuk dicetak', 'warning');
             return;
         }
+        // Hitung total sementara (anggap lunas)
+        const total = cart.reduce((s, c) => s + c.subtotal, 0);
         dataToPrint = {
             items: cart.map(c => ({
                 name: c.item.name,
@@ -4577,9 +4582,9 @@ async function printReceipt() {
                 price: c.pricePerUnit,
                 subtotal: c.subtotal
             })),
-            total: cart.reduce((s, c) => s + c.subtotal, 0),
-            paidAmount: paidAmount,
-            change: change,
+            total: total,
+            paidAmount: total,  // Asumsi lunas
+            change: 0,
             date: new Date().toLocaleString('id-ID')
         };
     }
@@ -4593,9 +4598,7 @@ async function printReceipt() {
         receipt += dataToPrint.date + '\n';
         receipt += '--------------------------------\n';
         dataToPrint.items.forEach(item => {
-            // Format: Nama barang, jumlah satuan, harga, subtotal
-            let line = `${item.name}\n  ${item.qty} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
-            receipt += line;
+            receipt += `${item.name}\n  ${item.qty} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
         });
         receipt += '--------------------------------\n';
         receipt += `Total: ${formatRupiah(dataToPrint.total)}\n`;
@@ -4613,6 +4616,7 @@ async function printReceipt() {
         showNotification('Gagal mencetak: ' + error.message, 'error');
     }
 }
+
 
 // ==================== FUNGSI INVENTORY ====================
 function openInventoryStokModal() {
