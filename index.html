@@ -4591,7 +4591,7 @@ async function printReceipt() {
         receipt += '---------------------------------------\n';
         dataToPrint.items.forEach(item => {
             // Format: Nama barang, jumlah satuan, harga, subtotal
-            let line = `${item.name}\n  ${item.qty} ${item.unit} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
+            let line = `${item.name}\n  ${item.qty} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
             receipt += line;
         });
         receipt += '---------------------------------------\n';
