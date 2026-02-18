@@ -117,24 +117,28 @@
                 font-size: 0.9rem;
                 color: #333;
             }
+            /* MODIFIKASI: pembungkus tabel dengan scroll dan tinggi tetap di mobile */
+            .cart-table-wrapper {
+                width: 100%;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                margin-bottom: 20px;
+                overflow: hidden; /* agar border-radius tetap */
+            }
             .cart-table {
                 width: 100%;
                 border-collapse: collapse;
                 background: white;
-                border-radius: 15px;
-                padding: 20px 20px;
-                overflow: hidden;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                margin-bottom: 20px;
             }
             .cart-table th {
                 background: #006B54;
                 color: white;
-                padding: 12px 8px;  /* padding horizontal ditambah */
+                padding: 12px 8px;
                 text-align: left;
             }
             .cart-table td {
-                padding: 12px 8px;   /* padding horizontal ditambah */
+                padding: 12px 8px;
                 border-bottom: 1px solid #eee;
             }
             .cart-table input[type="number"] {
@@ -149,9 +153,7 @@
                 width: 30px;
                 height: 30px;
                 border-radius: 15%;
-                /*border: 1px solid #006B54;*/
                 background: white;
-                /*color: #006B54;*/
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -306,13 +308,15 @@
         
             /* === MODIFIKASI UNTUK LAYAR KECIL (MOBILE) === */
             @media (max-width: 768px) {
-                .cart-table{
-                    padding: 20px 20px;
+                /* MODIFIKASI: tabel wrapper dengan tinggi tetap 800px dan scroll */
+                .cart-table-wrapper {
+                    height: 800px;
+                    overflow-y: auto;
                 }
                 .cart-table th,
                 .cart-table td {
                     font-size: 0.8rem;
-                    padding: 8px 6px;   /* sedikit lebih kecil dari desktop, tapi tetap nyaman */
+                    padding: 8px 6px;
                 }
                 .cart-table input[type="number"] {
                     width: 60px;
@@ -363,19 +367,21 @@
             <div id="product-list" class="product-results"></div>
         </div>
 
-        <!-- Keranjang Pembelian -->
-        <table class="cart-table">
-            <thead>
-                <tr>
-                    <th>Produk</th>
-                    <th>Jumlah</th>
-                    <th>Harga Beli Satuan</th>
-                    <th>Subtotal</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="cart-items"></tbody>
-        </table>
+        <!-- MODIFIKASI: tambahkan pembungkus untuk scroll dan tinggi tetap -->
+        <div class="cart-table-wrapper">
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>Produk</th>
+                        <th>Jumlah</th>
+                        <th>Harga Beli Satuan</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cart-items"></tbody>
+            </table>
+        </div>
 
         <!-- Ringkasan -->
         <div class="summary">
@@ -480,6 +486,34 @@
 
         function hideLoading() {
             document.getElementById('loading').style.display = 'none';
+        }
+
+        // ==================== PERSISTENSI KERANJANG (localStorage) ====================
+        const CART_STORAGE_KEY = 'purchaseCart';
+
+        function saveCartToLocalStorage() {
+            try {
+                localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+            } catch (e) {
+                console.warn('Gagal menyimpan cart ke localStorage', e);
+            }
+        }
+
+        function loadCartFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem(CART_STORAGE_KEY);
+                if (saved) {
+                    cart = JSON.parse(saved);
+                    // Validasi sederhana: pastikan setiap item memiliki properti yang diperlukan
+                    cart = cart.filter(item => item.itemId && item.itemName !== undefined);
+                } else {
+                    cart = [];
+                }
+            } catch (e) {
+                console.warn('Gagal memuat cart dari localStorage', e);
+                cart = [];
+            }
+            renderCart(); // tampilkan setelah dimuat
         }
 
         // ==================== DATABASE FUNCTIONS ====================
@@ -693,6 +727,7 @@
                 });
             }
             renderCart();
+            saveCartToLocalStorage(); // MODIFIKASI: simpan setelah perubahan
             document.getElementById('search-product').value = '';
             document.getElementById('product-list').innerHTML = '';
         }
@@ -700,6 +735,7 @@
         function removeFromCart(index) {
             cart.splice(index, 1);
             renderCart();
+            saveCartToLocalStorage(); // MODIFIKASI: simpan setelah perubahan
         }
 
         function updateCartItem(index, field, value) {
@@ -710,6 +746,7 @@
             }
             cart[index].subtotal = cart[index].qty * cart[index].purchasePrice;
             renderCart();
+            saveCartToLocalStorage(); // MODIFIKASI: simpan setelah perubahan
         }
 
         function renderCart() {
@@ -835,6 +872,7 @@
             // Kosongkan keranjang
             cart = [];
             renderCart();
+            saveCartToLocalStorage(); // MODIFIKASI: hapus dari localStorage juga
             // Reset input ringkasan
             document.getElementById('discount').value = 0;
             document.getElementById('tax').value = 0;
@@ -862,6 +900,8 @@
                 await loadSuppliers();
                 await loadKasirItems();
                 await loadKasirSatuan();
+                // MODIFIKASI: muat keranjang dari localStorage setelah data master siap
+                loadCartFromLocalStorage();
                 console.log('Pembelian page ready');
             } catch (error) {
                 console.error('Init error:', error);
