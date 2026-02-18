@@ -4512,11 +4512,11 @@ function updatePrinterStatus(connected) {
     const connectBtnText = document.getElementById('connect-btn-text');
     if (connected) {
         statusLight.classList.add('connected');
-        statusText.textContent = 'Terhubung';
+        statusText.textContent = '';
         connectBtnText.textContent = 'Disconnect';
     } else {
         statusLight.classList.remove('connected');
-        statusText.textContent = 'Terputus';
+        statusText.textContent = '';
         connectBtnText.textContent = 'Connect';
     }
 }
