@@ -227,6 +227,33 @@
         .btn-danger:hover {
             background: #ff5252;
         }
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+        .action-btn.delete-btn {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .action-btn.delete-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
         .icon {
             width: 20px;
             height: 20px;
@@ -290,6 +317,14 @@
             .cart-table td:last-child button {
                 padding: 4px 8px;
                 font-size: 0.8rem;
+            }
+            .action-btn {
+                width: 32px;
+                height: 32px;
+            }
+            .action-btn svg {
+                width: 18px;
+                height: 18px;
             }
         }
     </style>
@@ -419,6 +454,11 @@
         let kasirItems = [];
         let kasirSatuan = [];
         let cart = [];
+
+        // Ikon yang digunakan (line art)
+        const icons = {
+            delete: `<svg class="icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`
+        };
 
         // ==================== FUNGSI HELPER ====================
         function formatRupiah(angka) {
@@ -686,7 +726,7 @@
                             <input type="number" min="0" step="0.01" value="${c.purchasePrice}" onchange="updateCartItem(${idx}, 'price', this.value)">
                         </td>
                         <td>${formatRupiah(c.subtotal)}</td>
-                        <td><button class="btn-danger" onclick="removeFromCart(${idx})" style="padding:8px 12px;">Hapus</button></td>
+                        <td><button class="action-btn delete-btn" onclick="removeFromCart(${idx})" title="Hapus">${icons.delete}</button></td>
                     </tr>
                 `;
             }).join('');
