@@ -4585,18 +4585,20 @@ async function printReceipt() {
         const writer = printerPort.writable.getWriter();
         const encoder = new TextEncoder();
         let receipt = '\n';
-        receipt += '      TOKO POSPLUS\n';
-        receipt += '====================\n';
+        receipt += '             TOKO LOKABUMBU\n';
+        receipt += '=======================================\n';
         receipt += dataToPrint.date + '\n';
-        receipt += '--------------------\n';
+        receipt += '---------------------------------------\n';
         dataToPrint.items.forEach(item => {
             // Format: Nama barang, jumlah satuan, harga, subtotal
             let line = `${item.name}\n  ${item.qty} ${item.unit} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
             receipt += line;
         });
-        receipt += '--------------------\n';
+        receipt += '---------------------------------------\n';
         receipt += `Total: ${formatRupiah(dataToPrint.total)}\n`;
         receipt += 'Terima kasih\n';
+        receipt += 'delivery order via WA\n';
+        receipt += '0823xxxxxxxx\n';
         receipt += '\n\n\n';
         await writer.write(encoder.encode(receipt));
         writer.releaseLock();
