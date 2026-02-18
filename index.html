@@ -4621,8 +4621,9 @@ function renderProductList() {
     if (productViewMode === 'list') {
         html = '<div class="product-list">';
         kasirItems.forEach(item => {
-            // Tentukan step berdasarkan apakah produk timbangan
-            let step = item.isWeighable ? '0.01' : '1';
+            // step="any" agar bisa input desimal, min="0.01" agar minimal 0.01
+            let step = 'any';
+            let min = '0.01';
             html += `
                 <div class="product-list-item" onclick="addToCartFromProductWithQty(${item.id}, this)">
                     <div class="name"><strong>${item.name}</strong></div>
@@ -4630,7 +4631,7 @@ function renderProductList() {
                         <span class="price" style="font-size: 0.9rem;">${formatRupiah(item.hargaJual)}</span>
                         <div class="qty-control">
                             <button class="qty-minus" onclick="event.stopPropagation(); adjustQty(this, -1, ${item.id})">-</button>
-                            <input type="number" class="qty-input" value="1" min="1" max="${item.stock}" step="${step}" data-id="${item.id}" onclick="event.stopPropagation();" onchange="event.stopPropagation();">
+                            <input type="number" class="qty-input" value="1" min="${min}" max="${item.stock}" step="${step}" data-id="${item.id}" onclick="event.stopPropagation();" onchange="event.stopPropagation();">
                             <button class="qty-plus" onclick="event.stopPropagation(); adjustQty(this, 1, ${item.id})">+</button>
                         </div>
                     </div>
@@ -4642,7 +4643,8 @@ function renderProductList() {
     } else {
         html = '<div class="product-grid">';
         kasirItems.forEach(item => {
-            let step = item.isWeighable ? '0.01' : '1';
+            let step = 'any';
+            let min = '0.01';
             html += `
                 <div class="product-card" onclick="addToCartFromProductWithQty(${item.id}, this)">
                     <div class="product-image">
@@ -4659,7 +4661,7 @@ function renderProductList() {
                     </div>
                     <div class="qty-control" style="display: flex; justify-content: center; gap: 5px; margin-top: 5px;">
                         <button class="qty-minus" onclick="event.stopPropagation(); adjustQty(this, -1, ${item.id})">-</button>
-                        <input type="number" class="qty-input" value="1" min="1" max="${item.stock}" step="${step}" data-id="${item.id}" style="width: 50px; text-align: center;" onclick="event.stopPropagation();" onchange="event.stopPropagation();">
+                        <input type="number" class="qty-input" value="1" min="${min}" max="${item.stock}" step="${step}" data-id="${item.id}" style="width: 50px; text-align: center;" onclick="event.stopPropagation();" onchange="event.stopPropagation();">
                         <button class="qty-plus" onclick="event.stopPropagation(); adjustQty(this, 1, ${item.id})">+</button>
                     </div>
                 </div>
@@ -4674,27 +4676,21 @@ function adjustQty(btn, delta, itemId) {
     const container = btn.closest('.product-list-item, .product-card');
     const input = container.querySelector('.qty-input');
     if (input) {
-        // Cari item berdasarkan ID untuk mengetahui apakah termasuk timbangan
         const item = kasirItems.find(i => i.id === itemId);
+        // Tentukan step tombol: 1 untuk produk biasa, 0.01 untuk timbangan
         let step = 1;
         if (item && item.isWeighable) step = 0.01;
-
-        // Baca nilai saat ini sebagai float, tambah/dikurang dengan step
         let newVal = parseFloat(input.value) + (delta * step);
-
-        // Batasi sesuai min dan max (min=1)
-        const min = parseFloat(input.min) || 0.01;
-        const max = parseFloat(input.max);
+        let min = parseFloat(input.min) || 0.01;
+        let max = parseFloat(input.max);
         if (newVal < min) newVal = min;
         if (newVal > max) newVal = max;
-
-        // Bulatkan sesuai step (2 desimal untuk timbangan, integer untuk biasa)
+        // Bulatkan sesuai jenis produk
         if (item && item.isWeighable) {
             newVal = Math.round(newVal * 100) / 100; // 2 desimal
         } else {
-            newVal = Math.round(newVal);
+            newVal = Math.round(newVal); // integer
         }
-
         input.value = newVal;
     }
 }
@@ -4704,7 +4700,7 @@ function addToCartFromProductWithQty(itemId, element) {
     let qty = 1;
     if (input) {
         qty = parseFloat(input.value);
-        if (isNaN(qty) || qty < 1) qty = 1;
+        if (isNaN(qty) || qty <= 0) qty = 0.01; // minimal 0.01 jika input tidak valid
     }
     const item = kasirItems.find(i => i.id === itemId);
     if (item) {
