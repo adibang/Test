@@ -1011,6 +1011,56 @@ button {
     font-size: 14px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
+
+/* ==================== FLOATING BUTTON ==================== */
+.floating-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #006B54;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    transition: transform 0.2s;
+}
+.floating-btn:hover {
+    transform: scale(1.1);
+}
+.floating-btn svg {
+    width: 30px;
+    height: 30px;
+}
+
+/* ==================== TOMBOL PIUTANG ==================== */
+.piutang-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: #ccc;
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.piutang-btn.active {
+    background: #dc3545;
+}
+.piutang-btn:hover {
+    opacity: 0.8;
+}
 </style>
 </head>
 <body>
@@ -1311,7 +1361,13 @@ button {
             <div style="text-align:right; font-size:1.2rem; margin-bottom:20px;">
                 Total: <span id="cart-total-modal">Rp 0</span>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <!-- Tombol Simpan Draft -->
+            <div style="margin-bottom:10px;">
+                <button type="button" class="form-button-secondary" onclick="saveDraftTransaction()" style="width:100%;">Simpan Draft</button>
+            </div>
+            <!-- Tombol aksi: piutang, tutup, bayar -->
+            <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:10px; align-items:center;">
+                <button id="piutang-btn" class="piutang-btn" onclick="showPiutangInfo()">!</button>
                 <button type="button" class="form-button-secondary" onclick="closeCartModal()">Tutup</button>
                 <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
             </div>
@@ -1646,6 +1702,11 @@ button {
                 <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Alamat</label>
                 <textarea class="form-input" id="customer-address" rows="3"></textarea>
             </div>
+            <!-- Tambahan input Piutang -->
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Piutang (Outstanding)</label>
+                <input type="number" class="form-input" id="customer-outstanding" min="0" step="0.01" value="0">
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <button type="button" class="form-button-secondary" onclick="closeCustomerModal()">BATAL</button>
                 <button type="button" class="form-button-primary" onclick="saveCustomer()">SIMPAN</button>
@@ -1762,6 +1823,35 @@ button {
             </h2>
         </div>
         <div class="modal-body" id="inventory-modal-body">
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TOMBOL FLOATING UNTUK PENDING ==================== -->
+<button id="pending-transactions-btn" class="floating-btn" onclick="openPendingTransactionsModal()" title="Transaksi Pending">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+    </svg>
+</button>
+
+<!-- ==================== MODAL PENDING TRANSACTIONS ==================== -->
+<div class="modal-overlay" id="pending-transactions-modal">
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header">
+            <h2 class="modal-title">
+                <svg class="icon icon-primary" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Transaksi Pending
+            </h2>
+        </div>
+        <div class="modal-body">
+            <div id="pending-transactions-list" style="max-height:400px; overflow-y:auto;"></div>
+            <div style="margin-top:20px; display:grid;grid-template-columns:1fr;gap:10px;">
+                <button type="button" class="form-button-secondary" onclick="closePendingTransactionsModal()">Tutup</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1965,7 +2055,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-const DB_VERSION = 12;
+const DB_VERSION = 13; // dinaikkan karena menambah store pendingTransactions
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -1973,7 +2063,8 @@ const STORES = {
     KASIR_ITEMS: 'kasirItems',
     KASIR_SATUAN: 'kasirSatuan',
     CUSTOMERS: 'customers',
-    SUPPLIERS: 'suppliers'
+    SUPPLIERS: 'suppliers',
+    PENDING_TRANSACTIONS: 'pendingTransactions' // store baru
 };
 
 // ==================== GLOBAL VARIABLES ====================
@@ -1989,6 +2080,7 @@ let kasirItems = [];
 let kasirSatuan = [];
 let customers = [];
 let suppliers = [];
+let pendingTransactions = []; // daftar transaksi pending
 let editingKasirCategoryId = null;
 let editingKasirItemId = null;
 let editingSatuanId = null;
@@ -2108,6 +2200,9 @@ async function initDatabase() {
             if (!db.objectStoreNames.contains(STORES.SUPPLIERS)) {
                 const supplierStore = db.createObjectStore(STORES.SUPPLIERS, { keyPath: 'id', autoIncrement: true });
                 supplierStore.createIndex('name', 'name', { unique: false });
+            }
+            if (!db.objectStoreNames.contains(STORES.PENDING_TRANSACTIONS)) {
+                db.createObjectStore(STORES.PENDING_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
             }
             event.target.transaction.oncomplete = () => console.log('Database upgrade completed');
         };
@@ -2243,11 +2338,43 @@ async function loadKasirSatuan() {
 }
 
 async function loadCustomers() {
-    try { customers = await dbGetAll(STORES.CUSTOMERS); customers.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading customers:', error); customers = []; }
+    try { 
+        customers = await dbGetAll(STORES.CUSTOMERS); 
+        customers.forEach(c => { if (c.outstanding === undefined) c.outstanding = 0; });
+        customers.sort((a,b) => a.name.localeCompare(b.name)); 
+    } catch (error) { console.error('Error loading customers:', error); customers = []; }
 }
 
 async function loadSuppliers() {
     try { suppliers = await dbGetAll(STORES.SUPPLIERS); suppliers.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading suppliers:', error); suppliers = []; }
+}
+
+async function loadPendingTransactions() {
+    try { pendingTransactions = await dbGetAll(STORES.PENDING_TRANSACTIONS); } catch (error) { console.error('Error loading pending transactions:', error); pendingTransactions = []; }
+}
+
+async function savePendingTransaction(transactionData) {
+    try {
+        const now = new Date().toISOString();
+        const data = { ...transactionData, createdAt: now };
+        const id = await dbAdd(STORES.PENDING_TRANSACTIONS, data);
+        data.id = id;
+        pendingTransactions.push(data);
+        return data;
+    } catch (error) {
+        console.error('Error saving pending transaction:', error);
+        throw error;
+    }
+}
+
+async function deletePendingTransaction(id) {
+    try {
+        await dbDelete(STORES.PENDING_TRANSACTIONS, id);
+        pendingTransactions = pendingTransactions.filter(t => t.id !== id);
+    } catch (error) {
+        console.error('Error deleting pending transaction:', error);
+        throw error;
+    }
 }
 
 // ==================== FUNGSI MODAL KASIR ====================
@@ -2918,6 +3045,7 @@ function openTambahCustomerModal(editId = null) {
     const nameInput = document.getElementById('customer-name');
     const phoneInput = document.getElementById('customer-phone');
     const addressInput = document.getElementById('customer-address');
+    const outstandingInput = document.getElementById('customer-outstanding');
 
     if (editId) {
         const cust = customers.find(c => c.id === editId);
@@ -2925,6 +3053,7 @@ function openTambahCustomerModal(editId = null) {
             nameInput.value = cust.name;
             phoneInput.value = cust.phone || '';
             addressInput.value = cust.address || '';
+            outstandingInput.value = cust.outstanding || 0;
             editingCustomerId = editId;
             title.innerHTML = `<svg class="icon icon-primary" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit Pelanggan`;
         }
@@ -2932,6 +3061,7 @@ function openTambahCustomerModal(editId = null) {
         nameInput.value = '';
         phoneInput.value = '';
         addressInput.value = '';
+        outstandingInput.value = 0;
         editingCustomerId = null;
         title.innerHTML = `<svg class="icon icon-primary" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg> Tambah Pelanggan`;
     }
@@ -2948,6 +3078,7 @@ async function saveCustomer() {
     const name = document.getElementById('customer-name').value.trim();
     const phone = document.getElementById('customer-phone').value.trim();
     const address = document.getElementById('customer-address').value.trim();
+    const outstanding = parseFloat(document.getElementById('customer-outstanding').value) || 0;
 
     if (!name) { showNotification('Nama pelanggan harus diisi!', 'error'); return; }
 
@@ -2960,11 +3091,12 @@ async function saveCustomer() {
                 cust.name = name;
                 cust.phone = phone;
                 cust.address = address;
+                cust.outstanding = outstanding;
                 cust.updatedAt = now;
                 await dbPut(STORES.CUSTOMERS, cust);
             }
         } else {
-            const newCust = { name, phone, address, createdAt: now, updatedAt: now };
+            const newCust = { name, phone, address, outstanding, createdAt: now, updatedAt: now };
             const id = await dbAdd(STORES.CUSTOMERS, newCust);
             newCust.id = id;
             customers.push(newCust);
@@ -3012,7 +3144,8 @@ function openDaftarCustomerModal() {
                     <strong>${cust.name}</strong><br>
                     <span style="font-size:0.8rem;">
                         Telepon: ${cust.phone || '-'}<br>
-                        Alamat: ${cust.address || '-'}
+                        Alamat: ${cust.address || '-'}<br>
+                        Piutang: ${formatRupiah(cust.outstanding || 0)}
                     </span>
                 </div>
                 <div>
@@ -3172,7 +3305,8 @@ function openSelectCustomerModal() {
                     <strong>${cust.name}</strong><br>
                     <span style="font-size:0.8rem;">
                         Telepon: ${cust.phone || '-'}<br>
-                        Alamat: ${cust.address || '-'}
+                        Alamat: ${cust.address || '-'}<br>
+                        Piutang: ${formatRupiah(cust.outstanding || 0)}
                     </span>
                 </div>
                 <div>
@@ -3200,6 +3334,7 @@ function selectCustomer(customer) {
         badge.style.display = 'none';
     }
     closeSelectCustomerModal();
+    updatePiutangButton(); // perbarui tombol piutang di modal cart
     showNotification(`Pelanggan ${customer.name} dipilih`, 'success');
 }
 
@@ -3230,6 +3365,7 @@ async function exportData() {
             kasirSatuan: await dbGetAll(STORES.KASIR_SATUAN),
             customers: await dbGetAll(STORES.CUSTOMERS),
             suppliers: await dbGetAll(STORES.SUPPLIERS),
+            pendingTransactions: await dbGetAll(STORES.PENDING_TRANSACTIONS),
             settings: await dbGetAll(STORES.SETTINGS),
             exportDate: new Date().toISOString(),
             version: DB_VERSION
@@ -3265,18 +3401,21 @@ async function importData() {
                     await dbClear(STORES.KASIR_SATUAN);
                     await dbClear(STORES.CUSTOMERS);
                     await dbClear(STORES.SUPPLIERS);
+                    await dbClear(STORES.PENDING_TRANSACTIONS);
                     await dbClear(STORES.SETTINGS);
                     if (importedData.kasirCategories) for (const kc of importedData.kasirCategories) try { await dbAdd(STORES.KASIR_CATEGORIES, kc); } catch (error) { console.warn('Gagal mengimport kategori kasir:', kc, error); }
                     if (importedData.kasirItems) for (const ki of importedData.kasirItems) try { await dbAdd(STORES.KASIR_ITEMS, ki); } catch (error) { console.warn('Gagal mengimport item kasir:', ki, error); }
                     if (importedData.kasirSatuan) for (const ks of importedData.kasirSatuan) try { await dbAdd(STORES.KASIR_SATUAN, ks); } catch (error) { console.warn('Gagal mengimport satuan:', ks, error); }
                     if (importedData.customers) for (const c of importedData.customers) try { await dbAdd(STORES.CUSTOMERS, c); } catch (error) { console.warn('Gagal mengimport customer:', c, error); }
                     if (importedData.suppliers) for (const s of importedData.suppliers) try { await dbAdd(STORES.SUPPLIERS, s); } catch (error) { console.warn('Gagal mengimport supplier:', s, error); }
+                    if (importedData.pendingTransactions) for (const pt of importedData.pendingTransactions) try { await dbAdd(STORES.PENDING_TRANSACTIONS, pt); } catch (error) { console.warn('Gagal mengimport pending transactions:', pt, error); }
                     if (importedData.settings) for (const set of importedData.settings) try { await dbAdd(STORES.SETTINGS, set); } catch (error) { console.warn('Gagal mengimport setting:', set, error); }
                     await loadKasirCategories();
                     await loadKasirItems();
                     await loadKasirSatuan();
                     await loadCustomers();
                     await loadSuppliers();
+                    await loadPendingTransactions();
                     showNotification('Data berhasil diimport!', 'success');
                     resolve(true);
                 } catch (error) {
@@ -3301,6 +3440,7 @@ async function clearAllData() {
             await dbClear(STORES.KASIR_SATUAN);
             await dbClear(STORES.CUSTOMERS);
             await dbClear(STORES.SUPPLIERS);
+            await dbClear(STORES.PENDING_TRANSACTIONS);
             await dbClear(STORES.SETTINGS);
             await dbClear(STORES.APP_STATE);
             kasirCategories = [];
@@ -3308,6 +3448,7 @@ async function clearAllData() {
             kasirSatuan = [];
             customers = [];
             suppliers = [];
+            pendingTransactions = [];
             showNotification('Semua data berhasil dihapus!', 'success');
         } catch (error) { console.error('Error clearing data:', error); showNotification('Gagal menghapus data: ' + error.message, 'error'); } finally { hideLoading(); }
     }
@@ -3566,6 +3707,7 @@ function processBarcode() {
 // Fungsi untuk membuka modal keranjang
 function openCartModal() {
     document.getElementById('cart-modal').style.display = 'flex';
+    updatePiutangButton(); // perbarui tombol piutang
 }
 
 // Fungsi untuk menutup modal keranjang
@@ -3868,6 +4010,151 @@ function addToCartFromProductWithQty(itemId, element) {
     }
 }
 
+// ==================== FUNGSI PIUTANG ====================
+function updatePiutangButton() {
+    const btn = document.getElementById('piutang-btn');
+    if (!btn) return;
+    if (selectedCustomer && selectedCustomer.outstanding > 0) {
+        btn.classList.add('active');
+        btn.style.background = '#dc3545';
+    } else {
+        btn.classList.remove('active');
+        btn.style.background = '#ccc';
+    }
+}
+
+function showPiutangInfo() {
+    if (selectedCustomer && selectedCustomer.outstanding > 0) {
+        showNotification(`Piutang ${selectedCustomer.name}: ${formatRupiah(selectedCustomer.outstanding)}`, 'info');
+    } else {
+        showNotification('Tidak ada piutang', 'info');
+    }
+}
+
+// ==================== FUNGSI PENDING TRANSACTIONS ====================
+function openPendingTransactionsModal() {
+    const container = document.getElementById('pending-transactions-list');
+    container.innerHTML = '';
+    if (pendingTransactions.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tidak ada transaksi pending.</div>';
+    } else {
+        pendingTransactions.forEach((trans, index) => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.padding = '10px';
+            div.style.borderBottom = '1px solid #eee';
+            div.innerHTML = `
+                <div style="flex:1;">
+                    <strong>Transaksi ${trans.id}</strong><br>
+                    <span style="font-size:0.8rem;">
+                        Tanggal: ${new Date(trans.createdAt).toLocaleString()}<br>
+                        Total: ${formatRupiah(trans.total)}<br>
+                        Customer: ${trans.customerName || '-'}
+                    </span>
+                </div>
+                <div>
+                    <button class="action-btn edit-btn" onclick="loadPendingTransaction(${trans.id})">Muat</button>
+                    <button class="action-btn delete-btn" onclick="deletePendingTransactionPrompt(${trans.id})">Hapus</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+    document.getElementById('pending-transactions-modal').style.display = 'flex';
+}
+
+function closePendingTransactionsModal() {
+    document.getElementById('pending-transactions-modal').style.display = 'none';
+}
+
+async function deletePendingTransactionPrompt(id) {
+    if (confirm('Hapus transaksi pending ini?')) {
+        await deletePendingTransaction(id);
+        openPendingTransactionsModal(); // refresh
+    }
+}
+
+function loadPendingTransaction(id) {
+    const trans = pendingTransactions.find(t => t.id === id);
+    if (trans) {
+        // Reconstruct cart dengan item terbaru
+        const newCart = [];
+        trans.cart.forEach(c => {
+            const item = kasirItems.find(i => i.id === c.itemId);
+            if (item) {
+                newCart.push({
+                    item: item,
+                    qty: c.qty,
+                    unitConversion: c.unitConversion,
+                    weightGram: c.weightGram,
+                    pricePerUnit: c.pricePerUnit,
+                    subtotal: c.subtotal
+                });
+            } else {
+                // item sudah dihapus, beri notifikasi
+                showNotification(`Item dengan ID ${c.itemId} tidak ditemukan, dilewati.`, 'warning');
+            }
+        });
+        cart = newCart;
+        if (trans.customerId) {
+            const cust = customers.find(c => c.id === trans.customerId);
+            if (cust) selectedCustomer = cust;
+            else selectedCustomer = null;
+        } else {
+            selectedCustomer = null;
+        }
+        // Update badge
+        const badge = document.getElementById('customer-badge');
+        if (selectedCustomer) {
+            badge.textContent = selectedCustomer.name.charAt(0).toUpperCase();
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+        renderCart();
+        updatePiutangButton(); // perbarui tombol piutang
+        showNotification('Transaksi pending dimuat', 'success');
+        closePendingTransactionsModal();
+        if (document.getElementById('transaksi-page').style.display !== 'block') {
+            openTransaksiPage();
+        }
+    }
+}
+
+async function saveDraftTransaction() {
+    if (cart.length === 0) {
+        showNotification('Keranjang kosong, tidak ada yang disimpan', 'warning');
+        return;
+    }
+    const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
+    const transactionData = {
+        cart: cart.map(c => ({
+            itemId: c.item.id,
+            itemName: c.item.name,
+            qty: c.qty,
+            unitConversion: c.unitConversion ? { ...c.unitConversion } : null,
+            weightGram: c.weightGram,
+            pricePerUnit: c.pricePerUnit,
+            subtotal: c.subtotal
+        })),
+        customerId: selectedCustomer ? selectedCustomer.id : null,
+        customerName: selectedCustomer ? selectedCustomer.name : null,
+        total: total,
+        createdAt: new Date().toISOString()
+    };
+    try {
+        showLoading();
+        await savePendingTransaction(transactionData);
+        showNotification('Transaksi disimpan sebagai draft', 'success');
+    } catch (error) {
+        showNotification('Gagal menyimpan draft: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
     notification.textContent = message;
@@ -3892,6 +4179,7 @@ async function initApp() {
         await loadKasirSatuan();
         await loadCustomers();
         await loadSuppliers();
+        await loadPendingTransactions(); // load pending transactions
         console.log('App initialized successfully');
         showNotification('Aplikasi siap.', 'success');
     } catch (error) {
@@ -3925,6 +4213,7 @@ window.onclick = function(event) {
         else if (event.target.id === 'supplier-modal') closeSupplierModal();
         else if (event.target.id === 'list-supplier-modal') closeListSupplierModal();
         else if (event.target.id === 'select-customer-modal') closeSelectCustomerModal();
+        else if (event.target.id === 'pending-transactions-modal') closePendingTransactionsModal();
     }
 };
 
@@ -3938,6 +4227,7 @@ async function refreshData() {
         await loadKasirSatuan();
         await loadCustomers();
         await loadSuppliers();
+        await loadPendingTransactions();
         console.log('Data refreshed successfully');
     } catch (error) { console.error('Error refreshing data:', error); } finally { hideLoading(); }
 }
