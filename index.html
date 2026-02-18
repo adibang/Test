@@ -1444,7 +1444,7 @@ button {
         <span>Laporan Stok</span>
     </button>
 
-    <!-- ==================== PERUBAHAN: MENU LAPORAN PENJUALAN ==================== -->
+    <!-- ==================== MENU LAPORAN PENJUALAN ==================== -->
     <div class="menu-section">LAPORAN</div>
     <button onclick="openLaporanPage()">
         <svg class="icon" viewBox="0 0 24 24">
@@ -1453,6 +1453,16 @@ button {
             <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
         <span>Laporan Penjualan</span>
+    </button>
+
+    <!-- ==================== PERUBAHAN: MENU PEMBELIAN ==================== -->
+    <div class="menu-section">PEMBELIAN</div>
+    <button onclick="openPembelianPage()">
+        <svg class="icon" viewBox="0 0 24 24">
+            <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+            <path d="M8 7h8M8 11h6M8 15h4"/>
+        </svg>
+        <span>Pembelian Barang</span>
     </button>
 </div>
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -2376,8 +2386,8 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-// PERUBAHAN: Versi database dinaikkan menjadi 14 untuk menambah store sales
-const DB_VERSION = 14;
+// PERUBAHAN: Versi database dinaikkan menjadi 15 untuk menambah store purchases
+const DB_VERSION = 15;
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -2386,7 +2396,9 @@ const STORES = {
     KASIR_SATUAN: 'kasirSatuan',
     CUSTOMERS: 'customers',
     SUPPLIERS: 'suppliers',
-    PENDING_TRANSACTIONS: 'pendingTransactions'
+    PENDING_TRANSACTIONS: 'pendingTransactions',
+    SALES: 'sales',
+    PURCHASES: 'purchases' // Tambahan
 };
 
 // ==================== GLOBAL VARIABLES ====================
@@ -2525,10 +2537,17 @@ async function initDatabase() {
                 db.createObjectStore(STORES.PENDING_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
             }
             // PERUBAHAN: Buat object store sales dengan indeks
-            if (!db.objectStoreNames.contains('sales')) {
-                const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+            if (!db.objectStoreNames.contains(STORES.SALES)) {
+                const salesStore = db.createObjectStore(STORES.SALES, { keyPath: 'id', autoIncrement: true });
                 salesStore.createIndex('date', 'date', { unique: false });
                 salesStore.createIndex('transactionNumber', 'transactionNumber', { unique: true });
+            }
+            // PERUBAHAN: Buat object store purchases dengan indeks
+            if (!db.objectStoreNames.contains(STORES.PURCHASES)) {
+                const purchaseStore = db.createObjectStore(STORES.PURCHASES, { keyPath: 'id', autoIncrement: true });
+                purchaseStore.createIndex('date', 'date', { unique: false });
+                purchaseStore.createIndex('supplierId', 'supplierId', { unique: false });
+                purchaseStore.createIndex('purchaseNumber', 'purchaseNumber', { unique: true });
             }
             event.target.transaction.oncomplete = () => console.log('Database upgrade completed');
         };
@@ -4333,7 +4352,7 @@ async function executePayment(method, paidAmount, outstandingAdded) {
         };
 
         // Simpan ke store sales
-        await dbAdd('sales', salesData);
+        await dbAdd(STORES.SALES, salesData);
 
         await loadKasirItems();
         await loadCustomers();
@@ -4784,9 +4803,61 @@ async function saveDraftTransaction() {
 }
 
 // ==================== FUNGSI LAPORAN PENJUALAN ====================
-// PERUBAHAN: Fungsi untuk membuka halaman laporan
 function openLaporanPage() {
     window.open('laporan.html', '_blank');
+}
+
+// ==================== FUNGSI PEMBELIAN (MENU BARU) ====================
+function openPembelianPage() {
+    window.open('pembelian.html', '_blank');
+}
+
+// ==================== FUNGSI GENERATE NOMOR PEMBELIAN (UNTUK PEMBELIAN.HTML) ====================
+// PERUBAHAN: Fungsi ini akan dipanggil dari halaman pembelian, tapi kita definisikan juga di sini untuk keperluan umum.
+async function generatePurchaseNumber() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    let lastCounter = 0;
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readonly');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const request = store.get('lastPurchaseNumber');
+        await new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                if (request.result) {
+                    const data = request.result.value;
+                    if (data.date === dateStr) {
+                        lastCounter = data.counter;
+                    } else {
+                        lastCounter = 0;
+                    }
+                }
+                resolve();
+            };
+            request.onerror = reject;
+        });
+    } catch (error) {
+        console.warn('Gagal membaca counter purchase:', error);
+    }
+
+    const newCounter = lastCounter + 1;
+    const purchaseNumber = `PO-${dateStr}-${String(newCounter).padStart(5, '0')}`;
+
+    // Simpan counter baru ke settings
+    try {
+        await dbPut(STORES.SETTINGS, {
+            key: 'lastPurchaseNumber',
+            value: { date: dateStr, counter: newCounter }
+        });
+    } catch (error) {
+        console.error('Gagal menyimpan counter purchase:', error);
+    }
+
+    return purchaseNumber;
 }
 
 function showNotification(message, type = 'info') {
