@@ -2397,7 +2397,6 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-// PERUBAHAN: Versi database dinaikkan menjadi 15 untuk menambah store purchases
 const DB_VERSION = 15;
 const STORES = {
     SETTINGS: 'settings',
@@ -2409,7 +2408,7 @@ const STORES = {
     SUPPLIERS: 'suppliers',
     PENDING_TRANSACTIONS: 'pendingTransactions',
     SALES: 'sales',
-    PURCHASES: 'purchases' // Tambahan
+    PURCHASES: 'purchases'
 };
 
 // ==================== GLOBAL VARIABLES ====================
@@ -2449,6 +2448,105 @@ const icons = {
     upload: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
     download: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 };
+
+// ==================== LOCALSTORAGE CART ====================
+const CART_STORAGE_KEY = 'pos_cart';
+const CUSTOMER_STORAGE_KEY = 'pos_selected_customer';
+
+function saveCartToLocalStorage() {
+    try {
+        const cartData = cart.map(c => ({
+            itemId: c.item.id,
+            qty: c.qty,
+            unitConversion: c.unitConversion ? { 
+                unit: c.unitConversion.unit, 
+                value: c.unitConversion.value,
+                barcode: c.unitConversion.barcode,
+                sellPrice: c.unitConversion.sellPrice 
+            } : null,
+            weightGram: c.weightGram || 0
+        }));
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+        
+        if (selectedCustomer) {
+            localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify({
+                id: selectedCustomer.id,
+                name: selectedCustomer.name
+            }));
+        } else {
+            localStorage.removeItem(CUSTOMER_STORAGE_KEY);
+        }
+    } catch (e) {
+        console.error('Gagal menyimpan cart ke localStorage:', e);
+    }
+}
+
+async function loadCartFromLocalStorage() {
+    try {
+        // Muat customer
+        const customerData = localStorage.getItem(CUSTOMER_STORAGE_KEY);
+        if (customerData) {
+            const { id } = JSON.parse(customerData);
+            const customer = customers.find(c => c.id === id);
+            if (customer) {
+                selectedCustomer = customer;
+                const badge = document.getElementById('customer-badge');
+                if (badge) {
+                    badge.textContent = customer.name.charAt(0).toUpperCase();
+                    badge.style.display = 'flex';
+                }
+            } else {
+                localStorage.removeItem(CUSTOMER_STORAGE_KEY);
+            }
+        }
+
+        // Muat cart
+        const cartData = localStorage.getItem(CART_STORAGE_KEY);
+        if (!cartData) return;
+
+        const parsed = JSON.parse(cartData);
+        if (!Array.isArray(parsed)) return;
+
+        const newCart = [];
+        for (let c of parsed) {
+            const item = kasirItems.find(i => i.id === c.itemId);
+            if (!item) continue;
+
+            let pricePerUnit;
+            if (c.unitConversion) {
+                const conv = item.unitConversions?.find(u => u.barcode === c.unitConversion.barcode);
+                if (conv) {
+                    pricePerUnit = conv.sellPrice;
+                    c.unitConversion = conv;
+                } else {
+                    pricePerUnit = getPriceForQty(item, c.qty);
+                    c.unitConversion = null;
+                }
+            } else {
+                pricePerUnit = getPriceForQty(item, c.qty);
+            }
+
+            newCart.push({
+                item,
+                qty: c.qty,
+                unitConversion: c.unitConversion || null,
+                weightGram: c.weightGram || 0,
+                pricePerUnit,
+                subtotal: c.qty * pricePerUnit
+            });
+        }
+
+        cart = newCart;
+        renderCartPage();
+        if (document.getElementById('transaksi-page').style.display === 'block') {
+            renderProductList();
+        }
+    } catch (e) {
+        console.error('Gagal memuat cart dari localStorage:', e);
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(CUSTOMER_STORAGE_KEY);
+    }
+}
 
 // ==================== LOADING STATE FUNCTIONS ====================
 function showLoading() {
@@ -2547,13 +2645,11 @@ async function initDatabase() {
             if (!db.objectStoreNames.contains(STORES.PENDING_TRANSACTIONS)) {
                 db.createObjectStore(STORES.PENDING_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
             }
-            // PERUBAHAN: Buat object store sales dengan indeks
             if (!db.objectStoreNames.contains(STORES.SALES)) {
                 const salesStore = db.createObjectStore(STORES.SALES, { keyPath: 'id', autoIncrement: true });
                 salesStore.createIndex('date', 'date', { unique: false });
                 salesStore.createIndex('transactionNumber', 'transactionNumber', { unique: true });
             }
-            // PERUBAHAN: Buat object store purchases dengan indeks
             if (!db.objectStoreNames.contains(STORES.PURCHASES)) {
                 const purchaseStore = db.createObjectStore(STORES.PURCHASES, { keyPath: 'id', autoIncrement: true });
                 purchaseStore.createIndex('date', 'date', { unique: false });
@@ -3690,6 +3786,7 @@ function selectCustomer(customer) {
     closeSelectCustomerModal();
     updatePiutangButtonCart();
     showNotification(`Pelanggan ${customer.name} dipilih`, 'success');
+    saveCartToLocalStorage(); // Simpan perubahan customer
 }
 
 // ==================== DRAWER FUNCTIONS ====================
@@ -3922,11 +4019,10 @@ function openTransaksiPage() {
     document.getElementById('transaksi-page').style.display = 'block';
     document.getElementById('cart-page').style.display = 'none';
     document.getElementById('payment-page').style.display = 'none';
-    cart = [];
-    selectedCustomer = null;
-    document.getElementById('customer-badge').style.display = 'none';
-    renderCartPage(); // update badge jumlah
-    setProductViewMode('list');
+    // Tidak reset cart, biarkan seperti yang sudah dimuat
+    renderProductList();
+    renderCartPage();
+    updatePiutangButtonCart();
     setTimeout(() => document.getElementById('barcode-input').focus(), 100);
     closeDrawer();
 }
@@ -3949,7 +4045,7 @@ function getPriceForQty(item, qty) {
     return item.hargaJual;
 }
 
-function addToCart(item, qty, unitConversion = null, weightGram = 0) {
+function addToCart(item, qty, unitConversion, weightGram) {
     let requiredStock;
     if (weightGram > 0) {
         requiredStock = qty;
@@ -4006,6 +4102,7 @@ function addToCart(item, qty, unitConversion = null, weightGram = 0) {
         });
     }
     renderCartPage();
+    saveCartToLocalStorage();
 }
 
 function processBarcode() {
@@ -4110,6 +4207,7 @@ function renderCartPage() {
 function removeFromCart(index) {
     cart.splice(index, 1);
     renderCartPage();
+    saveCartToLocalStorage();
     if (document.getElementById('payment-page').style.display === 'block') {
         const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
         document.getElementById('payment-total').textContent = formatRupiah(total);
@@ -4160,6 +4258,7 @@ function addOutstandingToCart() {
     };
     cart.push(outstandingItem);
     renderCartPage();
+    saveCartToLocalStorage();
     updatePiutangButtonCart();
     showNotification('Piutang ditambahkan ke keranjang', 'success');
 }
@@ -4175,10 +4274,9 @@ function openPaymentPage() {
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
     document.getElementById('payment-total').textContent = formatRupiah(total);
     document.getElementById('payment-grand-total').textContent = formatRupiah(total);
-    // KOSONGKAN input jumlah bayar (tidak otomatis)
     document.getElementById('payment-amount').value = '';
     document.getElementById('shortage-display').style.display = 'none';
-    calculateChange(); // untuk reset
+    calculateChange();
 }
 
 function closePaymentPage() {
@@ -4224,7 +4322,6 @@ async function processPayment() {
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
     const shortage = total - paidAmount;
     if (shortage > 0) {
-        // Kurang bayar, perlu konfirmasi piutang
         if (!selectedCustomer) {
             showNotification('Untuk mencatat piutang, harus pilih pelanggan terlebih dahulu', 'error');
             return;
@@ -4235,7 +4332,6 @@ async function processPayment() {
         document.getElementById('confirm-piutang-modal').style.display = 'flex';
         return;
     }
-    // Lunas atau lebih
     await executePayment(method, paidAmount, 0);
 }
 
@@ -4246,7 +4342,6 @@ async function processPaymentWithPiutang() {
     await executePayment(pendingPaymentMethod, pendingPaidAmount, shortage);
 }
 
-// PERUBAHAN: Fungsi generate nomor transaksi
 async function generateTransactionNumber() {
     const today = new Date();
     const year = today.getFullYear();
@@ -4254,7 +4349,6 @@ async function generateTransactionNumber() {
     const day = String(today.getDate()).padStart(2, '0');
     const dateStr = `${year}${month}${day}`;
 
-    // Ambil counter terakhir dari settings
     let lastCounter = 0;
     try {
         const transaction = db.transaction([STORES.SETTINGS], 'readonly');
@@ -4264,7 +4358,6 @@ async function generateTransactionNumber() {
             request.onsuccess = () => {
                 if (request.result) {
                     const data = request.result.value;
-                    // Jika tanggal hari ini sama dengan tanggal tersimpan, pakai counter, else reset
                     if (data.date === dateStr) {
                         lastCounter = data.counter;
                     } else {
@@ -4282,7 +4375,6 @@ async function generateTransactionNumber() {
     const newCounter = lastCounter + 1;
     const transactionNumber = `INV-${dateStr}-${String(newCounter).padStart(5, '0')}`;
 
-    // Simpan counter baru ke settings
     try {
         await dbPut(STORES.SETTINGS, {
             key: 'lastTransactionNumber',
@@ -4295,13 +4387,11 @@ async function generateTransactionNumber() {
     return transactionNumber;
 }
 
-// PERUBAHAN: Fungsi executePayment yang dimodifikasi untuk menyimpan transaksi
 async function executePayment(method, paidAmount, outstandingAdded) {
     try {
         showLoading();
-        // Kurangi stok
         for (let c of cart) {
-            if (c.isOutstanding) continue; // item piutang tidak mempengaruhi stok
+            if (c.isOutstanding) continue;
             let requiredStock;
             if (c.weightGram > 0) requiredStock = c.qty;
             else if (c.unitConversion) requiredStock = c.qty * c.unitConversion.value;
@@ -4314,7 +4404,6 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             }
         }
 
-        // Update piutang customer jika ada outstandingAdded
         if (outstandingAdded > 0 && selectedCustomer) {
             const cust = customers.find(c => c.id === selectedCustomer.id);
             if (cust) {
@@ -4325,16 +4414,13 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             }
         }
 
-        // Generate nomor transaksi
         const transactionNumber = await generateTransactionNumber();
 
-        // Hitung subtotal, diskon, pajak, total (asumsikan 0 untuk diskon/tax)
         const subtotal = cart.reduce((sum, c) => sum + c.subtotal, 0);
-        const discount = 0; // Bisa diisi jika ada fitur diskon
-        const tax = 0;      // Bisa diisi jika ada fitur pajak
+        const discount = 0;
+        const tax = 0;
         const total = subtotal - discount + tax;
 
-        // Siapkan data items
         const items = cart.map(c => ({
             itemId: c.item.id,
             itemName: c.item.name,
@@ -4345,7 +4431,6 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             weightGram: c.weightGram || 0
         }));
 
-        // Data transaksi untuk disimpan
         const salesData = {
             transactionNumber,
             date: new Date().toISOString(),
@@ -4362,7 +4447,6 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             customerName: selectedCustomer ? selectedCustomer.name : null
         };
 
-        // Simpan ke store sales
         await dbAdd(STORES.SALES, salesData);
 
         await loadKasirItems();
@@ -4370,14 +4454,14 @@ async function executePayment(method, paidAmount, outstandingAdded) {
         renderProductList();
         showNotification(`Pembayaran berhasil via ${method === 'cash' ? 'Tunai' : method === 'card' ? 'Kartu' : 'Transfer'}${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
         
-        // Setelah pembayaran sukses, aktifkan tombol print
         document.getElementById('print-receipt-btn').disabled = false;
         
+        // Kosongkan cart dan hapus dari localStorage
         cart = [];
         selectedCustomer = null;
         document.getElementById('customer-badge').style.display = 'none';
         renderCartPage();
-        // Jangan langsung close payment page, biarkan user mencetak struk
+        saveCartToLocalStorage(); // simpan keranjang kosong
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
@@ -4395,7 +4479,6 @@ function closeConfirmPiutangModal() {
 // ==================== FUNGSI PRINT VIA WEB SERIAL ====================
 async function togglePrinter() {
     if (printerPort) {
-        // Disconnect
         try {
             await printerPort.close();
             printerPort = null;
@@ -4406,14 +4489,13 @@ async function togglePrinter() {
             showNotification('Gagal memutuskan printer: ' + error.message, 'error');
         }
     } else {
-        // Connect
         if (!navigator.serial) {
             showNotification('Web Serial API tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
             return;
         }
         try {
             const port = await navigator.serial.requestPort();
-            await port.open({ baudRate: 9600 }); // Sesuaikan baud rate printer Anda
+            await port.open({ baudRate: 9600 });
             printerPort = port;
             updatePrinterStatus(true);
             showNotification('Printer terhubung', 'success');
@@ -4444,7 +4526,6 @@ async function autoReconnectPrinter() {
     try {
         const ports = await navigator.serial.getPorts();
         if (ports.length > 0) {
-            // Coba buka port pertama yang sudah diizinkan
             const port = ports[0];
             await port.open({ baudRate: 9600 });
             printerPort = port;
@@ -4621,8 +4702,7 @@ function renderProductList() {
     if (productViewMode === 'list') {
         html = '<div class="product-list">';
         kasirItems.forEach(item => {
-            // step="any" agar bisa input desimal, min="0.01" agar minimal 0.01
-            let step = 'any';
+            let step = item.isWeighable ? '0.01' : '1';
             let min = '0.01';
             html += `
                 <div class="product-list-item" onclick="addToCartFromProductWithQty(${item.id}, this)">
@@ -4643,7 +4723,7 @@ function renderProductList() {
     } else {
         html = '<div class="product-grid">';
         kasirItems.forEach(item => {
-            let step = 'any';
+            let step = item.isWeighable ? '0.01' : '1';
             let min = '0.01';
             html += `
                 <div class="product-card" onclick="addToCartFromProductWithQty(${item.id}, this)">
@@ -4677,7 +4757,6 @@ function adjustQty(btn, delta, itemId) {
     const input = container.querySelector('.qty-input');
     if (input) {
         const item = kasirItems.find(i => i.id === itemId);
-        // Tentukan step tombol: 1 untuk produk biasa, 0.01 untuk timbangan
         let step = 1;
         if (item && item.isWeighable) step = 0.01;
         let newVal = parseFloat(input.value) + (delta * step);
@@ -4685,11 +4764,10 @@ function adjustQty(btn, delta, itemId) {
         let max = parseFloat(input.max);
         if (newVal < min) newVal = min;
         if (newVal > max) newVal = max;
-        // Bulatkan sesuai jenis produk
         if (item && item.isWeighable) {
-            newVal = Math.round(newVal * 100) / 100; // 2 desimal
+            newVal = Math.round(newVal * 100) / 100;
         } else {
-            newVal = Math.round(newVal); // integer
+            newVal = Math.round(newVal);
         }
         input.value = newVal;
     }
@@ -4700,7 +4778,7 @@ function addToCartFromProductWithQty(itemId, element) {
     let qty = 1;
     if (input) {
         qty = parseFloat(input.value);
-        if (isNaN(qty) || qty <= 0) qty = 0.01; // minimal 0.01 jika input tidak valid
+        if (isNaN(qty) || qty <= 0) qty = 0.01;
     }
     const item = kasirItems.find(i => i.id === itemId);
     if (item) {
@@ -4789,6 +4867,7 @@ function loadPendingTransaction(id) {
         }
         renderCartPage();
         updatePiutangButtonCart();
+        saveCartToLocalStorage(); // simpan perubahan
         showNotification('Transaksi pending dimuat', 'success');
         closePendingTransactionsModal();
         if (document.getElementById('transaksi-page').style.display !== 'block') {
@@ -4840,7 +4919,6 @@ function openPembelianPage() {
 }
 
 // ==================== FUNGSI GENERATE NOMOR PEMBELIAN (UNTUK PEMBELIAN.HTML) ====================
-// PERUBAHAN: Fungsi ini akan dipanggil dari halaman pembelian, tapi kita definisikan juga di sini untuk keperluan umum.
 async function generatePurchaseNumber() {
     const today = new Date();
     const year = today.getFullYear();
@@ -4874,7 +4952,6 @@ async function generatePurchaseNumber() {
     const newCounter = lastCounter + 1;
     const purchaseNumber = `PO-${dateStr}-${String(newCounter).padStart(5, '0')}`;
 
-    // Simpan counter baru ke settings
     try {
         await dbPut(STORES.SETTINGS, {
             key: 'lastPurchaseNumber',
@@ -4912,7 +4989,8 @@ async function initApp() {
         await loadCustomers();
         await loadSuppliers();
         await loadPendingTransactions();
-        // Coba sambung ulang printer secara otomatis
+        // Muat cart dari localStorage setelah data siap
+        await loadCartFromLocalStorage();
         await autoReconnectPrinter();
         console.log('App initialized successfully');
         showNotification('Aplikasi siap.', 'success');
