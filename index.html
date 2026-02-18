@@ -1100,37 +1100,63 @@ button {
         <h2>Transaksi Kasir</h2>
         <button class="form-button-secondary" onclick="closeTransaksiPage()">Kembali ke Beranda</button>
     </div>
-    <!-- Baris pencarian dan toggle -->
+    <!-- Baris pencarian, toggle, dan ikon keranjang -->
     <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px;">
         <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 1;">
         <div class="view-toggle">
             <button id="view-list-btn" onclick="setProductViewMode('list')" title="Tampilan List">📋</button>
             <button id="view-grid-btn" onclick="setProductViewMode('grid')" title="Tampilan Grid">🔲</button>
         </div>
+        <button id="cart-icon-btn" class="action-btn" onclick="openCartModal()" title="Lihat Keranjang" style="background: white; border: 1px solid #006B54; border-radius: 15px; padding: 8px 12px;">
+            <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span id="cart-count" style="background: #006B54; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; margin-left: 5px;">0</span>
+        </button>
     </div>
     <!-- Container produk -->
     <div id="product-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 15px; padding: 10px;"></div>
-    <!-- Keranjang -->
-    <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr>
-                    <th>Produk</th>
-                    <th>Jumlah</th>
-                    <th>Harga Satuan</th>
-                    <th>Subtotal</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="cart-items"></tbody>
-        </table>
-    </div>
-    <div style="text-align:right; font-size:1.2rem; margin-bottom:20px;">
-        Total: <span id="cart-total">Rp 0</span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button type="button" class="form-button-secondary" onclick="closeTransaksiPage()">Tutup</button>
-        <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
+    <!-- Bagian keranjang dihapus dari sini, dipindah ke modal -->
+</div>
+
+<!-- ==================== MODAL CART ==================== -->
+<div class="modal-overlay" id="cart-modal">
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header">
+            <h2 class="modal-title">
+                <svg class="icon icon-primary" viewBox="0 0 24 24" width="24" height="24">
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                Keranjang Belanja
+            </h2>
+        </div>
+        <div class="modal-body">
+            <div style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Harga Satuan</th>
+                            <th>Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items-modal"></tbody>
+                </table>
+            </div>
+            <div style="text-align:right; font-size:1.2rem; margin-bottom:20px;">
+                Total: <span id="cart-total-modal">Rp 0</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button type="button" class="form-button-secondary" onclick="closeCartModal()">Tutup</button>
+                <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2917,9 +2943,21 @@ function processBarcode() {
     input.value = '';
 }
 
+// Fungsi untuk membuka modal keranjang
+function openCartModal() {
+    document.getElementById('cart-modal').style.display = 'flex';
+}
+
+// Fungsi untuk menutup modal keranjang
+function closeCartModal() {
+    document.getElementById('cart-modal').style.display = 'none';
+}
+
+// Render keranjang ke dalam modal
 function renderCart() {
-    const tbody = document.getElementById('cart-items');
-    const totalEl = document.getElementById('cart-total');
+    const tbody = document.getElementById('cart-items-modal');
+    const totalEl = document.getElementById('cart-total-modal');
+    const cartCount = document.getElementById('cart-count');
     if (!tbody) return;
     tbody.innerHTML = '';
     let total = 0;
@@ -2951,6 +2989,7 @@ function renderCart() {
         total += c.subtotal;
     });
     totalEl.textContent = formatRupiah(total);
+    cartCount.textContent = cart.length;
 }
 
 function removeFromCart(index) {
@@ -2991,6 +3030,7 @@ async function bayarTransaksi() {
         showNotification('Transaksi berhasil', 'success');
         cart = [];
         renderCart();
+        closeCartModal(); // tutup modal setelah bayar
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses transaksi: ' + error.message, 'error');
@@ -3252,6 +3292,7 @@ window.onclick = function(event) {
         else if (event.target.id === 'satuan-modal') closeSatuanModal();
         else if (event.target.id === 'settings-modal') closeSettingsModal();
         else if (event.target.id === 'inventory-modal') closeInventoryModal();
+        else if (event.target.id === 'cart-modal') closeCartModal(); // tambahkan untuk modal cart
     }
 };
 
