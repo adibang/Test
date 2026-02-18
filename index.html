@@ -354,7 +354,18 @@ body.drawer-open .main-content {
     margin-bottom: 20px;
     font-weight: 600;
 }
+/* ===== MODIFIKASI UNTUK MOBILE ===== */
+@media (max-width: 768px) {
+    .cart-items-table th,
+    .cart-items-table td {
+        font-size: 0.8rem;   /* ukuran font lebih kecil */
+        padding: 6px;         /* padding dikurangi agar lebih muat */
+    }
 
+    .cart-total {
+        font-size: 1.1rem;    /* ukuran total juga disesuaikan */
+    }
+    }
 .cart-actions {
     display: flex;
     gap: 10px;
