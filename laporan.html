@@ -276,7 +276,8 @@
 
     <script>
         const DB_NAME = 'POSKasirDB';
-        const DB_VERSION = 14; // Sesuaikan dengan versi terbaru
+        // PERUBAHAN: Versi database dinaikkan menjadi 15 agar sesuai dengan database utama
+        const DB_VERSION = 15;
         let db = null;
         let salesData = [];
         let chartInstance = null;
@@ -291,13 +292,11 @@
                     resolve();
                 };
                 request.onupgradeneeded = (e) => {
-                    // Jika database belum ada atau versi lama, kita tidak perlu upgrade di sini
-                    // karena hanya membaca. Tapi pastikan object store sales ada.
+                    // Jika database belum ada atau versi lama, kita perlu memastikan store sales ada.
+                    // Tapi karena hanya membaca, kita bisa beri tahu user untuk membuka aplikasi utama terlebih dahulu.
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('sales')) {
-                        // Jika tidak ada, berarti versi database utama belum di-upgrade.
-                        // Tampilkan pesan error.
-                        alert('Database belum di-upgrade. Silakan buka aplikasi utama terlebih dahulu.');
+                        alert('Database belum memiliki data penjualan. Silakan buka aplikasi utama terlebih dahulu untuk membuat database.');
                     }
                 };
             });
@@ -317,6 +316,11 @@
             return new Promise((resolve, reject) => {
                 if (!db) {
                     reject('Database tidak tersedia');
+                    return;
+                }
+                // Pastikan object store 'sales' ada
+                if (!db.objectStoreNames.contains('sales')) {
+                    reject('Store sales tidak ditemukan. Pastikan database sudah di-upgrade.');
                     return;
                 }
                 const transaction = db.transaction(['sales'], 'readonly');
