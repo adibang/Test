@@ -1132,13 +1132,22 @@ button {
         <h2>Transaksi Kasir</h2>
         <button class="form-button-secondary" onclick="closeTransaksiPage()">Kembali ke Beranda</button>
     </div>
-    <!-- Baris pencarian, toggle, dan ikon keranjang -->
-    <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px;">
-        <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 1;">
+    <!-- Baris pencarian, toggle, ikon customer, dan ikon keranjang -->
+    <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 2; min-width: 200px;">
         <div class="view-toggle">
             <button id="view-list-btn" onclick="setProductViewMode('list')" title="Tampilan List">📋</button>
             <button id="view-grid-btn" onclick="setProductViewMode('grid')" title="Tampilan Grid">🔲</button>
         </div>
+        <!-- Tombol Pilih Customer -->
+        <button id="customer-select-btn" class="action-btn" onclick="openSelectCustomerModal()" title="Pilih Pelanggan" style="background: white; border: 1px solid #006B54; border-radius: 15px; padding: 8px 12px; display: flex; align-items: center; gap: 5px;">
+            <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
+            </svg>
+            <span id="selected-customer-name" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Pilih Customer</span>
+        </button>
+        <!-- Tombol Keranjang -->
         <button id="cart-icon-btn" class="action-btn" onclick="openCartModal()" title="Lihat Keranjang" style="background: white; border: 1px solid #006B54; border-radius: 15px; padding: 8px 12px;">
             <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
                 <circle cx="9" cy="21" r="1"/>
@@ -1150,7 +1159,6 @@ button {
     </div>
     <!-- Container produk -->
     <div id="product-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 15px; padding: 10px;"></div>
-    <!-- Bagian keranjang dihapus dari sini, dipindah ke modal -->
 </div>
 
 <!-- ==================== MODAL CART ==================== -->
@@ -1187,6 +1195,27 @@ button {
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <button type="button" class="form-button-secondary" onclick="closeCartModal()">Tutup</button>
                 <button type="button" class="form-button-primary" onclick="bayarTransaksi()">Bayar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL PILIH CUSTOMER ==================== -->
+<div class="modal-overlay" id="select-customer-modal">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h2 class="modal-title">
+                <svg class="icon icon-primary" viewBox="0 0 24 24">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
+                </svg>
+                Pilih Pelanggan
+            </h2>
+        </div>
+        <div class="modal-body">
+            <div id="select-customer-list" style="max-height:400px; overflow-y:auto;"></div>
+            <div style="margin-top:20px;">
+                <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeSelectCustomerModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1473,7 +1502,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL CUSTOMER ==================== -->
+<!-- ==================== MODAL CUSTOMER (TAMBAH/EDIT) ==================== -->
 <div class="modal-overlay" id="customer-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -1528,7 +1557,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== MODAL SUPPLIER ==================== -->
+<!-- ==================== MODAL SUPPLIER (TAMBAH/EDIT) ==================== -->
 <div class="modal-overlay" id="supplier-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -1817,7 +1846,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-const DB_VERSION = 12; // upgrade version
+const DB_VERSION = 12;
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -1846,6 +1875,7 @@ let editingKasirItemId = null;
 let editingSatuanId = null;
 let editingCustomerId = null;
 let editingSupplierId = null;
+let selectedCustomer = null; // customer yang dipilih untuk transaksi saat ini
 
 // Variabel untuk konversi satuan
 let tempUnitConversions = [];
@@ -3002,6 +3032,51 @@ function closeListSupplierModal() {
     document.getElementById('list-supplier-modal').style.display = 'none';
 }
 
+// ==================== FUNGSI PILIH CUSTOMER ====================
+function openSelectCustomerModal() {
+    const container = document.getElementById('select-customer-list');
+    container.innerHTML = '';
+    if (customers.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Belum ada pelanggan. Silakan tambah terlebih dahulu.</div>';
+    } else {
+        customers.forEach(cust => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.padding = '10px';
+            div.style.borderBottom = '1px solid #eee';
+            div.style.cursor = 'pointer';
+            div.onclick = () => selectCustomer(cust);
+            div.innerHTML = `
+                <div style="flex:1;">
+                    <strong>${cust.name}</strong><br>
+                    <span style="font-size:0.8rem;">
+                        Telepon: ${cust.phone || '-'}<br>
+                        Alamat: ${cust.address || '-'}
+                    </span>
+                </div>
+                <div>
+                    <span style="color:#006B54;">Pilih</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+    document.getElementById('select-customer-modal').style.display = 'flex';
+}
+
+function closeSelectCustomerModal() {
+    document.getElementById('select-customer-modal').style.display = 'none';
+}
+
+function selectCustomer(customer) {
+    selectedCustomer = customer;
+    document.getElementById('selected-customer-name').textContent = customer.name;
+    closeSelectCustomerModal();
+    showNotification(`Pelanggan ${customer.name} dipilih`, 'success');
+}
+
 // ==================== DRAWER FUNCTIONS ====================
 function toggleDrawer() {
     const sidebar = document.getElementById('sidebar');
@@ -3226,6 +3301,8 @@ function openTransaksiPage() {
     document.querySelector('.main-content').style.display = 'none';
     document.getElementById('transaksi-page').style.display = 'block';
     cart = [];
+    selectedCustomer = null; // reset customer
+    document.getElementById('selected-customer-name').textContent = 'Pilih Customer';
     renderCart();
     setProductViewMode('list');
     setTimeout(() => document.getElementById('barcode-input').focus(), 100);
@@ -3443,10 +3520,15 @@ async function bayarTransaksi() {
         }
         await loadKasirItems();
         renderProductList();
-        showNotification('Transaksi berhasil', 'success');
+        // Di sini bisa ditambahkan penyimpanan transaksi dengan customerId jika diperlukan
+        const customerInfo = selectedCustomer ? ` untuk ${selectedCustomer.name}` : '';
+        showNotification(`Transaksi berhasil${customerInfo}`, 'success');
         cart = [];
         renderCart();
         closeCartModal(); // tutup modal setelah bayar
+        // Reset customer setelah transaksi? Tergantung kebutuhan, bisa direset atau tidak.
+        // selectedCustomer = null;
+        // document.getElementById('selected-customer-name').textContent = 'Pilih Customer';
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses transaksi: ' + error.message, 'error');
@@ -3715,6 +3797,7 @@ window.onclick = function(event) {
         else if (event.target.id === 'list-customer-modal') closeListCustomerModal();
         else if (event.target.id === 'supplier-modal') closeSupplierModal();
         else if (event.target.id === 'list-supplier-modal') closeListSupplierModal();
+        else if (event.target.id === 'select-customer-modal') closeSelectCustomerModal();
     }
 };
 
