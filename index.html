@@ -4601,10 +4601,11 @@ async function printReceipt() {
             receipt += `${item.name}\n  ${item.qty} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
         });
         receipt += '--------------------------------\n';
-        receipt += `Total: ${formatRupiah(dataToPrint.total)}\n`;
-        receipt += `Bayar: ${formatRupiah(dataToPrint.paidAmount)}\n`;
-        receipt += `Kembali: ${formatRupiah(dataToPrint.change)}\n`;
-        receipt += 'Terima kasih\n';
+        receipt += `Total:          ${formatRupiah(dataToPrint.total)}\n`;
+        receipt += `Bayar:          ${formatRupiah(dataToPrint.paidAmount)}\n`;
+        receipt += `Kembali:        ${formatRupiah(dataToPrint.change)}\n`;
+        receipt += '--------------------------------\n';
+        receipt += '        Terima kasih\n';
         receipt += 'delivery order via WA\n';
         receipt += '0823xxxxxxxx\n';
         receipt += '\n\n\n';
