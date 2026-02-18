@@ -476,14 +476,59 @@ body.drawer-open .main-content {
     margin-top: 20px;
     border-top: 1px solid #ddd;
     padding-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
 }
-.printer-section button {
-    min-height: 40px;
-    padding: 8px 16px;
+
+.printer-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-#printer-status {
-    margin-left: 10px;
-    color: #666;
+
+.status-light {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #ff4444; /* merah = disconnected */
+    transition: background-color 0.3s;
+}
+
+.status-light.connected {
+    background-color: #00C851; /* hijau */
+}
+
+#connect-printer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #006B54;
+    color: white;
+    border: 1px solid #006B54;
+}
+
+#connect-printer-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
+#print-receipt-btn {
+    background: #006B54;
+    color: white;
+    border: 1px solid #006B54;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#print-receipt-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ==================== MODAL OVERLAY ==================== */
@@ -1596,13 +1641,28 @@ button {
             <button class="form-button-primary" onclick="processPayment()">Proses Pembayaran</button>
         </div>
 
-        <!-- Bagian Printer Web Serial -->
+        <!-- Bagian Printer Web Serial (dimodifikasi) -->
         <div class="printer-section">
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <button id="connect-printer-btn" class="form-button-secondary" onclick="connectPrinter()">🔌 Connect Printer</button>
-                <span id="printer-status">Not connected</span>
-                <button id="print-receipt-btn" class="form-button-primary" onclick="printReceipt()" disabled>🖨️ Print Struk</button>
+            <button id="connect-printer-btn" class="form-button-secondary" onclick="togglePrinter()">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <path d="M6 9V3h12v6"/>
+                    <rect x="6" y="15" width="12" height="6" rx="2"/>
+                </svg>
+                <span id="connect-btn-text">Connect</span>
+            </button>
+            <div class="printer-status-indicator">
+                <span class="status-light" id="printer-status-light"></span>
+                <span id="printer-status-text">Terputus</span>
             </div>
+            <button id="print-receipt-btn" class="form-button-primary" onclick="printReceipt()" disabled>
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <path d="M6 9V3h12v6"/>
+                    <rect x="6" y="15" width="12" height="6" rx="2"/>
+                </svg>
+                Print Struk
+            </button>
         </div>
     </div>
 </div>
@@ -4171,12 +4231,16 @@ async function executePayment(method, paidAmount, outstandingAdded) {
         await loadCustomers();
         renderProductList();
         showNotification(`Pembayaran berhasil via ${method === 'cash' ? 'Tunai' : method === 'card' ? 'Kartu' : 'Transfer'}${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
+        
+        // Setelah pembayaran sukses, aktifkan tombol print
+        document.getElementById('print-receipt-btn').disabled = false;
+        
         cart = [];
         selectedCustomer = null;
         document.getElementById('customer-badge').style.display = 'none';
         renderCartPage();
-        closePaymentPage();
-        openTransaksiPage();
+        // Jangan langsung close payment page, biarkan user mencetak struk
+        // Tapi kita bisa tetap menampilkan halaman pembayaran dengan struk yang sudah siap cetak
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
@@ -4192,24 +4256,49 @@ function closeConfirmPiutangModal() {
 }
 
 // ==================== FUNGSI PRINT VIA WEB SERIAL ====================
-async function connectPrinter() {
-    if (!navigator.serial) {
-        showNotification('Web Serial API tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
-        return;
+async function togglePrinter() {
+    if (printerPort) {
+        // Disconnect
+        try {
+            await printerPort.close();
+            printerPort = null;
+            updatePrinterStatus(false);
+            showNotification('Printer diputuskan', 'info');
+        } catch (error) {
+            console.error('Error disconnecting printer:', error);
+            showNotification('Gagal memutuskan printer: ' + error.message, 'error');
+        }
+    } else {
+        // Connect
+        if (!navigator.serial) {
+            showNotification('Web Serial API tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
+            return;
+        }
+        try {
+            const port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 9600 }); // Sesuaikan baud rate printer Anda
+            printerPort = port;
+            updatePrinterStatus(true);
+            showNotification('Printer terhubung', 'success');
+        } catch (error) {
+            console.error('Error connecting printer:', error);
+            showNotification('Gagal connect printer: ' + error.message, 'error');
+        }
     }
-    try {
-        const port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 }); // Sesuaikan baud rate printer Anda
-        printerPort = port;
-        document.getElementById('printer-status').textContent = 'Connected';
-        document.getElementById('print-receipt-btn').disabled = false;
-        showNotification('Printer terhubung', 'success');
-        
-        // Simpan port untuk auto reconnect? Tidak bisa simpan objek, tapi kita bisa simpan info vendorId/productId jika ingin
-        // Untuk reconnect otomatis saat reload, kita gunakan getPorts() di init
-    } catch (error) {
-        console.error('Error connecting printer:', error);
-        showNotification('Gagal connect printer: ' + error.message, 'error');
+}
+
+function updatePrinterStatus(connected) {
+    const statusLight = document.getElementById('printer-status-light');
+    const statusText = document.getElementById('printer-status-text');
+    const connectBtnText = document.getElementById('connect-btn-text');
+    if (connected) {
+        statusLight.classList.add('connected');
+        statusText.textContent = 'Terhubung';
+        connectBtnText.textContent = 'Disconnect';
+    } else {
+        statusLight.classList.remove('connected');
+        statusText.textContent = 'Terputus';
+        connectBtnText.textContent = 'Connect';
     }
 }
 
@@ -4222,8 +4311,7 @@ async function autoReconnectPrinter() {
             const port = ports[0];
             await port.open({ baudRate: 9600 });
             printerPort = port;
-            document.getElementById('printer-status').textContent = 'Connected (auto)';
-            document.getElementById('print-receipt-btn').disabled = false;
+            updatePrinterStatus(true);
             console.log('Printer auto-connected');
         }
     } catch (error) {
