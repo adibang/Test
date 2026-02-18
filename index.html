@@ -2465,7 +2465,11 @@ function saveCartToLocalStorage() {
                 barcode: c.unitConversion.barcode,
                 sellPrice: c.unitConversion.sellPrice 
             } : null,
-            weightGram: c.weightGram || 0
+            weightGram: c.weightGram || 0,
+            pricePerUnit: c.pricePerUnit,
+            subtotal: c.subtotal,
+            isOutstanding: c.isOutstanding || false,
+            customerId: c.customerId
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
         
@@ -2510,6 +2514,32 @@ async function loadCartFromLocalStorage() {
 
         const newCart = [];
         for (let c of parsed) {
+            if (c.isOutstanding) {
+                // Rekonstruksi item piutang
+                const cust = customers.find(cust => cust.id === c.customerId);
+                if (cust) {
+                    const item = {
+                        id: 'outstanding-' + cust.id,
+                        name: 'Piutang ' + cust.name,
+                        stock: Infinity
+                    };
+                    newCart.push({
+                        item: item,
+                        qty: c.qty,
+                        unitConversion: null,
+                        weightGram: 0,
+                        pricePerUnit: c.pricePerUnit,
+                        subtotal: c.subtotal,
+                        isOutstanding: true,
+                        customerId: cust.id
+                    });
+                } else {
+                    console.warn('Customer tidak ditemukan untuk item piutang');
+                }
+                continue;
+            }
+
+            // Item biasa
             const item = kasirItems.find(i => i.id === c.itemId);
             if (!item) continue;
 
@@ -4255,7 +4285,7 @@ function addOutstandingToCart() {
         pricePerUnit: selectedCustomer.outstanding,
         subtotal: selectedCustomer.outstanding,
         isOutstanding: true,
-        originalCustomerId: selectedCustomer.id
+        customerId: selectedCustomer.id
     };
     cart.push(outstandingItem);
     renderCartPage();
@@ -4392,7 +4422,7 @@ async function generateTransactionNumber() {
 async function executePayment(method, paidAmount, outstandingAdded) {
     try {
         showLoading();
-        // Kurangi stok
+        // Kurangi stok untuk item non-piutang
         for (let c of cart) {
             if (c.isOutstanding) continue;
             let requiredStock;
@@ -4407,7 +4437,43 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             }
         }
 
-        // Tambah piutang ke customer jika ada
+        // Proses pembayaran piutang
+        for (let c of cart) {
+            if (c.isOutstanding) {
+                const custId = c.customerId;
+                if (!custId) {
+                    showNotification('Item piutang tidak memiliki customerId', 'warning');
+                    continue;
+                }
+                const cust = customers.find(cust => cust.id === custId);
+                if (!cust) {
+                    showNotification(`Customer dengan ID ${custId} tidak ditemukan`, 'warning');
+                    continue;
+                }
+                const paymentAmount = c.subtotal;
+                if (cust.outstanding >= paymentAmount) {
+                    cust.outstanding -= paymentAmount;
+                } else {
+                    // Jika outstanding kurang, set ke 0 (atau bisa beri peringatan)
+                    cust.outstanding = 0;
+                    showNotification(`Outstanding customer ${cust.name} lebih kecil dari pembayaran, diset 0`, 'warning');
+                }
+                cust.updatedAt = new Date().toISOString();
+                await dbPut(STORES.CUSTOMERS, cust);
+
+                // Perbarui selectedCustomer jika sama
+                if (selectedCustomer && selectedCustomer.id === custId) {
+                    selectedCustomer.outstanding = cust.outstanding;
+                    const badge = document.getElementById('customer-badge');
+                    if (badge) {
+                        badge.textContent = selectedCustomer.name.charAt(0).toUpperCase();
+                        badge.style.display = 'flex';
+                    }
+                }
+            }
+        }
+
+        // Tambah piutang baru ke customer jika ada outstandingAdded
         if (outstandingAdded > 0 && selectedCustomer) {
             const cust = customers.find(c => c.id === selectedCustomer.id);
             if (cust) {
