@@ -302,7 +302,7 @@ body.drawer-open .main-content {
     fill: none;
 }
 
-/* ==================== MODAL OVERLAY (untuk form lainnya) ==================== */
+/* ==================== MODAL OVERLAY ==================== */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -423,9 +423,10 @@ button {
     background: #cccccc;
 }
 
+/* Style untuk tombol action (ikon saja) */
 .action-btn {
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
     border-radius: 15px;
     border: 1px solid #006B54;
     background: white;
@@ -435,7 +436,51 @@ button {
     justify-content: center;
     padding: 0;
     min-height: auto;
-    font-size: 0.9rem;
+    position: relative;
+}
+
+.action-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+}
+
+/* Badge untuk customer (inisial) */
+.customer-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #006B54;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Badge untuk cart (jumlah) */
+.cart-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #006B54;
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    font-weight: bold;
+    padding: 0 4px;
 }
 
 .action-btn.delete-btn {
@@ -1211,22 +1256,24 @@ button {
     <!-- Baris pencarian, ikon customer, dan ikon keranjang -->
     <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="barcode-input" class="form-input" placeholder="Scan barcode..." onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 2; min-width: 200px;">
-        <!-- Tombol Pilih Customer -->
-        <button id="customer-select-btn" class="action-btn" onclick="openSelectCustomerModal()" title="Pilih Pelanggan" style="background: white; border: 1px solid #006B54; border-radius: 15px; padding: 8px 12px; display: flex; align-items: center; gap: 5px; color: #006B54;">
-            <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        
+        <!-- Tombol Pilih Customer (hanya ikon + badge inisial) -->
+        <button id="customer-select-btn" class="action-btn" onclick="openSelectCustomerModal()" title="Pilih Pelanggan">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="8" r="4"/>
                 <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
             </svg>
-            <span id="selected-customer-name" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Pilih Customer</span>
+            <span id="customer-badge" class="customer-badge" style="display: none;"></span>
         </button>
-        <!-- Tombol Keranjang -->
-        <button id="cart-icon-btn" class="action-btn" onclick="openCartModal()" title="Lihat Keranjang" style="background: white; border: 1px solid #006B54; border-radius: 15px; padding: 8px 12px; color: #006B54;">
-            <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+
+        <!-- Tombol Keranjang (ikon + badge jumlah) -->
+        <button id="cart-icon-btn" class="action-btn" onclick="openCartModal()" title="Lihat Keranjang">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="9" cy="21" r="1"/>
                 <circle cx="20" cy="21" r="1"/>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
             </svg>
-            <span id="cart-count" style="background: #006B54; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; margin-left: 5px;">0</span>
+            <span id="cart-count" class="cart-badge">0</span>
         </button>
     </div>
     <!-- Container produk -->
@@ -3144,7 +3191,14 @@ function closeSelectCustomerModal() {
 
 function selectCustomer(customer) {
     selectedCustomer = customer;
-    document.getElementById('selected-customer-name').textContent = customer.name;
+    // Tampilkan badge inisial
+    const badge = document.getElementById('customer-badge');
+    if (customer) {
+        badge.textContent = customer.name.charAt(0).toUpperCase();
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
     closeSelectCustomerModal();
     showNotification(`Pelanggan ${customer.name} dipilih`, 'success');
 }
@@ -3374,7 +3428,8 @@ function openTransaksiPage() {
     document.getElementById('transaksi-page').style.display = 'block';
     cart = [];
     selectedCustomer = null; // reset customer
-    document.getElementById('selected-customer-name').textContent = 'Pilih Customer';
+    // sembunyikan badge customer
+    document.getElementById('customer-badge').style.display = 'none';
     renderCart();
     setProductViewMode('list');
     setTimeout(() => document.getElementById('barcode-input').focus(), 100);
@@ -3600,7 +3655,7 @@ async function bayarTransaksi() {
         closeCartModal(); // tutup modal setelah bayar
         // Reset customer setelah transaksi? Tergantung kebutuhan, bisa direset atau tidak.
         // selectedCustomer = null;
-        // document.getElementById('selected-customer-name').textContent = 'Pilih Customer';
+        // document.getElementById('customer-badge').style.display = 'none';
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses transaksi: ' + error.message, 'error');
