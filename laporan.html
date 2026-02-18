@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POSPLUS - Laporan Penjualan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #006B54;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: flex-end;
+        }
+        .filter-group {
+            flex: 1 1 200px;
+        }
+        .filter-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #006B54;
+        }
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+            background: white;
+        }
+        button {
+            padding: 12px 24px;
+            border-radius: 15px;
+            border: 1px solid #006B54;
+            background: #006B54;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+        button.secondary {
+            background: white;
+            color: #006B54;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .card .label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #006B54;
+            margin-top: 10px;
+        }
+        .chart-container {
+            margin-bottom: 30px;
+            height: 300px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background: #006B54;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .detail-btn {
+            background: none;
+            border: none;
+            color: #006B54;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        .detail-btn:hover {
+            background: #e0f2f1;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #006B54;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+        .item-detail {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#006B54" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Laporan Penjualan
+        </h1>
+
+        <!-- Filter -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <label>Tanggal Mulai</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="filter-group">
+                <label>Tanggal Akhir</label>
+                <input type="date" id="endDate">
+            </div>
+            <div class="filter-group">
+                <label>Metode Pembayaran</label>
+                <select id="paymentMethod">
+                    <option value="all">Semua</option>
+                    <option value="cash">Tunai</option>
+                    <option value="card">Kartu</option>
+                    <option value="transfer">Transfer</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="loadData()">Tampilkan</button>
+                <button class="secondary" onclick="exportCSV()">Ekspor CSV</button>
+            </div>
+        </div>
+
+        <!-- Kartu Ringkasan -->
+        <div class="cards">
+            <div class="card">
+                <div class="label">Total Penjualan</div>
+                <div class="value" id="totalSales">Rp 0</div>
+            </div>
+            <div class="card">
+                <div class="label">Jumlah Transaksi</div>
+                <div class="value" id="totalTransactions">0</div>
+            </div>
+            <div class="card">
+                <div class="label">Rata-rata per Transaksi</div>
+                <div class="value" id="averageTransaction">Rp 0</div>
+            </div>
+            <div class="card">
+                <div class="label">Total Piutang</div>
+                <div class="value" id="totalOutstanding">Rp 0</div>
+            </div>
+        </div>
+
+        <!-- Grafik -->
+        <div class="chart-container">
+            <canvas id="salesChart"></canvas>
+        </div>
+
+        <!-- Tabel Transaksi -->
+        <h2>Daftar Transaksi</h2>
+        <div style="overflow-x: auto;">
+            <table id="transactionsTable">
+                <thead>
+                    <tr>
+                        <th>No. Transaksi</th>
+                        <th>Tanggal</th>
+                        <th>Pelanggan</th>
+                        <th>Total</th>
+                        <th>Metode</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="6" style="text-align:center;">Pilih filter dan klik Tampilkan</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Detail Transaksi -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detail Transaksi</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 14; // Sesuaikan dengan versi terbaru
+        let db = null;
+        let salesData = [];
+        let chartInstance = null;
+
+        // Inisialisasi database
+        async function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (e) => {
+                    // Jika database belum ada atau versi lama, kita tidak perlu upgrade di sini
+                    // karena hanya membaca. Tapi pastikan object store sales ada.
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('sales')) {
+                        // Jika tidak ada, berarti versi database utama belum di-upgrade.
+                        // Tampilkan pesan error.
+                        alert('Database belum di-upgrade. Silakan buka aplikasi utama terlebih dahulu.');
+                    }
+                };
+            });
+        }
+
+        // Format tanggal ke YYYY-MM-DD
+        function formatDate(date) {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Ambil data dari store sales dengan filter
+        async function fetchSales(start, end, method) {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    reject('Database tidak tersedia');
+                    return;
+                }
+                const transaction = db.transaction(['sales'], 'readonly');
+                const store = transaction.objectStore('sales');
+                const index = store.index('date');
+                const range = IDBKeyRange.bound(start + 'T00:00:00.000Z', end + 'T23:59:59.999Z');
+                const request = index.getAll(range);
+                request.onsuccess = () => {
+                    let data = request.result || [];
+                    if (method !== 'all') {
+                        data = data.filter(item => item.paymentMethod === method);
+                    }
+                    resolve(data);
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Hitung ringkasan
+        function calculateSummary(data) {
+            let totalSales = 0;
+            let totalTransactions = data.length;
+            let totalOutstanding = 0;
+
+            data.forEach(item => {
+                totalSales += item.total;
+                totalOutstanding += item.outstandingAdded || 0;
+            });
+
+            const average = totalTransactions > 0 ? totalSales / totalTransactions : 0;
+
+            return { totalSales, totalTransactions, average, totalOutstanding };
+        }
+
+        // Format Rupiah
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        // Render grafik harian
+        function renderChart(data, start, end) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            // Kelompokkan per tanggal
+            const dateMap = new Map();
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dateStr = formatDate(d);
+                dateMap.set(dateStr, 0);
+            }
+
+            data.forEach(item => {
+                const dateStr = formatDate(item.date);
+                if (dateMap.has(dateStr)) {
+                    dateMap.set(dateStr, dateMap.get(dateStr) + item.total);
+                }
+            });
+
+            const labels = Array.from(dateMap.keys()).sort();
+            const values = labels.map(date => dateMap.get(date));
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Penjualan',
+                        data: values,
+                        backgroundColor: '#006B54',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => formatRupiah(ctx.raw) } }
+                    },
+                    scales: {
+                        y: { ticks: { callback: (val) => formatRupiah(val) } }
+                    }
+                }
+            });
+        }
+
+        // Render tabel transaksi
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data</td></tr>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(trx => {
+                const date = new Date(trx.date).toLocaleString('id-ID');
+                html += `
+                    <tr>
+                        <td>${trx.transactionNumber}</td>
+                        <td>${date}</td>
+                        <td>${trx.customerName || '-'}</td>
+                        <td>${formatRupiah(trx.total)}</td>
+                        <td>${trx.paymentMethod === 'cash' ? 'Tunai' : trx.paymentMethod === 'card' ? 'Kartu' : 'Transfer'}</td>
+                        <td><button class="detail-btn" onclick="showDetail(${trx.id})">🔽</button></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Tampilkan detail transaksi di modal
+        function showDetail(id) {
+            const trx = salesData.find(t => t.id === id);
+            if (!trx) return;
+
+            let itemsHtml = '';
+            trx.items.forEach(item => {
+                itemsHtml += `
+                    <div class="item-detail">
+                        <strong>${item.itemName}</strong><br>
+                        Jumlah: ${item.qty} ${item.unitConversion ? '(' + item.unitConversion.name + ')' : ''} ${item.weightGram ? '(' + item.weightGram + ' g)' : ''}<br>
+                        Harga Satuan: ${formatRupiah(item.pricePerUnit)}<br>
+                        Subtotal: ${formatRupiah(item.subtotal)}
+                    </div>
+                `;
+            });
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <p><strong>No. Transaksi:</strong> ${trx.transactionNumber}</p>
+                <p><strong>Tanggal:</strong> ${new Date(trx.date).toLocaleString('id-ID')}</p>
+                <p><strong>Pelanggan:</strong> ${trx.customerName || '-'}</p>
+                <p><strong>Subtotal:</strong> ${formatRupiah(trx.subtotal)}</p>
+                <p><strong>Diskon:</strong> ${formatRupiah(trx.discount)}</p>
+                <p><strong>Pajak:</strong> ${formatRupiah(trx.tax)}</p>
+                <p><strong>Total:</strong> ${formatRupiah(trx.total)}</p>
+                <p><strong>Metode:</strong> ${trx.paymentMethod}</p>
+                <p><strong>Dibayar:</strong> ${formatRupiah(trx.paidAmount)}</p>
+                <p><strong>Kembalian:</strong> ${formatRupiah(trx.change)}</p>
+                <p><strong>Piutang ditambahkan:</strong> ${formatRupiah(trx.outstandingAdded)}</p>
+                <h3>Item yang dibeli:</h3>
+                ${itemsHtml}
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // Ekspor CSV
+        function exportCSV() {
+            if (salesData.length === 0) {
+                alert('Tidak ada data untuk diekspor');
+                return;
+            }
+
+            let csv = 'No. Transaksi,Tanggal,Pelanggan,Total,Metode\n';
+            salesData.forEach(trx => {
+                const date = new Date(trx.date).toLocaleString('id-ID');
+                csv += `"${trx.transactionNumber}","${date}","${trx.customerName || ''}",${trx.total},"${trx.paymentMethod}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', 'laporan_penjualan.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Fungsi utama memuat data berdasarkan filter
+        async function loadData() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const method = document.getElementById('paymentMethod').value;
+
+            if (!start || !end) {
+                alert('Pilih tanggal mulai dan akhir');
+                return;
+            }
+
+            if (new Date(start) > new Date(end)) {
+                alert('Tanggal akhir harus setelah tanggal mulai');
+                return;
+            }
+
+            try {
+                if (!db) await initDB();
+                salesData = await fetchSales(start, end, method);
+
+                // Update ringkasan
+                const summary = calculateSummary(salesData);
+                document.getElementById('totalSales').textContent = formatRupiah(summary.totalSales);
+                document.getElementById('totalTransactions').textContent = summary.totalTransactions;
+                document.getElementById('averageTransaction').textContent = formatRupiah(summary.average);
+                document.getElementById('totalOutstanding').textContent = formatRupiah(summary.totalOutstanding);
+
+                // Render grafik
+                renderChart(salesData, start, end);
+
+                // Render tabel
+                renderTable(salesData);
+            } catch (error) {
+                console.error('Gagal memuat data:', error);
+                alert('Gagal memuat data. Pastikan database sudah di-upgrade dan berisi data.');
+            }
+        }
+
+        // Inisialisasi tanggal default (hari ini dan 30 hari sebelumnya)
+        function setDefaultDates() {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            const format = (date) => date.toISOString().split('T')[0];
+            document.getElementById('startDate').value = format(thirtyDaysAgo);
+            document.getElementById('endDate').value = format(today);
+        }
+
+        window.onload = async () => {
+            setDefaultDates();
+            try {
+                await initDB();
+                // Muat data otomatis saat halaman dibuka
+                loadData();
+            } catch (error) {
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" class="error-message">Gagal mengakses database. Pastikan aplikasi utama sudah dibuka dan database ter-upgrade.</td></tr>`;
+            }
+        };
+
+        // Tutup modal jika klik di luar
+        window.onclick = function(event) {
+            const modal = document.getElementById('detailModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>
