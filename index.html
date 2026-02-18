@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POSPLUS</title>
+<title>POSPLUS - Pembayaran & Piutang</title>
 <style>
 /* ==================== RESET & BASE STYLES ==================== */
 * {
@@ -446,6 +446,18 @@ body.drawer-open .main-content {
     font-size: 1rem;
 }
 
+/* === TAMBAHAN: Tampilan kurang bayar === */
+#shortage-display {
+    display: none;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #fff3f3;
+    border-radius: 10px;
+    border: 1px solid #ff6b6b;
+    color: #ff0000;
+    font-weight: 600;
+}
+
 .change-amount {
     margin-bottom: 20px;
     font-size: 1.2rem;
@@ -457,6 +469,21 @@ body.drawer-open .main-content {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+}
+
+/* ==================== BAGIAN PRINTER (WEB SERIAL) ==================== */
+.printer-section {
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+.printer-section button {
+    min-height: 40px;
+    padding: 8px 16px;
+}
+#printer-status {
+    margin-left: 10px;
+    color: #666;
 }
 
 /* ==================== MODAL OVERLAY ==================== */
@@ -1522,7 +1549,7 @@ button {
     </div>
 </div>
 
-<!-- ==================== HALAMAN PEMBAYARAN ==================== -->
+<!-- ==================== HALAMAN PEMBAYARAN (MODIFIKASI) ==================== -->
 <div id="payment-page">
     <div class="payment-header">
         <button class="back-button" onclick="closePaymentPage()" title="Kembali ke Keranjang">
@@ -1555,13 +1582,45 @@ button {
         <div id="cash-payment-fields">
             <div class="payment-amount">
                 <label>Jumlah Bayar</label>
-                <input type="number" id="payment-amount" min="0" step="0.01" oninput="calculateChange()">
+                <!-- Tidak diisi otomatis -->
+                <input type="number" id="payment-amount" min="0" step="0.01" oninput="calculateChange()" placeholder="Masukkan jumlah bayar">
+            </div>
+            <!-- Tampilan kurang bayar -->
+            <div id="shortage-display" style="display:none; color:red; margin-bottom:10px; padding:10px; background:#fff3f3; border-radius:10px;">
+                Kurang bayar: Rp <span id="shortage-amount">0</span>
             </div>
             <div class="change-amount" id="change-amount">Kembalian: Rp 0</div>
         </div>
         <div class="payment-actions">
             <button class="form-button-secondary" onclick="closePaymentPage()">Batal</button>
             <button class="form-button-primary" onclick="processPayment()">Proses Pembayaran</button>
+        </div>
+
+        <!-- Bagian Printer Web Serial -->
+        <div class="printer-section">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button id="connect-printer-btn" class="form-button-secondary" onclick="connectPrinter()">🔌 Connect Printer</button>
+                <span id="printer-status">Not connected</span>
+                <button id="print-receipt-btn" class="form-button-primary" onclick="printReceipt()" disabled>🖨️ Print Struk</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL KONFIRMASI PIUTANG ==================== -->
+<div class="modal-overlay" id="confirm-piutang-modal">
+    <div class="modal-content" style="max-width:400px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Konfirmasi Piutang</h2>
+        </div>
+        <div class="modal-body">
+            <p>Jumlah bayar kurang sebesar <span id="shortage-confirm">Rp 0</span>.</p>
+            <p>Apakah ingin melanjutkan transaksi dengan mencatat sisa sebagai piutang?</p>
+            <p style="font-size:0.9rem; color:#666;">Pastikan pelanggan telah dipilih.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-top:20px;">
+                <button class="form-button-secondary" onclick="closeConfirmPiutangModal()">Batal</button>
+                <button class="form-button-primary" onclick="processPaymentWithPiutang()">Ya, Lanjutkan</button>
+            </div>
         </div>
     </div>
 </div>
@@ -2282,6 +2341,11 @@ let tempUnitConversions = [];
 let editingConversionIndex = -1;
 let cart = [];
 let productViewMode = 'list';
+
+// Variabel untuk printer serial
+let printerPort = null;
+let pendingPaymentMethod = null;
+let pendingPaidAmount = 0;
 
 const icons = {
     edit: `<svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
@@ -3942,7 +4006,7 @@ function removeFromCart(index) {
         const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
         document.getElementById('payment-total').textContent = formatRupiah(total);
         document.getElementById('payment-grand-total').textContent = formatRupiah(total);
-        document.getElementById('payment-amount').value = total;
+        document.getElementById('payment-amount').value = '';
         calculateChange();
     }
 }
@@ -3992,7 +4056,7 @@ function addOutstandingToCart() {
     showNotification('Piutang ditambahkan ke keranjang', 'success');
 }
 
-// ==================== FUNGSI PEMBAYARAN ====================
+// ==================== FUNGSI PEMBAYARAN (MODIFIKASI) ====================
 function openPaymentPage() {
     if (cart.length === 0) {
         showNotification('Keranjang masih kosong', 'warning');
@@ -4003,8 +4067,10 @@ function openPaymentPage() {
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
     document.getElementById('payment-total').textContent = formatRupiah(total);
     document.getElementById('payment-grand-total').textContent = formatRupiah(total);
-    document.getElementById('payment-amount').value = total;
-    calculateChange();
+    // KOSONGKAN input jumlah bayar (tidak otomatis)
+    document.getElementById('payment-amount').value = '';
+    document.getElementById('shortage-display').style.display = 'none';
+    calculateChange(); // untuk reset
 }
 
 function closePaymentPage() {
@@ -4029,8 +4095,12 @@ function calculateChange() {
     document.getElementById('change-amount').textContent = `Kembalian: ${formatRupiah(change >= 0 ? change : 0)}`;
     if (change < 0) {
         document.getElementById('change-amount').style.color = 'red';
+        const shortage = total - paid;
+        document.getElementById('shortage-display').style.display = 'block';
+        document.getElementById('shortage-amount').textContent = formatRupiah(shortage);
     } else {
         document.getElementById('change-amount').style.color = '#006B54';
+        document.getElementById('shortage-display').style.display = 'none';
     }
 }
 
@@ -4039,28 +4109,45 @@ async function processPayment() {
     const method = document.getElementById('payment-method-select').value;
     let paidAmount;
     if (method === 'cash') {
-        paidAmount = parseFloat(document.getElementById('payment-amount').value);
-        const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
-        if (paidAmount < total) {
-            showNotification('Jumlah bayar kurang dari total', 'error');
-            return;
-        }
+        paidAmount = parseFloat(document.getElementById('payment-amount').value) || 0;
     } else {
         paidAmount = cart.reduce((sum, c) => sum + c.subtotal, 0);
     }
+    const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
+    const shortage = total - paidAmount;
+    if (shortage > 0) {
+        // Kurang bayar, perlu konfirmasi piutang
+        if (!selectedCustomer) {
+            showNotification('Untuk mencatat piutang, harus pilih pelanggan terlebih dahulu', 'error');
+            return;
+        }
+        document.getElementById('shortage-confirm').textContent = formatRupiah(shortage);
+        pendingPaymentMethod = method;
+        pendingPaidAmount = paidAmount;
+        document.getElementById('confirm-piutang-modal').style.display = 'flex';
+        return;
+    }
+    // Lunas atau lebih
+    await executePayment(method, paidAmount, 0);
+}
 
+async function processPaymentWithPiutang() {
+    closeConfirmPiutangModal();
+    const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
+    const shortage = total - pendingPaidAmount;
+    await executePayment(pendingPaymentMethod, pendingPaidAmount, shortage);
+}
+
+async function executePayment(method, paidAmount, outstandingAdded) {
     try {
         showLoading();
+        // Kurangi stok
         for (let c of cart) {
-            if (c.isOutstanding) continue;
+            if (c.isOutstanding) continue; // item piutang tidak mempengaruhi stok
             let requiredStock;
-            if (c.weightGram > 0) {
-                requiredStock = c.qty;
-            } else if (c.unitConversion) {
-                requiredStock = c.qty * c.unitConversion.value;
-            } else {
-                requiredStock = c.qty;
-            }
+            if (c.weightGram > 0) requiredStock = c.qty;
+            else if (c.unitConversion) requiredStock = c.qty * c.unitConversion.value;
+            else requiredStock = c.qty;
             const item = kasirItems.find(i => i.id === c.item.id);
             if (item) {
                 item.stock -= requiredStock;
@@ -4069,12 +4156,11 @@ async function processPayment() {
             }
         }
 
-        const outstandingItem = cart.find(c => c.isOutstanding);
-        if (outstandingItem && selectedCustomer) {
+        // Update piutang customer jika ada outstandingAdded
+        if (outstandingAdded > 0 && selectedCustomer) {
             const cust = customers.find(c => c.id === selectedCustomer.id);
             if (cust) {
-                cust.outstanding -= outstandingItem.subtotal;
-                if (cust.outstanding < 0) cust.outstanding = 0;
+                cust.outstanding = (cust.outstanding || 0) + outstandingAdded;
                 cust.updatedAt = new Date().toISOString();
                 await dbPut(STORES.CUSTOMERS, cust);
                 selectedCustomer.outstanding = cust.outstanding;
@@ -4084,7 +4170,7 @@ async function processPayment() {
         await loadKasirItems();
         await loadCustomers();
         renderProductList();
-        showNotification(`Pembayaran berhasil via ${method === 'cash' ? 'Tunai' : method === 'card' ? 'Kartu' : 'Transfer'}`, 'success');
+        showNotification(`Pembayaran berhasil via ${method === 'cash' ? 'Tunai' : method === 'card' ? 'Kartu' : 'Transfer'}${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
         cart = [];
         selectedCustomer = null;
         document.getElementById('customer-badge').style.display = 'none';
@@ -4096,6 +4182,82 @@ async function processPayment() {
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
     } finally {
         hideLoading();
+    }
+}
+
+function closeConfirmPiutangModal() {
+    document.getElementById('confirm-piutang-modal').style.display = 'none';
+    pendingPaymentMethod = null;
+    pendingPaidAmount = 0;
+}
+
+// ==================== FUNGSI PRINT VIA WEB SERIAL ====================
+async function connectPrinter() {
+    if (!navigator.serial) {
+        showNotification('Web Serial API tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
+        return;
+    }
+    try {
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 }); // Sesuaikan baud rate printer Anda
+        printerPort = port;
+        document.getElementById('printer-status').textContent = 'Connected';
+        document.getElementById('print-receipt-btn').disabled = false;
+        showNotification('Printer terhubung', 'success');
+        
+        // Simpan port untuk auto reconnect? Tidak bisa simpan objek, tapi kita bisa simpan info vendorId/productId jika ingin
+        // Untuk reconnect otomatis saat reload, kita gunakan getPorts() di init
+    } catch (error) {
+        console.error('Error connecting printer:', error);
+        showNotification('Gagal connect printer: ' + error.message, 'error');
+    }
+}
+
+async function autoReconnectPrinter() {
+    if (!navigator.serial) return;
+    try {
+        const ports = await navigator.serial.getPorts();
+        if (ports.length > 0) {
+            // Coba buka port pertama yang sudah diizinkan
+            const port = ports[0];
+            await port.open({ baudRate: 9600 });
+            printerPort = port;
+            document.getElementById('printer-status').textContent = 'Connected (auto)';
+            document.getElementById('print-receipt-btn').disabled = false;
+            console.log('Printer auto-connected');
+        }
+    } catch (error) {
+        console.warn('Auto reconnect printer failed:', error);
+    }
+}
+
+async function printReceipt() {
+    if (!printerPort) {
+        showNotification('Printer belum terhubung', 'error');
+        return;
+    }
+    try {
+        const writer = printerPort.writable.getWriter();
+        const encoder = new TextEncoder();
+        let receipt = '\n';
+        receipt += '      TOKO POSPLUS\n';
+        receipt += '====================\n';
+        receipt += new Date().toLocaleString() + '\n';
+        receipt += '--------------------\n';
+        cart.forEach(item => {
+            let line = `${item.item.name}\n  ${item.qty} x ${formatRupiah(item.pricePerUnit)} = ${formatRupiah(item.subtotal)}\n`;
+            receipt += line;
+        });
+        receipt += '--------------------\n';
+        receipt += `Total: ${formatRupiah(cart.reduce((s,c)=>s+c.subtotal,0))}\n`;
+        receipt += 'Terima kasih\n';
+        receipt += '\n\n\n';
+        await writer.write(encoder.encode(receipt));
+        writer.releaseLock();
+        showNotification('Struk berhasil dicetak', 'success');
+    } catch (error) {
+        console.error('Error printing:', error);
+        showNotification('Gagal mencetak: ' + error.message, 'error');
     }
 }
 
@@ -4451,6 +4613,8 @@ async function initApp() {
         await loadCustomers();
         await loadSuppliers();
         await loadPendingTransactions();
+        // Coba sambung ulang printer secara otomatis
+        await autoReconnectPrinter();
         console.log('App initialized successfully');
         showNotification('Aplikasi siap.', 'success');
     } catch (error) {
@@ -4484,6 +4648,7 @@ window.onclick = function(event) {
         else if (event.target.id === 'list-supplier-modal') closeListSupplierModal();
         else if (event.target.id === 'select-customer-modal') closeSelectCustomerModal();
         else if (event.target.id === 'pending-transactions-modal') closePendingTransactionsModal();
+        else if (event.target.id === 'confirm-piutang-modal') closeConfirmPiutangModal();
     }
 };
 
