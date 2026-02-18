@@ -4622,7 +4622,7 @@ function renderProductList() {
         html = '<div class="product-list">';
         kasirItems.forEach(item => {
             // Tentukan step berdasarkan apakah produk timbangan
-            let step = item.isWeighable ? '0.01' : '0';
+            let step = item.isWeighable ? '0.01' : '1';
             html += `
                 <div class="product-list-item" onclick="addToCartFromProductWithQty(${item.id}, this)">
                     <div class="name"><strong>${item.name}</strong></div>
@@ -4642,7 +4642,7 @@ function renderProductList() {
     } else {
         html = '<div class="product-grid">';
         kasirItems.forEach(item => {
-            let step = item.isWeighable ? '0.01' : '0';
+            let step = item.isWeighable ? '0.01' : '1';
             html += `
                 <div class="product-card" onclick="addToCartFromProductWithQty(${item.id}, this)">
                     <div class="product-image">
@@ -4676,14 +4676,14 @@ function adjustQty(btn, delta, itemId) {
     if (input) {
         // Cari item berdasarkan ID untuk mengetahui apakah termasuk timbangan
         const item = kasirItems.find(i => i.id === itemId);
-        let step = 0;
+        let step = 1;
         if (item && item.isWeighable) step = 0.01;
 
         // Baca nilai saat ini sebagai float, tambah/dikurang dengan step
         let newVal = parseFloat(input.value) + (delta * step);
 
         // Batasi sesuai min dan max (min=1)
-        const min = parseFloat(input.min) || 1;
+        const min = parseFloat(input.min) || 0.01;
         const max = parseFloat(input.max);
         if (newVal < min) newVal = min;
         if (newVal > max) newVal = max;
@@ -4701,7 +4701,7 @@ function adjustQty(btn, delta, itemId) {
 
 function addToCartFromProductWithQty(itemId, element) {
     const input = element.querySelector('.qty-input');
-    let qty = 0;
+    let qty = 1;
     if (input) {
         qty = parseFloat(input.value);
         if (isNaN(qty) || qty < 1) qty = 1;
