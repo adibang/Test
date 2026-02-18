@@ -1443,6 +1443,17 @@ button {
         </svg>
         <span>Laporan Stok</span>
     </button>
+
+    <!-- ==================== PERUBAHAN: MENU LAPORAN PENJUALAN ==================== -->
+    <div class="menu-section">LAPORAN</div>
+    <button onclick="openLaporanPage()">
+        <svg class="icon" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Laporan Penjualan</span>
+    </button>
 </div>
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -2365,7 +2376,8 @@ document.addEventListener('click', function initAudioOnInteraction() {
 
 // ==================== DATABASE CONFIGURATION ====================
 const DB_NAME = 'POSKasirDB';
-const DB_VERSION = 13; // dinaikkan karena menambah store pendingTransactions
+// PERUBAHAN: Versi database dinaikkan menjadi 14 untuk menambah store sales
+const DB_VERSION = 14;
 const STORES = {
     SETTINGS: 'settings',
     APP_STATE: 'appState',
@@ -2511,6 +2523,12 @@ async function initDatabase() {
             }
             if (!db.objectStoreNames.contains(STORES.PENDING_TRANSACTIONS)) {
                 db.createObjectStore(STORES.PENDING_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
+            }
+            // PERUBAHAN: Buat object store sales dengan indeks
+            if (!db.objectStoreNames.contains('sales')) {
+                const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+                salesStore.createIndex('date', 'date', { unique: false });
+                salesStore.createIndex('transactionNumber', 'transactionNumber', { unique: true });
             }
             event.target.transaction.oncomplete = () => console.log('Database upgrade completed');
         };
@@ -4198,6 +4216,56 @@ async function processPaymentWithPiutang() {
     await executePayment(pendingPaymentMethod, pendingPaidAmount, shortage);
 }
 
+// PERUBAHAN: Fungsi generate nomor transaksi
+async function generateTransactionNumber() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    // Ambil counter terakhir dari settings
+    let lastCounter = 0;
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readonly');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const request = store.get('lastTransactionNumber');
+        await new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                if (request.result) {
+                    const data = request.result.value;
+                    // Jika tanggal hari ini sama dengan tanggal tersimpan, pakai counter, else reset
+                    if (data.date === dateStr) {
+                        lastCounter = data.counter;
+                    } else {
+                        lastCounter = 0;
+                    }
+                }
+                resolve();
+            };
+            request.onerror = reject;
+        });
+    } catch (error) {
+        console.warn('Gagal membaca counter transaksi:', error);
+    }
+
+    const newCounter = lastCounter + 1;
+    const transactionNumber = `INV-${dateStr}-${String(newCounter).padStart(5, '0')}`;
+
+    // Simpan counter baru ke settings
+    try {
+        await dbPut(STORES.SETTINGS, {
+            key: 'lastTransactionNumber',
+            value: { date: dateStr, counter: newCounter }
+        });
+    } catch (error) {
+        console.error('Gagal menyimpan counter transaksi:', error);
+    }
+
+    return transactionNumber;
+}
+
+// PERUBAHAN: Fungsi executePayment yang dimodifikasi untuk menyimpan transaksi
 async function executePayment(method, paidAmount, outstandingAdded) {
     try {
         showLoading();
@@ -4227,6 +4295,46 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             }
         }
 
+        // Generate nomor transaksi
+        const transactionNumber = await generateTransactionNumber();
+
+        // Hitung subtotal, diskon, pajak, total (asumsikan 0 untuk diskon/tax)
+        const subtotal = cart.reduce((sum, c) => sum + c.subtotal, 0);
+        const discount = 0; // Bisa diisi jika ada fitur diskon
+        const tax = 0;      // Bisa diisi jika ada fitur pajak
+        const total = subtotal - discount + tax;
+
+        // Siapkan data items
+        const items = cart.map(c => ({
+            itemId: c.item.id,
+            itemName: c.item.name,
+            qty: c.qty,
+            pricePerUnit: c.pricePerUnit,
+            subtotal: c.subtotal,
+            unitConversion: c.unitConversion ? { id: c.unitConversion.unit, name: kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name } : null,
+            weightGram: c.weightGram || 0
+        }));
+
+        // Data transaksi untuk disimpan
+        const salesData = {
+            transactionNumber,
+            date: new Date().toISOString(),
+            items,
+            subtotal,
+            discount,
+            tax,
+            total,
+            paymentMethod: method,
+            paidAmount,
+            change: paidAmount - total,
+            outstandingAdded,
+            customerId: selectedCustomer ? selectedCustomer.id : null,
+            customerName: selectedCustomer ? selectedCustomer.name : null
+        };
+
+        // Simpan ke store sales
+        await dbAdd('sales', salesData);
+
         await loadKasirItems();
         await loadCustomers();
         renderProductList();
@@ -4240,7 +4348,6 @@ async function executePayment(method, paidAmount, outstandingAdded) {
         document.getElementById('customer-badge').style.display = 'none';
         renderCartPage();
         // Jangan langsung close payment page, biarkan user mencetak struk
-        // Tapi kita bisa tetap menampilkan halaman pembayaran dengan struk yang sudah siap cetak
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
@@ -4674,6 +4781,12 @@ async function saveDraftTransaction() {
     } finally {
         hideLoading();
     }
+}
+
+// ==================== FUNGSI LAPORAN PENJUALAN ====================
+// PERUBAHAN: Fungsi untuk membuka halaman laporan
+function openLaporanPage() {
+    window.open('laporan.html', '_blank');
 }
 
 function showNotification(message, type = 'info') {
