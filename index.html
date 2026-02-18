@@ -2435,6 +2435,7 @@ let tempUnitConversions = [];
 let editingConversionIndex = -1;
 let cart = [];
 let productViewMode = 'list';
+let lastTransactionData = null;
 
 // Variabel untuk printer serial
 let printerPort = null;
@@ -4390,6 +4391,7 @@ async function generateTransactionNumber() {
 async function executePayment(method, paidAmount, outstandingAdded) {
     try {
         showLoading();
+        // Kurangi stok
         for (let c of cart) {
             if (c.isOutstanding) continue;
             let requiredStock;
@@ -4404,6 +4406,7 @@ async function executePayment(method, paidAmount, outstandingAdded) {
             }
         }
 
+        // Tambah piutang ke customer jika ada
         if (outstandingAdded > 0 && selectedCustomer) {
             const cust = customers.find(c => c.id === selectedCustomer.id);
             if (cust) {
@@ -4449,11 +4452,25 @@ async function executePayment(method, paidAmount, outstandingAdded) {
 
         await dbAdd(STORES.SALES, salesData);
 
+        // MODIFIKASI: Simpan data struk sebelum cart direset
+        lastTransactionData = {
+            items: cart.map(c => ({
+                name: c.item.name,
+                qty: c.qty,
+                unit: c.unitConversion ? (kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name || '?') : (c.weightGram ? 'kg' : 'pcs'),
+                price: c.pricePerUnit,
+                subtotal: c.subtotal
+            })),
+            total: total,
+            date: new Date().toLocaleString('id-ID')
+        };
+
         await loadKasirItems();
         await loadCustomers();
         renderProductList();
         showNotification(`Pembayaran berhasil via ${method === 'cash' ? 'Tunai' : method === 'card' ? 'Kartu' : 'Transfer'}${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
         
+        // Aktifkan tombol print (sudah ada)
         document.getElementById('print-receipt-btn').disabled = false;
         
         // Kosongkan cart dan hapus dari localStorage
@@ -4542,20 +4559,43 @@ async function printReceipt() {
         showNotification('Printer belum terhubung', 'error');
         return;
     }
+
+    // MODIFIKASI: Gunakan data terakhir jika ada, jika tidak gunakan cart (misal preview)
+    let dataToPrint = lastTransactionData;
+    if (!dataToPrint) {
+        // Fallback: cetak dari cart yang masih ada (misal untuk preview sebelum bayar)
+        if (cart.length === 0) {
+            showNotification('Tidak ada data untuk dicetak', 'warning');
+            return;
+        }
+        dataToPrint = {
+            items: cart.map(c => ({
+                name: c.item.name,
+                qty: c.qty,
+                unit: c.unitConversion ? (kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name || '?') : (c.weightGram ? 'kg' : 'pcs'),
+                price: c.pricePerUnit,
+                subtotal: c.subtotal
+            })),
+            total: cart.reduce((s, c) => s + c.subtotal, 0),
+            date: new Date().toLocaleString('id-ID')
+        };
+    }
+
     try {
         const writer = printerPort.writable.getWriter();
         const encoder = new TextEncoder();
         let receipt = '\n';
         receipt += '      TOKO POSPLUS\n';
         receipt += '====================\n';
-        receipt += new Date().toLocaleString() + '\n';
+        receipt += dataToPrint.date + '\n';
         receipt += '--------------------\n';
-        cart.forEach(item => {
-            let line = `${item.item.name}\n  ${item.qty} x ${formatRupiah(item.pricePerUnit)} = ${formatRupiah(item.subtotal)}\n`;
+        dataToPrint.items.forEach(item => {
+            // Format: Nama barang, jumlah satuan, harga, subtotal
+            let line = `${item.name}\n  ${item.qty} ${item.unit} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
             receipt += line;
         });
         receipt += '--------------------\n';
-        receipt += `Total: ${formatRupiah(cart.reduce((s,c)=>s+c.subtotal,0))}\n`;
+        receipt += `Total: ${formatRupiah(dataToPrint.total)}\n`;
         receipt += 'Terima kasih\n';
         receipt += '\n\n\n';
         await writer.write(encoder.encode(receipt));
