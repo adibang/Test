@@ -117,14 +117,13 @@
                 font-size: 0.9rem;
                 color: #333;
             }
-            /* MODIFIKASI: pembungkus tabel dengan scroll dan tinggi tetap di mobile */
             .cart-table-wrapper {
                 width: 100%;
                 background: white;
                 border-radius: 15px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
                 margin-bottom: 20px;
-                overflow: hidden; /* agar border-radius tetap */
+                overflow: hidden;
             }
             .cart-table {
                 width: 100%;
@@ -148,7 +147,6 @@
                 border-radius: 10px;
                 text-align: center;
             }
-            /* Tombol aksi berbentuk ikon */
             .action-btn {
                 width: 30px;
                 height: 30px;
@@ -160,18 +158,18 @@
                 padding: 0;
                 cursor: pointer;
                 transition: all 0.2s;
+                border: 1px solid #ff6b6b;
             }
             .action-btn svg {
                 width: 20px;
                 height: 20px;
                 stroke-width: 2;
-            }
-            .action-btn.delete-btn {
-                border-color: #ff6b6b;
                 color: #ff6b6b;
             }
             .action-btn.delete-btn:hover {
                 background: #ff6b6b;
+            }
+            .action-btn.delete-btn:hover svg {
                 color: white;
             }
             .summary {
@@ -305,10 +303,7 @@
                 padding: 40px 20px;
                 color: #666;
             }
-        
-            /* === MODIFIKASI UNTUK LAYAR KECIL (MOBILE) === */
             @media (max-width: 768px) {
-                /* MODIFIKASI: tabel wrapper dengan tinggi tetap 375px dan scroll */
                 .cart-table-wrapper {
                     height: 375px;
                     overflow-y: auto;
@@ -367,7 +362,7 @@
             <div id="product-list" class="product-results"></div>
         </div>
 
-        <!-- MODIFIKASI: tambahkan pembungkus untuk scroll dan tinggi tetap -->
+        <!-- Keranjang -->
         <div class="cart-table-wrapper">
             <table class="cart-table">
                 <thead>
@@ -453,7 +448,7 @@
     <script>
         // ==================== KONFIGURASI DATABASE ====================
         const DB_NAME = 'POSKasirDB';
-        const DB_VERSION = 15; // Sama dengan versi terbaru di index.html
+        const DB_VERSION = 15;
         let db = null;
 
         // Data global
@@ -504,7 +499,7 @@
                 const saved = localStorage.getItem(CART_STORAGE_KEY);
                 if (saved) {
                     cart = JSON.parse(saved);
-                    // Validasi sederhana: pastikan setiap item memiliki properti yang diperlukan
+                    // Validasi sederhana
                     cart = cart.filter(item => item.itemId && item.itemName !== undefined);
                 } else {
                     cart = [];
@@ -513,7 +508,7 @@
                 console.warn('Gagal memuat cart dari localStorage', e);
                 cart = [];
             }
-            renderCart(); // tampilkan setelah dimuat
+            renderCart();
         }
 
         // ==================== DATABASE FUNCTIONS ====================
@@ -535,7 +530,6 @@
                     resolve();
                 };
                 request.onupgradeneeded = (e) => {
-                    // Jika database belum ada, buat store yang diperlukan (tapi biasanya sudah ada dari aplikasi utama)
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('settings')) {
                         db.createObjectStore('settings', { keyPath: 'key' });
@@ -664,7 +658,6 @@
             const newCounter = lastCounter + 1;
             const purchaseNumber = `PO-${dateStr}-${String(newCounter).padStart(5, '0')}`;
 
-            // Simpan counter baru
             try {
                 await dbPut('settings', {
                     key: 'lastPurchaseNumber',
@@ -676,8 +669,8 @@
 
             return purchaseNumber;
         }
-        
-        // ==================== PENCARIAN PRODUK ====================
+
+        // ==================== PENCARIAN PRODUK (MODIFIKASI) ====================
         function searchProducts() {
             const keyword = document.getElementById('search-product').value.toLowerCase().trim();
             const listDiv = document.getElementById('product-list');
@@ -685,14 +678,14 @@
                 listDiv.innerHTML = '';
                 return;
             }
-        
+
             // Filter item berdasarkan nama, kode, atau barcode produk
             let results = kasirItems.filter(item => 
                 item.name.toLowerCase().includes(keyword) ||
                 item.code.toLowerCase().includes(keyword) ||
                 (item.barcode && item.barcode.toLowerCase().includes(keyword))
             );
-        
+
             // Cari juga berdasarkan barcode satuan
             const unitBarcodeMatches = [];
             kasirItems.forEach(item => {
@@ -701,67 +694,76 @@
                         conv.barcode && conv.barcode.toLowerCase().includes(keyword)
                     );
                     if (matchedConv && !results.includes(item)) {
-                        unitBarcodeMatches.push(item);
+                        unitBarcodeMatches.push({ item, conversion: matchedConv });
                     }
                 }
             });
+
             // Gabungkan hasil, hindari duplikat
-            results = [...new Set([...results, ...unitBarcodeMatches])];
-        
-            // Batasi 10 hasil
-            results = results.slice(0, 10);
-        
-            if (results.length === 0) {
+            const allResults = [...results, ...unitBarcodeMatches.map(m => m.item)];
+            const uniqueResults = [...new Set(allResults)].slice(0, 10);
+
+            if (uniqueResults.length === 0) {
                 listDiv.innerHTML = '<div style="padding:10px; text-align:center;">Tidak ada produk</div>';
                 return;
             }
-        
-            // Tampilkan hasil dengan informasi tambahan jika ditemukan lewat barcode satuan
-            listDiv.innerHTML = results.map(item => {
-                // Cek apakah item ini masuk melalui barcode satuan
-                const isUnitMatch = unitBarcodeMatches.includes(item);
+
+            listDiv.innerHTML = uniqueResults.map(item => {
+                // Cari konversi yang cocok (jika ada)
+                const match = unitBarcodeMatches.find(m => m.item.id === item.id);
                 let extraInfo = '';
-                if (isUnitMatch) {
-                    // Ambil nama satuan yang cocok untuk ditampilkan (opsional)
-                    const matchedConv = item.unitConversions.find(conv => 
-                        conv.barcode && conv.barcode.toLowerCase().includes(keyword)
-                    );
-                    if (matchedConv) {
-                        const unitName = kasirSatuan.find(s => s.id == matchedConv.unit)?.name || '';
-                        extraInfo = ` (Satuan: ${unitName})`;
-                    }
+                let onclickAttr = `addToCart(${item.id})`; // default tanpa konversi
+
+                if (match) {
+                    const unitName = kasirSatuan.find(s => s.id == match.conversion.unit)?.name || '';
+                    extraInfo = ` (Satuan: ${unitName})`;
+                    // Sertakan data konversi dalam panggilan (escape JSON)
+                    const convStr = JSON.stringify(match.conversion).replace(/"/g, '&quot;');
+                    onclickAttr = `addToCart(${item.id}, ${convStr})`;
                 }
+
                 return `
-                    <div class="product-item" onclick="addToCart(${item.id})">
+                    <div class="product-item" onclick="${onclickAttr}">
                         <span class="name">${item.name}${extraInfo}</span>
                         <span class="price">Harga Beli: Rp ${(item.hargaDasar || 0).toLocaleString()}</span>
                     </div>
                 `;
             }).join('');
         }
-        // ==================== KERANJANG ====================
-        function addToCart(itemId) {
+
+        // ==================== KERANJANG (MODIFIKASI) ====================
+        function addToCart(itemId, conversion = null) {
             const item = kasirItems.find(i => i.id === itemId);
             if (!item) return;
 
-            // Cek apakah sudah ada di keranjang
-            const existing = cart.find(c => c.itemId === itemId);
-            if (existing) {
-                existing.qty += 1;
-                existing.subtotal = existing.qty * existing.purchasePrice;
+            // Tentukan harga beli: jika ada konversi dan memiliki basePrice, gunakan itu
+            let purchasePrice = item.hargaDasar || 0;
+            if (conversion && conversion.basePrice !== undefined) {
+                purchasePrice = conversion.basePrice;
+            }
+
+            // Cek apakah item dengan satuan yang sama sudah ada di keranjang
+            const existingIndex = cart.findIndex(c => 
+                c.itemId === itemId && 
+                (c.unitConversion?.barcode === conversion?.barcode)
+            );
+
+            if (existingIndex >= 0) {
+                cart[existingIndex].qty += 1;
+                cart[existingIndex].subtotal = cart[existingIndex].qty * cart[existingIndex].purchasePrice;
             } else {
                 cart.push({
                     itemId: item.id,
                     itemName: item.name,
                     qty: 1,
-                    purchasePrice: item.hargaDasar || 0,
-                    subtotal: item.hargaDasar || 0,
-                    unitConversion: null,
+                    purchasePrice: purchasePrice,
+                    subtotal: purchasePrice,
+                    unitConversion: conversion ? { ...conversion } : null,
                     weightGram: 0
                 });
             }
             renderCart();
-            saveCartToLocalStorage(); // MODIFIKASI: simpan setelah perubahan
+            saveCartToLocalStorage();
             document.getElementById('search-product').value = '';
             document.getElementById('product-list').innerHTML = '';
         }
@@ -769,7 +771,7 @@
         function removeFromCart(index) {
             cart.splice(index, 1);
             renderCart();
-            saveCartToLocalStorage(); // MODIFIKASI: simpan setelah perubahan
+            saveCartToLocalStorage();
         }
 
         function updateCartItem(index, field, value) {
@@ -780,7 +782,7 @@
             }
             cart[index].subtotal = cart[index].qty * cart[index].purchasePrice;
             renderCart();
-            saveCartToLocalStorage(); // MODIFIKASI: simpan setelah perubahan
+            saveCartToLocalStorage();
         }
 
         function renderCart() {
@@ -788,9 +790,15 @@
             let subtotal = 0;
             tbody.innerHTML = cart.map((c, idx) => {
                 subtotal += c.subtotal;
+                // Tampilkan satuan jika ada
+                let unitText = '';
+                if (c.unitConversion) {
+                    const unit = kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name || '?';
+                    unitText = ` (${unit})`;
+                }
                 return `
                     <tr>
-                        <td>${c.itemName}</td>
+                        <td>${c.itemName}${unitText}</td>
                         <td>
                             <input type="number" min="0" step="0.01" value="${c.qty}" onchange="updateCartItem(${idx}, 'qty', this.value)">
                         </td>
@@ -815,7 +823,7 @@
             document.getElementById('total').textContent = formatRupiah(total);
         }
 
-        // ==================== SIMPAN PEMBELIAN ====================
+        // ==================== SIMPAN PEMBELIAN (MODIFIKASI) ====================
         async function savePurchase() {
             // Validasi supplier
             const supplierSelect = document.getElementById('supplier-select');
@@ -832,32 +840,26 @@
                 return;
             }
 
-            // Validasi jumlah dibayar
             const paidAmount = parseFloat(document.getElementById('paid-amount').value) || 0;
 
             showLoading();
             try {
-                // Generate nomor PO
                 const purchaseNumber = await generatePurchaseNumber();
-
-                // Hitung subtotal, diskon, pajak, total
                 const subtotal = cart.reduce((sum, c) => sum + c.subtotal, 0);
                 const discount = parseFloat(document.getElementById('discount').value) || 0;
                 const tax = parseFloat(document.getElementById('tax').value) || 0;
                 const total = subtotal - discount + tax;
 
-                // Siapkan data items untuk disimpan
                 const items = cart.map(c => ({
                     itemId: c.itemId,
                     itemName: c.itemName,
                     qty: c.qty,
                     purchasePricePerUnit: c.purchasePrice,
                     subtotal: c.subtotal,
-                    unitConversion: c.unitConversion, // null untuk sekarang
+                    unitConversion: c.unitConversion,
                     weightGram: c.weightGram
                 }));
 
-                // Data pembelian
                 const purchaseData = {
                     purchaseNumber,
                     date: new Date().toISOString(),
@@ -874,22 +876,23 @@
                     createdAt: new Date().toISOString()
                 };
 
-                // Simpan ke store purchases
                 await dbAdd('purchases', purchaseData);
 
-                // Update stok item (tambah stok)
+                // Update stok item (perhatikan konversi)
                 for (let c of cart) {
                     const item = kasirItems.find(i => i.id === c.itemId);
                     if (item) {
-                        item.stock += c.qty; // asumsi tidak ada konversi satuan di sini
+                        let qtyToAdd = c.qty;
+                        if (c.unitConversion && c.unitConversion.value) {
+                            qtyToAdd *= c.unitConversion.value; // konversi ke satuan dasar
+                        }
+                        item.stock += qtyToAdd;
                         item.updatedAt = new Date().toISOString();
                         await dbPut('kasirItems', item);
                     }
                 }
 
-                // Refresh data items
                 await loadKasirItems();
-
                 showNotification('Pembelian berhasil disimpan!', 'success');
                 resetForm();
             } catch (error) {
@@ -901,13 +904,10 @@
         }
 
         function resetForm() {
-            // Reset supplier ke default
             document.getElementById('supplier-select').value = '';
-            // Kosongkan keranjang
             cart = [];
             renderCart();
-            saveCartToLocalStorage(); // MODIFIKASI: hapus dari localStorage juga
-            // Reset input ringkasan
+            saveCartToLocalStorage();
             document.getElementById('discount').value = 0;
             document.getElementById('tax').value = 0;
             document.getElementById('paid-amount').value = 0;
@@ -934,7 +934,6 @@
                 await loadSuppliers();
                 await loadKasirItems();
                 await loadKasirSatuan();
-                // MODIFIKASI: muat keranjang dari localStorage setelah data master siap
                 loadCartFromLocalStorage();
                 console.log('Pembelian page ready');
             } catch (error) {
@@ -945,7 +944,6 @@
             }
         }
 
-        // Jalankan saat halaman dimuat
         window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
