@@ -676,7 +676,7 @@
 
             return purchaseNumber;
         }
-
+        
         // ==================== PENCARIAN PRODUK ====================
         function searchProducts() {
             const keyword = document.getElementById('search-product').value.toLowerCase().trim();
@@ -685,26 +685,60 @@
                 listDiv.innerHTML = '';
                 return;
             }
-
-            const results = kasirItems.filter(item => 
+        
+            // Filter item berdasarkan nama, kode, atau barcode produk
+            let results = kasirItems.filter(item => 
                 item.name.toLowerCase().includes(keyword) ||
                 item.code.toLowerCase().includes(keyword) ||
                 (item.barcode && item.barcode.toLowerCase().includes(keyword))
-            ).slice(0, 10); // Batasi 10 hasil
-
+            );
+        
+            // Cari juga berdasarkan barcode satuan
+            const unitBarcodeMatches = [];
+            kasirItems.forEach(item => {
+                if (item.unitConversions && Array.isArray(item.unitConversions)) {
+                    const matchedConv = item.unitConversions.find(conv => 
+                        conv.barcode && conv.barcode.toLowerCase().includes(keyword)
+                    );
+                    if (matchedConv && !results.includes(item)) {
+                        unitBarcodeMatches.push(item);
+                    }
+                }
+            });
+            // Gabungkan hasil, hindari duplikat
+            results = [...new Set([...results, ...unitBarcodeMatches])];
+        
+            // Batasi 10 hasil
+            results = results.slice(0, 10);
+        
             if (results.length === 0) {
                 listDiv.innerHTML = '<div style="padding:10px; text-align:center;">Tidak ada produk</div>';
                 return;
             }
-
-            listDiv.innerHTML = results.map(item => `
-                <div class="product-item" onclick="addToCart(${item.id})">
-                    <span class="name">${item.name}</span>
-                    <span class="price">Harga Beli: Rp ${(item.hargaDasar || 0).toLocaleString()}</span>
-                </div>
-            `).join('');
+        
+            // Tampilkan hasil dengan informasi tambahan jika ditemukan lewat barcode satuan
+            listDiv.innerHTML = results.map(item => {
+                // Cek apakah item ini masuk melalui barcode satuan
+                const isUnitMatch = unitBarcodeMatches.includes(item);
+                let extraInfo = '';
+                if (isUnitMatch) {
+                    // Ambil nama satuan yang cocok untuk ditampilkan (opsional)
+                    const matchedConv = item.unitConversions.find(conv => 
+                        conv.barcode && conv.barcode.toLowerCase().includes(keyword)
+                    );
+                    if (matchedConv) {
+                        const unitName = kasirSatuan.find(s => s.id == matchedConv.unit)?.name || '';
+                        extraInfo = ` (Satuan: ${unitName})`;
+                    }
+                }
+                return `
+                    <div class="product-item" onclick="addToCart(${item.id})">
+                        <span class="name">${item.name}${extraInfo}</span>
+                        <span class="price">Harga Beli: Rp ${(item.hargaDasar || 0).toLocaleString()}</span>
+                    </div>
+                `;
+            }).join('');
         }
-
         // ==================== KERANJANG ====================
         function addToCart(itemId) {
             const item = kasirItems.find(i => i.id === itemId);
