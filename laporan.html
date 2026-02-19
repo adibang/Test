@@ -419,6 +419,22 @@
             <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Daftar Transaksi
         </button>
+        <button onclick="showSection('profitloss')">
+            <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Laba Rugi
+        </button>
+        <button onclick="showSection('cashflow')">
+            <svg viewBox="0 0 24 24">
+                <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+                <line x1="7" y1="15" x2="12" y2="15"/>
+            </svg>
+            Arus Kas
+        </button>
         <div style="flex:1;"></div>
         <button onclick="exportAllCSV()" style="border-top:1px solid #ddd; border-radius:0;">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -562,6 +578,62 @@
                 </table>
             </div>
         </div>
+
+        <!-- Section: Laba Rugi -->
+        <div id="section-profitloss" class="report-section">
+            <div class="cards">
+                <div class="card">
+                    <div class="label">Total Penjualan Bersih</div>
+                    <div class="value" id="pl-total-sales">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="label">Total Diskon</div>
+                    <div class="value" id="pl-total-discount">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="label">Total Pajak</div>
+                    <div class="value" id="pl-total-tax">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="label">HPP</div>
+                    <div class="value" id="pl-hpp">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="label">Laba Kotor</div>
+                    <div class="value" id="pl-gross-profit">Rp 0</div>
+                </div>
+            </div>
+            <div class="chart-box" style="margin-top:20px;">
+                <h3>Komponen Laba Rugi</h3>
+                <div class="chart-container" style="height:300px;">
+                    <canvas id="profitLossChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Arus Kas -->
+        <div id="section-cashflow" class="report-section">
+            <div class="cards">
+                <div class="card">
+                    <div class="label">Total Pemasukan</div>
+                    <div class="value" id="cf-income">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="label">Total Pengeluaran</div>
+                    <div class="value" id="cf-expense">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="label">Arus Kas Bersih</div>
+                    <div class="value" id="cf-net">Rp 0</div>
+                </div>
+            </div>
+            <div class="chart-box" style="margin-top:20px;">
+                <h3>Arus Kas per Bulan</h3>
+                <div class="chart-container" style="height:300px;">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Detail Transaksi -->
@@ -582,6 +654,8 @@
         let salesData = [];
         let chartInstance = null;
         let categoryChartInstance = null;
+        let profitLossChartInstance = null;
+        let cashFlowChartInstance = null;
         let categoryMap = {};
         let itemCategoryMap = {};
         let productMap = {};
@@ -609,7 +683,14 @@
             document.getElementById(`section-${sectionId}`).classList.add('active');
             // Update active class di sidebar
             document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active'); // atau cari berdasarkan data-section
+            // Cari tombol yang sesuai (berdasarkan onclick) dan beri class active
+            const buttons = document.querySelectorAll('.sidebar button');
+            for (let btn of buttons) {
+                if (btn.getAttribute('onclick')?.includes(sectionId)) {
+                    btn.classList.add('active');
+                    break;
+                }
+            }
             // Tutup drawer di mobile
             closeDrawer();
 
@@ -619,6 +700,12 @@
             }
             if (sectionId === 'categoryChart' && categoryChartInstance) {
                 categoryChartInstance.resize();
+            }
+            if (sectionId === 'profitloss' && profitLossChartInstance) {
+                profitLossChartInstance.resize();
+            }
+            if (sectionId === 'cashflow' && cashFlowChartInstance) {
+                cashFlowChartInstance.resize();
             }
         }
 
@@ -668,6 +755,26 @@
                     if (method !== 'all') {
                         data = data.filter(item => item.paymentMethod === method);
                     }
+                    resolve(data);
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function fetchPurchases(start, end) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('Database tidak tersedia'); return; }
+                if (!db.objectStoreNames.contains('purchases')) {
+                    resolve([]); // tidak ada data pembelian
+                    return;
+                }
+                const transaction = db.transaction(['purchases'], 'readonly');
+                const store = transaction.objectStore('purchases');
+                const index = store.index('date');
+                const range = IDBKeyRange.bound(start + 'T00:00:00.000Z', end + 'T23:59:59.999Z');
+                const request = index.getAll(range);
+                request.onsuccess = () => {
+                    let data = request.result || [];
                     resolve(data);
                 };
                 request.onerror = () => reject(request.error);
@@ -829,7 +936,6 @@
 
         // Ekspor semua data (gabungan)
         function exportAllCSV() {
-            // Gabungkan CSV transaksi dan produk
             exportCSV();
             exportProductCSV();
         }
@@ -1036,6 +1142,164 @@
             });
         }
 
+        // ==================== FITUR LABA RUGI ====================
+        function calculateProfitLoss(salesData) {
+            let totalSales = 0;
+            let totalDiscount = 0;
+            let totalTax = 0;
+            let totalHPP = 0;
+
+            salesData.forEach(trx => {
+                totalSales += trx.total || 0;
+                totalDiscount += trx.discount || 0;
+                totalTax += trx.tax || 0;
+
+                if (trx.items) {
+                    trx.items.forEach(item => {
+                        if (item.cost !== undefined) {
+                            totalHPP += (item.qty || 0) * item.cost;
+                        }
+                    });
+                }
+            });
+
+            const grossProfit = totalSales - totalHPP;
+            return { totalSales, totalDiscount, totalTax, totalHPP, grossProfit };
+        }
+
+        function renderProfitLossChart(data) {
+            const ctx = document.getElementById('profitLossChart').getContext('2d');
+            if (profitLossChartInstance) profitLossChartInstance.destroy();
+
+            const { totalSales, totalHPP, grossProfit } = data;
+            if (totalSales === 0) {
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Tidak ada data', 150, 150);
+                return;
+            }
+
+            profitLossChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['HPP', 'Laba Kotor'],
+                    datasets: [{
+                        data: [totalHPP, grossProfit],
+                        backgroundColor: ['#FFA500', '#006B54'],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const val = ctx.raw;
+                                    const perc = ((val / totalSales) * 100).toFixed(2);
+                                    return `${ctx.label}: ${formatRupiah(val)} (${perc}%)`;
+                                }
+                            }
+                        },
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // ==================== FITUR ARUS KAS ====================
+        function calculateCashFlow(salesData, purchasesData) {
+            let income = 0;
+            let expense = 0;
+
+            salesData.forEach(trx => {
+                income += trx.paidAmount || 0;
+            });
+
+            purchasesData.forEach(trx => {
+                expense += trx.paidAmount || 0;
+            });
+
+            const net = income - expense;
+            return { income, expense, net };
+        }
+
+        async function renderCashFlowChart(salesData, purchasesData, start, end) {
+            const ctx = document.getElementById('cashFlowChart').getContext('2d');
+            if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+
+            // Kelompokkan per bulan
+            const monthMap = new Map();
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 1)) {
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                monthMap.set(monthKey, { income: 0, expense: 0 });
+            }
+
+            salesData.forEach(trx => {
+                const date = new Date(trx.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (monthMap.has(monthKey)) {
+                    monthMap.get(monthKey).income += trx.paidAmount || 0;
+                }
+            });
+
+            purchasesData.forEach(trx => {
+                const date = new Date(trx.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (monthMap.has(monthKey)) {
+                    monthMap.get(monthKey).expense += trx.paidAmount || 0;
+                }
+            });
+
+            const labels = Array.from(monthMap.keys()).sort();
+            const incomeData = labels.map(m => monthMap.get(m).income);
+            const expenseData = labels.map(m => monthMap.get(m).expense);
+
+            cashFlowChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Pemasukan',
+                            data: incomeData,
+                            backgroundColor: '#006B54',
+                            borderRadius: 5
+                        },
+                        {
+                            label: 'Pengeluaran',
+                            data: expenseData,
+                            backgroundColor: '#FF6B6B',
+                            borderRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => formatRupiah(ctx.raw)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: (val) => formatRupiah(val)
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // ==================== LOAD DATA UTAMA ====================
         async function loadData() {
             const start = document.getElementById('startDate').value;
@@ -1048,6 +1312,12 @@
             try {
                 if (!db) await initDB();
                 salesData = await fetchSales(start, end, method);
+                let purchasesData = [];
+                try {
+                    purchasesData = await fetchPurchases(start, end);
+                } catch (e) {
+                    console.warn('Gagal mengambil data pembelian', e);
+                }
 
                 const summary = calculateSummary(salesData);
                 document.getElementById('totalSales').textContent = formatRupiah(summary.totalSales);
@@ -1063,6 +1333,23 @@
 
                 const categoryData = aggregateCategorySales(salesData);
                 renderCategoryChart(categoryData);
+
+                // Laba Rugi
+                const pl = calculateProfitLoss(salesData);
+                document.getElementById('pl-total-sales').textContent = formatRupiah(pl.totalSales);
+                document.getElementById('pl-total-discount').textContent = formatRupiah(pl.totalDiscount);
+                document.getElementById('pl-total-tax').textContent = formatRupiah(pl.totalTax);
+                document.getElementById('pl-hpp').textContent = formatRupiah(pl.totalHPP);
+                document.getElementById('pl-gross-profit').textContent = formatRupiah(pl.grossProfit);
+                renderProfitLossChart(pl);
+
+                // Arus Kas
+                const cf = calculateCashFlow(salesData, purchasesData);
+                document.getElementById('cf-income').textContent = formatRupiah(cf.income);
+                document.getElementById('cf-expense').textContent = formatRupiah(cf.expense);
+                document.getElementById('cf-net').textContent = formatRupiah(cf.net);
+                await renderCashFlowChart(salesData, purchasesData, start, end);
+
             } catch (error) {
                 console.error(error);
                 alert('Gagal memuat data.');
