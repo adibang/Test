@@ -4609,6 +4609,7 @@
 
 
         // ==================== FUNGSI INVENTORY ====================
+        // Fungsi untuk membuka modal stok barang (juga digunakan oleh stok opname)
         function openInventoryStokModal() {
             document.getElementById('inventory-modal-title').innerHTML = `
                 <svg class="icon icon-primary" viewBox="0 0 24 24">
@@ -4616,23 +4617,53 @@
                     <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                     <line x1="12" y1="11" x2="12" y2="17"/>
                 </svg> Stok Barang`;
-            
-            let html = '<div style="max-height:400px; overflow-y:auto;">';
-            html += '<table style="width:100%; border-collapse:collapse;">';
-            html += '<thead><tr><th>Nama Item</th><th>Stok</th><th>Aksi</th></tr></thead><tbody>';
-            kasirItems.forEach(item => {
-                html += `<tr>
-                    <td>${item.name}</td>
-                    <td>${item.stock !== undefined ? item.stock : 0}</td>
-                    <td><button class="action-btn edit-btn" onclick="openStockOpnameForItem(${item.id})">Sesuaikan</button></td>
-                </tr>`;
-            });
-            html += '</tbody></table></div>';
-            html += '<div style="margin-top:20px;"><button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button></div>';
-            
+        
+            // Struktur modal: input pencarian, container tabel, tombol tutup
+            let html = `
+                <div>
+                    <input type="text" id="inventory-search-input" class="form-input" 
+                           placeholder="Cari item..." style="margin-bottom:10px;" 
+                           oninput="filterInventoryTable(this.value)">
+                    <div id="inventory-table-container"></div>
+                    <div style="margin-top:20px;">
+                        <button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button>
+                    </div>
+                </div>
+            `;
+        
             document.getElementById('inventory-modal-body').innerHTML = html;
+            filterInventoryTable(''); // Tampilkan semua item saat modal dibuka
             document.getElementById('inventory-modal').style.display = 'flex';
             closeDrawer();
+        }
+        
+        // Fungsi untuk memfilter dan merender ulang tabel item
+        function filterInventoryTable(filterText) {
+            const container = document.getElementById('inventory-table-container');
+            if (!container) return;
+        
+            const filter = filterText.toLowerCase();
+            const filteredItems = kasirItems.filter(item => 
+                item.name.toLowerCase().includes(filter)
+            );
+        
+            let tableHtml = '<table style="width:100%; border-collapse:collapse;">';
+            tableHtml += '<thead><tr><th>Nama Item</th><th>Stok</th><th>Aksi</th></tr></thead><tbody>';
+        
+            filteredItems.forEach(item => {
+                tableHtml += `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.stock !== undefined ? item.stock : 0}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="openStockOpnameForItem(${item.id})">
+                            Sesuaikan
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        
+            tableHtml += '</tbody></table>';
+            container.innerHTML = tableHtml;
         }
 
         function openInventoryOpnameModal() {
