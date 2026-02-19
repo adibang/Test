@@ -3290,55 +3290,82 @@
         }
 
         function closeListSatuanModal() { document.getElementById('list-satuan-modal').style.display = 'none'; }
-
-        function showConversionForm(index = -1) {
-            const formContainer = document.getElementById('conversion-form-container');
-            const selectUnit = document.getElementById('conv-unit');
-            const valueInput = document.getElementById('conv-value');
-            const barcodeInput = document.getElementById('conv-barcode');
-            const skuInput = document.getElementById('conv-sku');
-            const basePriceInput = document.getElementById('conv-base-price');
-            const sellPriceInput = document.getElementById('conv-sell-price');
-            const pointsInput = document.getElementById('conv-points');
-            const commissionInput = document.getElementById('conv-commission');
-
-            selectUnit.innerHTML = '<option value="">-- Pilih Satuan --</option>';
-            kasirSatuan.forEach(sat => {
-                selectUnit.innerHTML += `<option value="${sat.id}">${sat.name}</option>`;
-            });
-
-            if (index >= 0) {
-                editingConversionIndex = index;
-                const conv = tempUnitConversions[index];
-                selectUnit.value = conv.unit;
-                valueInput.value = conv.value;
-                barcodeInput.value = conv.barcode;
-                skuInput.value = conv.sku || '';
-                basePriceInput.value = conv.basePrice;
-                sellPriceInput.value = conv.sellPrice;
-                pointsInput.value = conv.customerPoint || '';
-                commissionInput.value = conv.salesCommission || '';
-            } else {
-                editingConversionIndex = -1;
-                selectUnit.value = '';
-                valueInput.value = '';
-                barcodeInput.value = '';
-                skuInput.value = '';
-                basePriceInput.value = '';
-                sellPriceInput.value = '';
-                pointsInput.value = '';
-                commissionInput.value = '';
+            
+                    // ==================== MODIFIKASI UNTUK MEMPERBAIKI BUG KONVERSI SATUAN ====================
+            // 1. Menonaktifkan tombol edit konversi saat form tambah/edit konversi ditampilkan.
+            // 2. Mencegah event Enter pada input barcode agar tidak memicu aksi tak diinginkan.
+            
+            // Ganti fungsi showConversionForm dengan kode berikut:
+            function showConversionForm(index = -1) {
+                const formContainer = document.getElementById('conversion-form-container');
+                const selectUnit = document.getElementById('conv-unit');
+                const valueInput = document.getElementById('conv-value');
+                const barcodeInput = document.getElementById('conv-barcode');
+                const skuInput = document.getElementById('conv-sku');
+                const basePriceInput = document.getElementById('conv-base-price');
+                const sellPriceInput = document.getElementById('conv-sell-price');
+                const pointsInput = document.getElementById('conv-points');
+                const commissionInput = document.getElementById('conv-commission');
+            
+                selectUnit.innerHTML = '<option value="">-- Pilih Satuan --</option>';
+                kasirSatuan.forEach(sat => {
+                    selectUnit.innerHTML += `<option value="${sat.id}">${sat.name}</option>`;
+                });
+            
+                if (index >= 0) {
+                    editingConversionIndex = index;
+                    const conv = tempUnitConversions[index];
+                    selectUnit.value = conv.unit;
+                    valueInput.value = conv.value;
+                    barcodeInput.value = conv.barcode;
+                    skuInput.value = conv.sku || '';
+                    basePriceInput.value = conv.basePrice;
+                    sellPriceInput.value = conv.sellPrice;
+                    pointsInput.value = conv.customerPoint || '';
+                    commissionInput.value = conv.salesCommission || '';
+                } else {
+                    editingConversionIndex = -1;
+                    selectUnit.value = '';
+                    valueInput.value = '';
+                    barcodeInput.value = '';
+                    skuInput.value = '';
+                    basePriceInput.value = '';
+                    sellPriceInput.value = '';
+                    pointsInput.value = '';
+                    commissionInput.value = '';
+                }
+            
+                // Nonaktifkan semua tombol edit konversi saat form ditampilkan
+                document.querySelectorAll('.conversion-edit-btn').forEach(btn => {
+                    btn.disabled = true;
+                });
+            
+                formContainer.style.display = 'block';
             }
-
-            formContainer.style.display = 'block';
-        }
-
-        function hideConversionForm() {
-            document.getElementById('conversion-form-container').style.display = 'none';
-            editingConversionIndex = -1;
-        }
-
-        function saveConversion() {
+            
+            // Ganti fungsi hideConversionForm dengan kode berikut:
+            function hideConversionForm() {
+                // Aktifkan kembali tombol edit konversi
+                document.querySelectorAll('.conversion-edit-btn').forEach(btn => {
+                    btn.disabled = false;
+                });
+                document.getElementById('conversion-form-container').style.display = 'none';
+                editingConversionIndex = -1;
+            }
+            
+            // Tambahkan event listener pada input barcode untuk mencegah default Enter
+            document.addEventListener('DOMContentLoaded', function() {
+                const barcodeInput = document.getElementById('conv-barcode');
+                if (barcodeInput) {
+                    barcodeInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                        }
+                    });
+                }
+            });       
+        
+            function saveConversion() {
             const unit = document.getElementById('conv-unit').value;
             const value = parseFloat(document.getElementById('conv-value').value);
             const barcode = document.getElementById('conv-barcode').value.trim();
