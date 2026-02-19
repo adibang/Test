@@ -4638,6 +4638,7 @@
         }
         
         // Fungsi untuk memfilter dan merender ulang tabel item
+        // Fungsi untuk memfilter dan merender ulang tabel item
         function filterInventoryTable(filterText) {
             const container = document.getElementById('inventory-table-container');
             if (!container) return;
@@ -4656,7 +4657,7 @@
                     <td>${item.stock !== undefined ? item.stock : 0}</td>
                     <td>
                         <button class="action-btn edit-btn" onclick="openStockOpnameForItem(${item.id})">
-                            Sesuaikan
+                            ${icons.edit}  <!-- Ikon edit dari variabel global -->
                         </button>
                     </td>
                 </tr>`;
