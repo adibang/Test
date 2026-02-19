@@ -4637,17 +4637,31 @@
             closeDrawer();
         }
         
-        // Fungsi untuk memfilter dan merender ulang tabel item
-        // Fungsi untuk memfilter dan merender ulang tabel item
+        // Fungsi untuk memfilter dan merender ulang tabel item (dengan pencarian multi-kriteria)
         function filterInventoryTable(filterText) {
             const container = document.getElementById('inventory-table-container');
             if (!container) return;
         
             const filter = filterText.toLowerCase();
-            const filteredItems = kasirItems.filter(item => 
-                item.name.toLowerCase().includes(filter)
-            );
         
+            // Filter item berdasarkan: nama, kode, barcode produk, atau barcode satuan
+            const filteredItems = kasirItems.filter(item => {
+                const matchesName = item.name.toLowerCase().includes(filter);
+                const matchesCode = item.code.toLowerCase().includes(filter);
+                const matchesBarcode = item.barcode && item.barcode.toLowerCase().includes(filter);
+        
+                // Cek apakah ada barcode satuan yang cocok
+                let matchesUnitBarcode = false;
+                if (item.unitConversions && Array.isArray(item.unitConversions)) {
+                    matchesUnitBarcode = item.unitConversions.some(conv =>
+                        conv.barcode && conv.barcode.toLowerCase().includes(filter)
+                    );
+                }
+        
+                return matchesName || matchesCode || matchesBarcode || matchesUnitBarcode;
+            });
+        
+            // Bangun tabel hasil filter
             let tableHtml = '<table style="width:100%; border-collapse:collapse;">';
             tableHtml += '<thead><tr><th>Nama Item</th><th>Stok</th><th>Aksi</th></tr></thead><tbody>';
         
@@ -4657,7 +4671,7 @@
                     <td>${item.stock !== undefined ? item.stock : 0}</td>
                     <td>
                         <button class="action-btn edit-btn" onclick="openStockOpnameForItem(${item.id})">
-                            ${icons.edit}  <!-- Ikon edit dari variabel global -->
+                            ${icons.edit}
                         </button>
                     </td>
                 </tr>`;
@@ -4666,7 +4680,7 @@
             tableHtml += '</tbody></table>';
             container.innerHTML = tableHtml;
         }
-
+        
         function openInventoryOpnameModal() {
             openInventoryStokModal();
             closeDrawer();
