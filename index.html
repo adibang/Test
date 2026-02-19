@@ -4418,7 +4418,7 @@
                         await dbPut(STORES.KASIR_ITEMS, item);
                     }
                 }
-
+        
                 // Proses pembayaran piutang
                 for (let c of cart) {
                     if (c.isOutstanding) {
@@ -4436,14 +4436,12 @@
                         if (cust.outstanding >= paymentAmount) {
                             cust.outstanding -= paymentAmount;
                         } else {
-                            // Jika outstanding kurang, set ke 0 (atau bisa beri peringatan)
                             cust.outstanding = 0;
                             showNotification(`Outstanding customer ${cust.name} lebih kecil dari pembayaran, diset 0`, 'warning');
                         }
                         cust.updatedAt = new Date().toISOString();
                         await dbPut(STORES.CUSTOMERS, cust);
-
-                        // Perbarui selectedCustomer jika sama
+        
                         if (selectedCustomer && selectedCustomer.id === custId) {
                             selectedCustomer.outstanding = cust.outstanding;
                             const badge = document.getElementById('customer-badge');
@@ -4454,7 +4452,7 @@
                         }
                     }
                 }
-
+        
                 // Tambah piutang baru ke customer jika ada outstandingAdded
                 if (outstandingAdded > 0 && selectedCustomer) {
                     const cust = customers.find(c => c.id === selectedCustomer.id);
@@ -4465,25 +4463,39 @@
                         selectedCustomer.outstanding = cust.outstanding;
                     }
                 }
-
+        
                 const transactionNumber = await generateTransactionNumber();
-
+        
                 const subtotal = cart.reduce((sum, c) => sum + c.subtotal, 0);
                 const discount = 0;
                 const tax = 0;
                 const total = subtotal - discount + tax;
-                const change = paidAmount - total; // Hitung kembalian
-
-                const items = cart.map(c => ({
-                    itemId: c.item.id,
-                    itemName: c.item.name,
-                    qty: c.qty,
-                    pricePerUnit: c.pricePerUnit,
-                    subtotal: c.subtotal,
-                    unitConversion: c.unitConversion ? { id: c.unitConversion.unit, name: kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name } : null,
-                    weightGram: c.weightGram || 0
-                }));
-
+                const change = paidAmount - total;
+        
+                // Bangun array items dengan menyertakan cost per unit
+                const items = cart.map(c => {
+                    // Tentukan cost per unit
+                    let costPerUnit = 0;
+                    if (!c.isOutstanding) {
+                        if (c.unitConversion && c.unitConversion.basePrice !== undefined) {
+                            costPerUnit = c.unitConversion.basePrice;
+                        } else if (c.item.hargaDasar !== undefined) {
+                            costPerUnit = c.item.hargaDasar;
+                        }
+                        // Untuk item timbangan, hargaDasar per kg sudah sesuai dengan qty dalam kg
+                    }
+                    return {
+                        itemId: c.item.id,
+                        itemName: c.item.name,
+                        qty: c.qty,
+                        pricePerUnit: c.pricePerUnit,
+                        subtotal: c.subtotal,
+                        unitConversion: c.unitConversion ? { id: c.unitConversion.unit, name: kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name } : null,
+                        weightGram: c.weightGram || 0,
+                        cost: costPerUnit
+                    };
+                });
+        
                 const salesData = {
                     transactionNumber,
                     date: new Date().toISOString(),
@@ -4499,10 +4511,9 @@
                     customerId: selectedCustomer ? selectedCustomer.id : null,
                     customerName: selectedCustomer ? selectedCustomer.name : null
                 };
-
+        
                 await dbAdd(STORES.SALES, salesData);
-
-                // Simpan data struk sebelum cart direset
+        
                 lastTransactionData = {
                     items: cart.map(c => ({
                         name: c.item.name,
@@ -4512,20 +4523,18 @@
                         subtotal: c.subtotal
                     })),
                     total: total,
-                    paidAmount: paidAmount,   // Tambahkan paidAmount
-                    change: change,           // Simpan change
+                    paidAmount: paidAmount,
+                    change: change,
                     date: new Date().toLocaleString('id-ID')
                 };
-
+        
                 await loadKasirItems();
                 await loadCustomers();
                 renderProductList();
                 showNotification(`Pembayaran berhasil via ${method === 'cash' ? 'Tunai' : method === 'card' ? 'Kartu' : 'Transfer'}${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
                 
-                // Aktifkan tombol print
                 document.getElementById('print-receipt-btn').disabled = false;
                 
-                // Kosongkan cart dan hapus dari localStorage
                 cart = [];
                 selectedCustomer = null;
                 document.getElementById('customer-badge').style.display = 'none';
