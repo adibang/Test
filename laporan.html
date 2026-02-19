@@ -101,12 +101,41 @@
             color: #006B54;
             margin-top: 10px;
         }
-        .chart-container {
-            margin-bottom: 30px;
-            height: 300px;
-        }
 
-        /* === FITUR BARU: CSS untuk laporan per produk === */
+        /* === FITUR BARU: Layout untuk chart berdampingan === */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-box {
+            background: #fff;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+        }
+        .chart-box h3 {
+            color: #006B54;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        @media (max-width: 768px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* ==================================================== */
+
+        /* === FITUR BARU: CSS untuk laporan per produk (sebelumnya) === */
         .product-report-section {
             margin: 30px 0 20px;
         }
@@ -160,7 +189,7 @@
         #productTable tr:hover {
             background: #f5f5f5;
         }
-        /* ================================================ */
+        /* ============================================================= */
 
         table {
             width: 100%;
@@ -294,10 +323,36 @@
             </div>
         </div>
 
-        <!-- Grafik -->
-        <div class="chart-container">
-            <canvas id="salesChart"></canvas>
+        <!-- === FITUR BARU: Grafik Penjualan (Bar Chart dan Pie Chart) === -->
+        <div class="charts-row">
+            <div class="chart-box">
+                <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006B54" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Penjualan Harian
+                </h3>
+                <div class="chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-box">
+                <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006B54" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="12" x2="12" y2="8"></line>
+                        <line x1="12" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Penjualan per Kategori
+                </h3>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
         </div>
+        <!-- ============================================================= -->
 
         <!-- === FITUR BARU: Laporan Penjualan per Produk === -->
         <div class="product-report-section">
@@ -380,12 +435,17 @@
         let salesData = [];
         let chartInstance = null;
 
-        // === FITUR BARU: Variabel global untuk laporan produk ===
+        // === FITUR BARU: Variabel untuk pie chart kategori ===
+        let categoryChartInstance = null;
+        let categoryMap = {}; // key: categoryId, value: categoryName
+        let itemCategoryMap = {}; // key: itemId, value: categoryId
+
+        // === FITUR BARU: Variabel untuk laporan produk ===
         let productMap = {}; // key: productId, value: { hargaDasar, name }
         let productAggregatedData = [];
         let productSortColumn = 'totalRevenue';
         let productSortDirection = 'desc';
-        // ======================================================
+        // ==================================================
 
         // Inisialisasi database
         async function initDB() {
@@ -394,8 +454,6 @@
                 request.onerror = () => reject(request.error);
                 request.onsuccess = () => {
                     db = request.result;
-                    // === FITUR BARU: Muat data produk untuk harga dasar ===
-                    loadProducts();
                     resolve();
                 };
                 request.onupgradeneeded = (e) => {
@@ -464,7 +522,7 @@
             return 'Rp ' + angka.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
-        // Render grafik harian
+        // Render grafik harian (bar chart)
         function renderChart(data, start, end) {
             const ctx = document.getElementById('salesChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
@@ -601,53 +659,10 @@
             URL.revokeObjectURL(url);
         }
 
-        // Fungsi utama memuat data berdasarkan filter
-        async function loadData() {
-            const start = document.getElementById('startDate').value;
-            const end = document.getElementById('endDate').value;
-            const method = document.getElementById('paymentMethod').value;
-
-            if (!start || !end) {
-                alert('Pilih tanggal mulai dan akhir');
-                return;
-            }
-
-            if (new Date(start) > new Date(end)) {
-                alert('Tanggal akhir harus setelah tanggal mulai');
-                return;
-            }
-
-            try {
-                if (!db) await initDB();
-                salesData = await fetchSales(start, end, method);
-
-                // Update ringkasan
-                const summary = calculateSummary(salesData);
-                document.getElementById('totalSales').textContent = formatRupiah(summary.totalSales);
-                document.getElementById('totalTransactions').textContent = summary.totalTransactions;
-                document.getElementById('averageTransaction').textContent = formatRupiah(summary.average);
-                document.getElementById('totalOutstanding').textContent = formatRupiah(summary.totalOutstanding);
-
-                // Render grafik
-                renderChart(salesData, start, end);
-
-                // Render tabel transaksi
-                renderTable(salesData);
-
-                // === FITUR BARU: Agregasi dan render produk ===
-                productAggregatedData = aggregateProductSales(salesData);
-                renderProductTable(productAggregatedData);
-                // ==============================================
-            } catch (error) {
-                console.error('Gagal memuat data:', error);
-                alert('Gagal memuat data. Pastikan database sudah di-upgrade dan berisi data.');
-            }
-        }
-
-        // === FITUR BARU: Fungsi-fungsi laporan per produk ===
+        // === FITUR BARU: Fungsi untuk memuat data produk (harga dasar) ===
         async function loadProducts() {
-            if (!db) return;
-            try {
+            return new Promise((resolve, reject) => {
+                if (!db) { resolve(); return; }
                 const transaction = db.transaction(['kasirItems'], 'readonly');
                 const store = transaction.objectStore('kasirItems');
                 const request = store.getAll();
@@ -660,14 +675,52 @@
                             name: item.name
                         };
                     });
-                    console.log('Produk dimuat:', Object.keys(productMap).length);
+                    resolve();
                 };
-                request.onerror = (err) => console.error('Gagal memuat produk:', err);
-            } catch (error) {
-                console.error('Error loadProducts:', error);
-            }
+                request.onerror = (err) => reject(err);
+            });
         }
 
+        // === FITUR BARU: Fungsi untuk memuat kategori dan mapping item->kategori ===
+        async function loadCategoriesAndItems() {
+            return new Promise((resolve, reject) => {
+                if (!db) { resolve(); return; }
+                try {
+                    // Ambil semua kategori
+                    const catTx = db.transaction(['kasirCategories'], 'readonly');
+                    const catStore = catTx.objectStore('kasirCategories');
+                    const catRequest = catStore.getAll();
+                    catRequest.onsuccess = () => {
+                        const categories = catRequest.result || [];
+                        categoryMap = {};
+                        categories.forEach(cat => {
+                            categoryMap[cat.id] = cat.name;
+                        });
+
+                        // Ambil semua item untuk mapping categoryId
+                        const itemTx = db.transaction(['kasirItems'], 'readonly');
+                        const itemStore = itemTx.objectStore('kasirItems');
+                        const itemRequest = itemStore.getAll();
+                        itemRequest.onsuccess = () => {
+                            const items = itemRequest.result || [];
+                            itemCategoryMap = {};
+                            items.forEach(item => {
+                                if (item.categoryId) {
+                                    itemCategoryMap[item.id] = item.categoryId;
+                                }
+                            });
+                            resolve();
+                        };
+                        itemRequest.onerror = (err) => reject(err);
+                    };
+                    catRequest.onerror = (err) => reject(err);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        // === FITUR BARU: Agregasi penjualan per produk ===
         function aggregateProductSales(salesData) {
             const productSales = {};
 
@@ -726,6 +779,7 @@
             return result;
         }
 
+        // === FITUR BARU: Render tabel produk ===
         function renderProductTable(data) {
             const tbody = document.getElementById('productTableBody');
             if (!data || data.length === 0) {
@@ -770,22 +824,23 @@
             });
         }
 
+        // === FITUR BARU: Inisialisasi sorting tabel produk ===
         function initProductTableSort() {
             document.querySelectorAll('#productTable th[data-sort]').forEach(th => {
                 th.addEventListener('click', () => {
                     const sortKey = th.dataset.sort;
                     if (sortKey === productSortColumn) {
-                        // toggle direction
                         productSortDirection = productSortDirection === 'asc' ? 'desc' : 'asc';
                     } else {
                         productSortColumn = sortKey;
-                        productSortDirection = 'desc'; // default descending untuk angka
+                        productSortDirection = 'desc';
                     }
                     renderProductTable(productAggregatedData);
                 });
             });
         }
 
+        // === FITUR BARU: Ekspor CSV produk ===
         function exportProductCSV() {
             if (!productAggregatedData || productAggregatedData.length === 0) {
                 alert('Tidak ada data produk untuk diekspor');
@@ -808,7 +863,139 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
-        // ======================================================
+
+        // === FITUR BARU: Agregasi pendapatan per kategori ===
+        function aggregateCategorySales(salesData) {
+            const categoryRevenue = {};
+
+            salesData.forEach(transaction => {
+                if (!transaction.items || !Array.isArray(transaction.items)) return;
+                transaction.items.forEach(item => {
+                    const itemId = item.itemId;
+                    if (!itemId) return;
+
+                    const categoryId = itemCategoryMap[itemId];
+                    if (!categoryId) return; // item tidak memiliki kategori
+
+                    const revenue = item.subtotal || 0;
+                    if (!categoryRevenue[categoryId]) {
+                        categoryRevenue[categoryId] = 0;
+                    }
+                    categoryRevenue[categoryId] += revenue;
+                });
+            });
+
+            // Konversi ke array untuk chart, urutkan descending
+            const result = Object.entries(categoryRevenue)
+                .map(([catId, total]) => ({
+                    categoryName: categoryMap[catId] || 'Tanpa Kategori',
+                    total
+                }))
+                .sort((a, b) => b.total - a.total);
+
+            return result;
+        }
+
+        // === FITUR BARU: Render pie chart kategori ===
+        function renderCategoryChart(data) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            if (!data || data.length === 0) {
+                // Tampilkan pesan kosong
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Tidak ada data kategori', 150, 150);
+                return;
+            }
+
+            const labels = data.map(d => d.categoryName);
+            const values = data.map(d => d.total);
+            const total = values.reduce((a, b) => a + b, 0);
+
+            categoryChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#006B54', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1',
+                            '#96CEB4', '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB'
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const value = context.raw;
+                                    const percentage = ((value / total) * 100).toFixed(2);
+                                    return `${context.label}: ${formatRupiah(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, padding: 15 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Fungsi utama memuat data berdasarkan filter
+        async function loadData() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const method = document.getElementById('paymentMethod').value;
+
+            if (!start || !end) {
+                alert('Pilih tanggal mulai dan akhir');
+                return;
+            }
+
+            if (new Date(start) > new Date(end)) {
+                alert('Tanggal akhir harus setelah tanggal mulai');
+                return;
+            }
+
+            try {
+                if (!db) await initDB();
+                salesData = await fetchSales(start, end, method);
+
+                // Update ringkasan
+                const summary = calculateSummary(salesData);
+                document.getElementById('totalSales').textContent = formatRupiah(summary.totalSales);
+                document.getElementById('totalTransactions').textContent = summary.totalTransactions;
+                document.getElementById('averageTransaction').textContent = formatRupiah(summary.average);
+                document.getElementById('totalOutstanding').textContent = formatRupiah(summary.totalOutstanding);
+
+                // Render grafik harian
+                renderChart(salesData, start, end);
+
+                // Render tabel transaksi
+                renderTable(salesData);
+
+                // === FITUR BARU: Agregasi dan render produk ===
+                productAggregatedData = aggregateProductSales(salesData);
+                renderProductTable(productAggregatedData);
+
+                // === FITUR BARU: Agregasi dan render pie chart kategori ===
+                const categoryData = aggregateCategorySales(salesData);
+                renderCategoryChart(categoryData);
+                // ========================================================
+            } catch (error) {
+                console.error('Gagal memuat data:', error);
+                alert('Gagal memuat data. Pastikan database sudah di-upgrade dan berisi data.');
+            }
+        }
 
         // Inisialisasi tanggal default (hari ini dan 30 hari sebelumnya)
         function setDefaultDates() {
@@ -825,11 +1012,12 @@
             setDefaultDates();
             try {
                 await initDB();
+                // === FITUR BARU: Muat data produk dan kategori sebelum memuat laporan ===
+                await loadProducts();
+                await loadCategoriesAndItems();
                 // Muat data otomatis saat halaman dibuka
                 await loadData();
-                // === FITUR BARU: Inisialisasi sorting tabel produk ===
                 initProductTableSort();
-                // ====================================================
             } catch (error) {
                 document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" class="error-message">Gagal mengakses database. Pastikan aplikasi utama sudah dibuka dan database ter-upgrade.</td></tr>`;
             }
