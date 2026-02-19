@@ -1916,7 +1916,7 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL CUSTOMER (TAMBAH/EDIT) ==================== -->
+    <!-- ==================== MODAL CUSTOMER (TAMBAH/EDIT) DENGAN FIELD BARU ==================== -->
     <div class="modal-overlay" id="customer-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1932,6 +1932,31 @@
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nama</label>
                     <input type="text" class="form-input" id="customer-name" placeholder="" required>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Kode Pelanggan</label>
+                    <input type="text" class="form-input" id="customer-code" placeholder="Misal: CUST-001">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Tingkatan</label>
+                    <select class="form-input" id="customer-tier">
+                        <option value="Bronze">Bronze</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Platinum">Platinum</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nomor Rekening (BRIlink)</label>
+                    <input type="text" class="form-input" id="customer-account" placeholder="Nomor rekening">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Token Listrik</label>
+                    <input type="text" class="form-input" id="customer-token" placeholder="ID pelanggan listrik">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Email</label>
+                    <input type="email" class="form-input" id="customer-email" placeholder="contoh@email.com">
                 </div>
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Telepon</label>
@@ -1975,7 +2000,7 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL SUPPLIER (TAMBAH/EDIT) ==================== -->
+    <!-- ==================== MODAL SUPPLIER (TAMBAH/EDIT) DENGAN FIELD BARU ==================== -->
     <div class="modal-overlay" id="supplier-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1991,6 +2016,18 @@
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nama</label>
                     <input type="text" class="form-input" id="supplier-name" placeholder="" required>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Kode Supplier</label>
+                    <input type="text" class="form-input" id="supplier-code" placeholder="Misal: SUP-001">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Nomor Rekening</label>
+                    <input type="text" class="form-input" id="supplier-account" placeholder="Nomor rekening">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Email</label>
+                    <input type="email" class="form-input" id="supplier-email" placeholder="contoh@email.com">
                 </div>
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Telepon</label>
@@ -2786,17 +2823,14 @@
             overlay.style.display = 'flex';
             loginTapCount = 0;
 
-            // Handler untuk ketukan di luar area input/tombol
             overlay.addEventListener('click', function tapHandler(e) {
-                // Cek apakah target adalah input atau tombol login
                 const target = e.target;
                 if (target.id === 'login-username' || target.id === 'login-password' || target.id === 'login-btn') {
-                    return; // tidak menambah counter jika berinteraksi dengan form
+                    return;
                 }
                 loginTapCount++;
                 if (loginTapCount >= 10) {
                     overlay.removeEventListener('click', tapHandler);
-                    // Efek fade out
                     overlay.style.opacity = '0';
                     setTimeout(async () => {
                         overlay.style.display = 'none';
@@ -2805,9 +2839,8 @@
                 }
             });
 
-            // Tombol login palsu
             document.getElementById('login-btn').addEventListener('click', function(e) {
-                e.stopPropagation(); // mencegah event bubbling ke overlay (agar tidak double hitung)
+                e.stopPropagation();
                 document.getElementById('login-error').style.display = 'block';
                 setTimeout(() => {
                     document.getElementById('login-error').style.display = 'none';
@@ -3351,10 +3384,6 @@
         function closeListSatuanModal() { document.getElementById('list-satuan-modal').style.display = 'none'; }
             
         // ==================== MODIFIKASI UNTUK MEMPERBAIKI BUG KONVERSI SATUAN ====================
-        // 1. Menonaktifkan tombol edit konversi saat form tambah/edit konversi ditampilkan.
-        // 2. Mencegah event Enter pada input barcode agar tidak memicu aksi tak diinginkan.
-        
-        // Ganti fungsi showConversionForm dengan kode berikut:
         function showConversionForm(index = -1) {
             const formContainer = document.getElementById('conversion-form-container');
             const selectUnit = document.getElementById('conv-unit');
@@ -3394,7 +3423,6 @@
                 commissionInput.value = '';
             }
         
-            // Nonaktifkan semua tombol edit konversi saat form ditampilkan
             document.querySelectorAll('.conversion-edit-btn').forEach(btn => {
                 btn.disabled = true;
             });
@@ -3402,9 +3430,7 @@
             formContainer.style.display = 'block';
         }
         
-        // Ganti fungsi hideConversionForm dengan kode berikut:
         function hideConversionForm() {
-            // Aktifkan kembali tombol edit konversi
             document.querySelectorAll('.conversion-edit-btn').forEach(btn => {
                 btn.disabled = false;
             });
@@ -3412,7 +3438,6 @@
             editingConversionIndex = -1;
         }
         
-        // Tambahkan event listener pada input barcode untuk mencegah default Enter
         document.addEventListener('DOMContentLoaded', function() {
             const barcodeInput = document.getElementById('conv-barcode');
             if (barcodeInput) {
@@ -3503,11 +3528,16 @@
             }
         }
 
-        // ==================== FUNGSI CUSTOMER ====================
+        // ==================== FUNGSI CUSTOMER (DENGAN FIELD BARU) ====================
         function openTambahCustomerModal(editId = null) {
             const modal = document.getElementById('customer-modal');
             const title = document.getElementById('customer-modal-title');
             const nameInput = document.getElementById('customer-name');
+            const codeInput = document.getElementById('customer-code');
+            const tierSelect = document.getElementById('customer-tier');
+            const accountInput = document.getElementById('customer-account');
+            const tokenInput = document.getElementById('customer-token');
+            const emailInput = document.getElementById('customer-email');
             const phoneInput = document.getElementById('customer-phone');
             const addressInput = document.getElementById('customer-address');
             const outstandingInput = document.getElementById('customer-outstanding');
@@ -3515,7 +3545,12 @@
             if (editId) {
                 const cust = customers.find(c => c.id === editId);
                 if (cust) {
-                    nameInput.value = cust.name;
+                    nameInput.value = cust.name || '';
+                    codeInput.value = cust.code || '';
+                    tierSelect.value = cust.tier || 'Bronze';
+                    accountInput.value = cust.account || '';
+                    tokenInput.value = cust.token || '';
+                    emailInput.value = cust.email || '';
                     phoneInput.value = cust.phone || '';
                     addressInput.value = cust.address || '';
                     outstandingInput.value = cust.outstanding || 0;
@@ -3524,6 +3559,11 @@
                 }
             } else {
                 nameInput.value = '';
+                codeInput.value = '';
+                tierSelect.value = 'Bronze';
+                accountInput.value = '';
+                tokenInput.value = '';
+                emailInput.value = '';
                 phoneInput.value = '';
                 addressInput.value = '';
                 outstandingInput.value = 0;
@@ -3541,6 +3581,11 @@
 
         async function saveCustomer() {
             const name = document.getElementById('customer-name').value.trim();
+            const code = document.getElementById('customer-code').value.trim();
+            const tier = document.getElementById('customer-tier').value;
+            const account = document.getElementById('customer-account').value.trim();
+            const token = document.getElementById('customer-token').value.trim();
+            const email = document.getElementById('customer-email').value.trim();
             const phone = document.getElementById('customer-phone').value.trim();
             const address = document.getElementById('customer-address').value.trim();
             const outstanding = parseFloat(document.getElementById('customer-outstanding').value) || 0;
@@ -3554,6 +3599,11 @@
                     const cust = customers.find(c => c.id === editingCustomerId);
                     if (cust) {
                         cust.name = name;
+                        cust.code = code;
+                        cust.tier = tier;
+                        cust.account = account;
+                        cust.token = token;
+                        cust.email = email;
                         cust.phone = phone;
                         cust.address = address;
                         cust.outstanding = outstanding;
@@ -3561,7 +3611,10 @@
                         await dbPut(STORES.CUSTOMERS, cust);
                     }
                 } else {
-                    const newCust = { name, phone, address, outstanding, createdAt: now, updatedAt: now };
+                    const newCust = { 
+                        name, code, tier, account, token, email, phone, address, outstanding,
+                        createdAt: now, updatedAt: now 
+                    };
                     const id = await dbAdd(STORES.CUSTOMERS, newCust);
                     newCust.id = id;
                     customers.push(newCust);
@@ -3608,7 +3661,12 @@
                         <div style="flex:1;">
                             <strong>${cust.name}</strong><br>
                             <span style="font-size:0.8rem;">
+                                Kode: ${cust.code || '-'}<br>
+                                Tier: ${cust.tier || '-'}<br>
                                 Telepon: ${cust.phone || '-'}<br>
+                                Email: ${cust.email || '-'}<br>
+                                Rekening: ${cust.account || '-'}<br>
+                                Token: ${cust.token || '-'}<br>
                                 Alamat: ${cust.address || '-'}<br>
                                 Piutang: ${formatRupiah(cust.outstanding || 0)}
                             </span>
@@ -3629,18 +3687,24 @@
             document.getElementById('list-customer-modal').style.display = 'none';
         }
 
-        // ==================== FUNGSI SUPPLIER ====================
+        // ==================== FUNGSI SUPPLIER (DENGAN FIELD BARU) ====================
         function openTambahSupplierModal(editId = null) {
             const modal = document.getElementById('supplier-modal');
             const title = document.getElementById('supplier-modal-title');
             const nameInput = document.getElementById('supplier-name');
+            const codeInput = document.getElementById('supplier-code');
+            const accountInput = document.getElementById('supplier-account');
+            const emailInput = document.getElementById('supplier-email');
             const phoneInput = document.getElementById('supplier-phone');
             const addressInput = document.getElementById('supplier-address');
 
             if (editId) {
                 const supp = suppliers.find(s => s.id === editId);
                 if (supp) {
-                    nameInput.value = supp.name;
+                    nameInput.value = supp.name || '';
+                    codeInput.value = supp.code || '';
+                    accountInput.value = supp.account || '';
+                    emailInput.value = supp.email || '';
                     phoneInput.value = supp.phone || '';
                     addressInput.value = supp.address || '';
                     editingSupplierId = editId;
@@ -3648,6 +3712,9 @@
                 }
             } else {
                 nameInput.value = '';
+                codeInput.value = '';
+                accountInput.value = '';
+                emailInput.value = '';
                 phoneInput.value = '';
                 addressInput.value = '';
                 editingSupplierId = null;
@@ -3664,6 +3731,9 @@
 
         async function saveSupplier() {
             const name = document.getElementById('supplier-name').value.trim();
+            const code = document.getElementById('supplier-code').value.trim();
+            const account = document.getElementById('supplier-account').value.trim();
+            const email = document.getElementById('supplier-email').value.trim();
             const phone = document.getElementById('supplier-phone').value.trim();
             const address = document.getElementById('supplier-address').value.trim();
 
@@ -3676,13 +3746,19 @@
                     const supp = suppliers.find(s => s.id === editingSupplierId);
                     if (supp) {
                         supp.name = name;
+                        supp.code = code;
+                        supp.account = account;
+                        supp.email = email;
                         supp.phone = phone;
                         supp.address = address;
                         supp.updatedAt = now;
                         await dbPut(STORES.SUPPLIERS, supp);
                     }
                 } else {
-                    const newSupp = { name, phone, address, createdAt: now, updatedAt: now };
+                    const newSupp = { 
+                        name, code, account, email, phone, address,
+                        createdAt: now, updatedAt: now 
+                    };
                     const id = await dbAdd(STORES.SUPPLIERS, newSupp);
                     newSupp.id = id;
                     suppliers.push(newSupp);
@@ -3729,7 +3805,10 @@
                         <div style="flex:1;">
                             <strong>${supp.name}</strong><br>
                             <span style="font-size:0.8rem;">
+                                Kode: ${supp.code || '-'}<br>
                                 Telepon: ${supp.phone || '-'}<br>
+                                Email: ${supp.email || '-'}<br>
+                                Rekening: ${supp.account || '-'}<br>
                                 Alamat: ${supp.address || '-'}
                             </span>
                         </div>
@@ -3769,7 +3848,12 @@
                         <div style="flex:1;">
                             <strong>${cust.name}</strong><br>
                             <span style="font-size:0.8rem;">
+                                Kode: ${cust.code || '-'}<br>
+                                Tier: ${cust.tier || '-'}<br>
                                 Telepon: ${cust.phone || '-'}<br>
+                                Email: ${cust.email || '-'}<br>
+                                Rekening: ${cust.account || '-'}<br>
+                                Token: ${cust.token || '-'}<br>
                                 Alamat: ${cust.address || '-'}<br>
                                 Piutang: ${formatRupiah(cust.outstanding || 0)}
                             </span>
@@ -3800,7 +3884,7 @@
             closeSelectCustomerModal();
             updatePiutangButtonCart();
             showNotification(`Pelanggan ${customer.name} dipilih`, 'success');
-            saveCartToLocalStorage(); // Simpan perubahan customer
+            saveCartToLocalStorage();
         }
 
         // ==================== DRAWER FUNCTIONS ====================
@@ -4418,7 +4502,7 @@
                         await dbPut(STORES.KASIR_ITEMS, item);
                     }
                 }
-        
+
                 // Proses pembayaran piutang
                 for (let c of cart) {
                     if (c.isOutstanding) {
@@ -4441,7 +4525,7 @@
                         }
                         cust.updatedAt = new Date().toISOString();
                         await dbPut(STORES.CUSTOMERS, cust);
-        
+
                         if (selectedCustomer && selectedCustomer.id === custId) {
                             selectedCustomer.outstanding = cust.outstanding;
                             const badge = document.getElementById('customer-badge');
@@ -4452,7 +4536,7 @@
                         }
                     }
                 }
-        
+
                 // Tambah piutang baru ke customer jika ada outstandingAdded
                 if (outstandingAdded > 0 && selectedCustomer) {
                     const cust = customers.find(c => c.id === selectedCustomer.id);
@@ -4463,15 +4547,15 @@
                         selectedCustomer.outstanding = cust.outstanding;
                     }
                 }
-        
+
                 const transactionNumber = await generateTransactionNumber();
-        
+
                 const subtotal = cart.reduce((sum, c) => sum + c.subtotal, 0);
                 const discount = 0;
                 const tax = 0;
                 const total = subtotal - discount + tax;
                 const change = paidAmount - total;
-        
+
                 // Bangun array items dengan menyertakan cost per unit
                 const items = cart.map(c => {
                     // Tentukan cost per unit
@@ -4495,7 +4579,7 @@
                         cost: costPerUnit
                     };
                 });
-        
+
                 const salesData = {
                     transactionNumber,
                     date: new Date().toISOString(),
@@ -4511,9 +4595,9 @@
                     customerId: selectedCustomer ? selectedCustomer.id : null,
                     customerName: selectedCustomer ? selectedCustomer.name : null
                 };
-        
+
                 await dbAdd(STORES.SALES, salesData);
-        
+
                 lastTransactionData = {
                     items: cart.map(c => ({
                         name: c.item.name,
@@ -4527,7 +4611,7 @@
                     change: change,
                     date: new Date().toLocaleString('id-ID')
                 };
-        
+
                 await loadKasirItems();
                 await loadCustomers();
                 renderProductList();
@@ -4621,15 +4705,12 @@
                 return;
             }
 
-            // Gunakan data transaksi terakhir jika ada
             let dataToPrint = lastTransactionData;
             if (!dataToPrint) {
-                // Fallback: cetak dari cart yang masih ada (misal untuk preview sebelum bayar)
                 if (cart.length === 0) {
                     showNotification('Tidak ada data untuk dicetak', 'warning');
                     return;
                 }
-                // Hitung total sementara (anggap lunas)
                 const total = cart.reduce((s, c) => s + c.subtotal, 0);
                 dataToPrint = {
                     items: cart.map(c => ({
@@ -4640,7 +4721,7 @@
                         subtotal: c.subtotal
                     })),
                     total: total,
-                    paidAmount: total,  // Asumsi lunas
+                    paidAmount: total,
                     change: 0,
                     date: new Date().toLocaleString('id-ID')
                 };
@@ -4675,9 +4756,7 @@
             }
         }
 
-
         // ==================== FUNGSI INVENTORY ====================
-        // Fungsi untuk membuka modal stok barang (juga digunakan oleh stok opname)
         function openInventoryStokModal() {
             document.getElementById('inventory-modal-title').innerHTML = `
                 <svg class="icon icon-primary" viewBox="0 0 24 24">
@@ -4686,7 +4765,6 @@
                     <line x1="12" y1="11" x2="12" y2="17"/>
                 </svg> Stok Barang`;
         
-            // Struktur modal: input pencarian, container tabel, tombol tutup
             let html = `
                 <div>
                     <input type="text" id="inventory-search-input" class="form-input" 
@@ -4700,25 +4778,22 @@
             `;
         
             document.getElementById('inventory-modal-body').innerHTML = html;
-            filterInventoryTable(''); // Tampilkan semua item saat modal dibuka
+            filterInventoryTable('');
             document.getElementById('inventory-modal').style.display = 'flex';
             closeDrawer();
         }
         
-        // Fungsi untuk memfilter dan merender ulang tabel item (dengan pencarian multi-kriteria)
         function filterInventoryTable(filterText) {
             const container = document.getElementById('inventory-table-container');
             if (!container) return;
         
             const filter = filterText.toLowerCase();
         
-            // Filter item berdasarkan: nama, kode, barcode produk, atau barcode satuan
             const filteredItems = kasirItems.filter(item => {
                 const matchesName = item.name.toLowerCase().includes(filter);
                 const matchesCode = item.code.toLowerCase().includes(filter);
                 const matchesBarcode = item.barcode && item.barcode.toLowerCase().includes(filter);
         
-                // Cek apakah ada barcode satuan yang cocok
                 let matchesUnitBarcode = false;
                 if (item.unitConversions && Array.isArray(item.unitConversions)) {
                     matchesUnitBarcode = item.unitConversions.some(conv =>
@@ -4729,7 +4804,6 @@
                 return matchesName || matchesCode || matchesBarcode || matchesUnitBarcode;
             });
         
-            // Bangun tabel hasil filter
             let tableHtml = '<table style="width:100%; border-collapse:collapse;">';
             tableHtml += '<thead><tr><th>Nama Item</th><th>Stok</th><th>Aksi</th></tr></thead><tbody>';
         
@@ -5022,7 +5096,7 @@
                 }
                 renderCartPage();
                 updatePiutangButtonCart();
-                saveCartToLocalStorage(); // simpan perubahan
+                saveCartToLocalStorage();
                 showNotification('Transaksi pending dimuat', 'success');
                 closePendingTransactionsModal();
                 if (document.getElementById('transaksi-page').style.display !== 'block') {
@@ -5147,13 +5221,10 @@
                 await loadCartFromLocalStorage();
                 await autoReconnectPrinter();
 
-                // Cek apakah aplikasi sudah pernah dibuka (unlocked)
                 const unlocked = await checkUnlockedStatus();
                 if (!unlocked) {
-                    // Tampilkan login overlay
                     showLoginScreen();
                 } else {
-                    // Sembunyikan login overlay jika sudah pernah dibuka
                     document.getElementById('login-overlay').style.display = 'none';
                 }
 
