@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POSPLUS - Master Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ==================== RESET & BASE STYLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #FFFFFF;
+            min-height: 100vh;
+            color: #333333;
+        }
+        /* ==================== HEADER ==================== */
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .app-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #006B54;
+        }
+        .drawer-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #006B54;
+        }
+        .drawer-toggle svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .header-actions button {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 8px 12px;
+            border-radius: 15px;
+            border: 1px solid #006B54;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .header-actions button:hover {
+            background: #006B54;
+            color: white;
+        }
+        .header-actions button svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+            display: block;
+        }
+        #user-name-display {
+            margin-right: 10px;
+            font-weight: 600;
+            color: #006B54;
+        }
+        /* ==================== DRAWER SIDEBAR ==================== */
+        .sidebar {
+            position: fixed;
+            left: -220px;
+            top: 0;
+            width: 220px;
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            z-index: 300;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow-y: auto;
+            transition: left 0.3s ease;
+        }
+        .sidebar.open {
+            left: 0;
+        }
+        .menu-group {
+            margin-bottom: 5px;
+        }
+        .menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background-color: #f5f5f5;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 0 10px 5px;
+            font-weight: 700;
+            color: #006B54;
+        }
+        .menu-header .arrow {
+            transition: transform 0.2s;
+        }
+        .menu-header.open .arrow {
+            transform: rotate(90deg);
+        }
+        .sub-menu {
+            display: none;
+            margin-bottom: 10px;
+        }
+        .sub-menu button {
+            margin: 5px 10px;
+            padding: 12px 16px;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            background: white;
+            color: #006B54;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: calc(100% - 20px);
+        }
+        .sub-menu button:hover {
+            background: #f0f9f6;
+        }
+        .sub-menu button svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 250;
+            display: none;
+        }
+        .drawer-overlay.show {
+            display: block;
+        }
+        /* ==================== MAIN CONTENT ==================== */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .page-title {
+            color: #006B54;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #006B54;
+            border-radius: 15px;
+        }
+        .back-button:hover {
+            background: #f0f9f6;
+        }
+        .back-button svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        /* ==================== FORM STYLES ==================== */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+            background: white;
+            color: #333;
+            transition: all 0.2s;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: #006B54;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,107,84,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-button-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .form-button-primary:hover {
+            background: #005a46;
+        }
+        .form-button-secondary {
+            background: #d9d9d9;
+            color: #333333;
+            border: 1px solid #d9d9d9;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .form-button-secondary:hover {
+            background: #cccccc;
+        }
+        /* ==================== TABLE STYLES ==================== */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 15px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        .data-table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+        .data-table tr:hover {
+            background: #f9f9f9;
+        }
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 5px;
+        }
+        .action-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .action-btn.delete-btn {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .action-btn.delete-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+        .action-btn.edit-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        /* ==================== MODAL OVERLAY ==================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+        .modal-content {
+            background: #FFFFFF;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            padding: 12px 20px;
+            color: #006B54;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 107, 84, 0.1);
+        }
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #006B54;
+        }
+        .modal-body {
+            padding: 20px;
+            max-height: calc(90vh - 60px);
+            overflow-y: auto;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            background: #fafafa;
+        }
+        /* ==================== KONVERSI SATUAN & LEVEL HARGA ==================== */
+        .conversions-section, .level-harga-container {
+            margin-top: 15px;
+        }
+        #add-conversion-btn {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #006B54;
+            border-radius: 15px;
+            background: white;
+            color: #006B54;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        #add-conversion-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .conversions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .conversion-item {
+            background: #f9f9f9;
+            border: 1px solid #d9d9d9;
+            border-radius: 15px;
+            padding: 12px;
+        }
+        .conversion-item .action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        .level-harga-item {
+            display: grid;
+            grid-template-columns: 60px 1fr 1fr 36px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .level-harga-item .level-number {
+            font-weight: 600;
+            color: #006B54;
+            white-space: nowrap;
+        }
+        .level-harga-item .form-input {
+            width: 100%;
+            min-width: 0; /* agar bisa menyusut */
+        }
+        .level-harga-remove {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            padding: 0;
+            transition: background 0.2s;
+        }
+        .level-harga-remove:hover {
+            background: #ff4c4c;
+        }
+        .btn-add-level {
+            background: #006B54;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 10px 16px;
+            margin-top: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-add-level svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        /* ==================== NOTIFICATION ==================== */
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            display: none;
+            color: white;
+            background-color: #006B54;
+            max-width: 90%;
+            text-align: center;
+            z-index: 1001;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== HEADER ==================== -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="app-title">
+                <button class="drawer-toggle" id="drawer-toggle" onclick="toggleDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="1.5" fill="none">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span>Master Data</span>
+            </div>
+            <div class="header-actions">
+                <span id="user-name-display"></span>
+                <button onclick="window.location.href='index.html'">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </button>
+                <button onclick="logout()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== SIDEBAR DRAWER ==================== -->
+    <div class="sidebar" id="sidebar">
+        <div class="menu-group" id="menu-master">
+            <div class="menu-header" onclick="toggleSubMenu(this)">
+                <span>ITEM</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="sub-menu">
+                <button onclick="navigateTo('addItem'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span>Tambah Item</span>
+                </button>
+                <button onclick="navigateTo('listItems'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                    </svg>
+                    <span>Daftar Item</span>
+                </button>
+            </div>
+        </div>
+        <div class="menu-group" id="menu-kategori">
+            <div class="menu-header" onclick="toggleSubMenu(this)">
+                <span>KATEGORI</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="sub-menu">
+                <button onclick="navigateTo('addCategory'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span>Tambah Kategori</span>
+                </button>
+                <button onclick="navigateTo('listCategories'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                        <path d="M10 2v20"/>
+                    </svg>
+                    <span>Daftar Kategori</span>
+                </button>
+            </div>
+        </div>
+        <div class="menu-group" id="menu-satuan">
+            <div class="menu-header" onclick="toggleSubMenu(this)">
+                <span>SATUAN</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="sub-menu">
+                <button onclick="navigateTo('addUnit'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span>Tambah Satuan</span>
+                </button>
+                <button onclick="navigateTo('listUnits'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </svg>
+                    <span>Daftar Satuan</span>
+                </button>
+            </div>
+        </div>
+        <!-- ==================== GRUP BUNDLE ==================== -->
+        <div class="menu-group" id="menu-bundle">
+            <div class="menu-header" onclick="toggleSubMenu(this)">
+                <span>BUNDLE</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="sub-menu">
+                <button onclick="navigateTo('addBundle'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span>Tambah Bundle</span>
+                </button>
+                <button onclick="navigateTo('listBundles'); closeDrawer()">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                    </svg>
+                    <span>Daftar Bundle</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+    <!-- ==================== KONTEN UTAMA ==================== -->
+    <main class="main-content" id="master-content">
+        <!-- Diisi oleh JavaScript -->
+    </main>
+
+    <!-- ==================== MODAL KONVERSI SATUAN ==================== -->
+    <div class="modal-overlay" id="conversion-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="conversion-modal-title">Tambah Konversi Satuan</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Satuan</label>
+                    <select id="conv-unit" class="form-input"></select>
+                </div>
+                <div class="form-group">
+                    <label>Nilai Satuan (berapa unit dasar per satuan ini)</label>
+                    <input type="number" id="conv-value" class="form-input" min="0.01" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Barcode Satuan</label>
+                    <input type="text" id="conv-barcode" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>SKU (Opsional)</label>
+                    <input type="text" id="conv-sku" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Harga Dasar</label>
+                    <input type="number" id="conv-base-price" class="form-input" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Harga Jual</label>
+                    <input type="number" id="conv-sell-price" class="form-input" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Poin Pelanggan (Opsional)</label>
+                    <input type="number" id="conv-points" class="form-input" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Komisi Sales (Opsional)</label>
+                    <input type="number" id="conv-commission" class="form-input" min="0">
+                </div>
+                <div class="modal-footer">
+                    <button class="form-button-secondary" onclick="closeConversionModal()">Batal</button>
+                    <button class="form-button-primary" onclick="saveConversionFromModal()">Selesai</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== NOTIFICATION ==================== -->
+    <div id="notification"></div>
+
+    <script>
+        // ==================== KONFIGURASI DATABASE ====================
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 20;
+        const STORES = {
+            SETTINGS: 'settings',
+            APP_STATE: 'appState',
+            KASIR_CATEGORIES: 'kasirCategories',
+            KASIR_ITEMS: 'kasirItems',
+            KASIR_SATUAN: 'kasirSatuan',
+            CUSTOMERS: 'customers',
+            SUPPLIERS: 'suppliers',
+            PENDING_TRANSACTIONS: 'pendingTransactions',
+            SALES: 'sales',
+            PURCHASES: 'purchases',
+            USERS: 'users',
+            ROLES: 'roles',
+            BUNDLES: 'bundles'
+        };
+
+        let db = null;
+        let currentUser = null;
+        let kasirCategories = [];
+        let kasirItems = [];
+        let kasirSatuan = [];
+        let bundles = [];
+
+        let editingCategoryId = null;
+        let editingItemId = null;
+        let editingUnitId = null;
+        let editingBundleId = null;
+
+        let tempUnitConversions = [];
+        let editingConversionIndex = -1;
+
+        // ==================== FUNGSI DRAWER ====================
+        function toggleDrawer() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('drawer-overlay').classList.toggle('show');
+        }
+        function closeDrawer() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('drawer-overlay').classList.remove('show');
+            document.querySelectorAll('.sub-menu').forEach(sm => sm.style.display = 'none');
+            document.querySelectorAll('.menu-header').forEach(h => h.classList.remove('open'));
+        }
+        function toggleSubMenu(header) {
+            const subMenu = header.nextElementSibling;
+            if (subMenu && subMenu.classList.contains('sub-menu')) {
+                if (subMenu.style.display === 'block') {
+                    subMenu.style.display = 'none';
+                    header.classList.remove('open');
+                } else {
+                    document.querySelectorAll('.sub-menu').forEach(sm => sm.style.display = 'none');
+                    document.querySelectorAll('.menu-header').forEach(h => h.classList.remove('open'));
+                    subMenu.style.display = 'block';
+                    header.classList.add('open');
+                }
+            }
+        }
+
+        // ==================== NAVIGASI ====================
+        function navigateTo(action, id = null) {
+            let url = `?action=${action}`;
+            if (id !== null) url += `&id=${id}`;
+            window.location.href = url;
+        }
+
+        // ==================== FUNGSI NOTIFIKASI ====================
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.backgroundColor = type === 'success' ? '#006B54' : (type === 'error' ? '#dc3545' : '#ffc107');
+            notification.style.display = 'block';
+            setTimeout(() => { notification.style.display = 'none'; }, 3000);
+        }
+
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toLocaleString('id-ID');
+        }
+
+        // ==================== DATABASE FUNCTIONS ====================
+        async function initDatabase() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    reject('Browser tidak mendukung IndexedDB.');
+                    return;
+                }
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (e) => reject(e.target.error);
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+                        db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.KASIR_CATEGORIES)) {
+                        const catStore = db.createObjectStore(STORES.KASIR_CATEGORIES, { keyPath: 'id', autoIncrement: true });
+                        catStore.createIndex('name', 'name', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.KASIR_ITEMS)) {
+                        const itemStore = db.createObjectStore(STORES.KASIR_ITEMS, { keyPath: 'id', autoIncrement: true });
+                        itemStore.createIndex('code', 'code', { unique: true });
+                    } else {
+                        const transaction = e.target.transaction;
+                        const store = transaction.objectStore(STORES.KASIR_ITEMS);
+                        store.openCursor().onsuccess = (ev) => {
+                            const cursor = ev.target.result;
+                            if (cursor) {
+                                const item = cursor.value;
+                                if (item.minStock === undefined) {
+                                    item.minStock = 5;
+                                    cursor.update(item);
+                                }
+                                cursor.continue();
+                            }
+                        };
+                    }
+                    if (!db.objectStoreNames.contains(STORES.KASIR_SATUAN)) {
+                        const satuanStore = db.createObjectStore(STORES.KASIR_SATUAN, { keyPath: 'id', autoIncrement: true });
+                        satuanStore.createIndex('name', 'name', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.CUSTOMERS)) {
+                        db.createObjectStore(STORES.CUSTOMERS, { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.SUPPLIERS)) {
+                        db.createObjectStore(STORES.SUPPLIERS, { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.PENDING_TRANSACTIONS)) {
+                        db.createObjectStore(STORES.PENDING_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.SALES)) {
+                        const salesStore = db.createObjectStore(STORES.SALES, { keyPath: 'id', autoIncrement: true });
+                        salesStore.createIndex('date', 'date', { unique: false });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.PURCHASES)) {
+                        const purchaseStore = db.createObjectStore(STORES.PURCHASES, { keyPath: 'id', autoIncrement: true });
+                        purchaseStore.createIndex('date', 'date', { unique: false });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.USERS)) {
+                        const userStore = db.createObjectStore(STORES.USERS, { keyPath: 'id', autoIncrement: true });
+                        userStore.createIndex('username', 'username', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.ROLES)) {
+                        const roleStore = db.createObjectStore(STORES.ROLES, { keyPath: 'id', autoIncrement: true });
+                        roleStore.createIndex('name', 'name', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.BUNDLES)) {
+                        db.createObjectStore(STORES.BUNDLES, { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('DB not init'); return; }
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbGet(storeName, key) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('DB not init'); return; }
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbAdd(storeName, data) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('DB not init'); return; }
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('DB not init'); return; }
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('DB not init'); return; }
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ==================== LOAD DATA ====================
+        async function loadKasirCategories() {
+            try {
+                kasirCategories = await dbGetAll(STORES.KASIR_CATEGORIES);
+                kasirCategories.sort((a,b) => a.name.localeCompare(b.name));
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                kasirCategories = [];
+            }
+        }
+
+        async function loadKasirItems() {
+            try {
+                kasirItems = await dbGetAll(STORES.KASIR_ITEMS);
+                kasirItems.forEach(item => {
+                    if (item.stock === undefined) item.stock = 0;
+                    if (item.minStock === undefined) item.minStock = 5;
+                });
+                kasirItems.sort((a,b) => a.name.localeCompare(b.name));
+            } catch (error) {
+                console.error('Error loading items:', error);
+                kasirItems = [];
+            }
+        }
+
+        async function loadKasirSatuan() {
+            try {
+                kasirSatuan = await dbGetAll(STORES.KASIR_SATUAN);
+                kasirSatuan.sort((a,b) => a.name.localeCompare(b.name));
+            } catch (error) {
+                console.error('Error loading satuan:', error);
+                kasirSatuan = [];
+            }
+        }
+
+        // ==================== FUNGSI BUNDLE ====================
+        async function loadBundles() {
+            try {
+                bundles = await dbGetAll(STORES.BUNDLES);
+                bundles.sort((a,b) => a.name.localeCompare(b.name));
+            } catch (error) {
+                console.error('Error loading bundles:', error);
+                bundles = [];
+            }
+        }
+
+        async function saveBundle(bundleData, id = null) {
+            const now = new Date().toISOString();
+            if (id) {
+                const bundle = await dbGet(STORES.BUNDLES, id);
+                if (bundle) {
+                    Object.assign(bundle, bundleData);
+                    bundle.updatedAt = now;
+                    await dbPut(STORES.BUNDLES, bundle);
+                }
+            } else {
+                const newBundle = { ...bundleData, createdAt: now, updatedAt: now };
+                await dbAdd(STORES.BUNDLES, newBundle);
+            }
+            await loadBundles();
+        }
+
+        async function deleteBundle(id) {
+            await dbDelete(STORES.BUNDLES, id);
+            await loadBundles();
+        }
+
+        // ==================== FUNGSI TAMPILAN BUNDLE ====================
+        function showAddBundlePage() {
+            editingBundleId = null;
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listBundles')">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Bundle
+                    </h2>
+                    <form id="bundle-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Bundle *</label>
+                            <input type="text" id="bundle-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi</label>
+                            <textarea id="bundle-description" class="form-input" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Harga *</label>
+                            <input type="number" id="bundle-price" class="form-input" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="bundle-active" checked> Aktif
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tanggal Mulai (opsional)</label>
+                                <input type="date" id="bundle-start-date" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal Akhir (opsional)</label>
+                                <input type="date" id="bundle-end-date" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="conversions-section">
+                            <label style="font-weight:500;">Komponen Bundle</label>
+                            <button type="button" id="add-component-btn" class="btn-add-level" onclick="addComponentRow()">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                Tambah Komponen
+                            </button>
+                            <div id="components-container" class="conversions-list"></div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listBundles')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveBundleFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+            addComponentRow();
+        }
+
+        function showEditBundlePage(id) {
+            const bundle = bundles.find(b => b.id === id);
+            if (!bundle) {
+                navigateTo('listBundles');
+                return;
+            }
+            editingBundleId = id;
+            showAddBundlePage();
+            document.getElementById('bundle-name').value = bundle.name;
+            document.getElementById('bundle-description').value = bundle.description || '';
+            document.getElementById('bundle-price').value = bundle.price;
+            document.getElementById('bundle-active').checked = bundle.active !== false;
+            if (bundle.startDate) document.getElementById('bundle-start-date').value = bundle.startDate.split('T')[0];
+            if (bundle.endDate) document.getElementById('bundle-end-date').value = bundle.endDate.split('T')[0];
+
+            const container = document.getElementById('components-container');
+            container.innerHTML = '';
+            if (bundle.components && bundle.components.length > 0) {
+                bundle.components.forEach(comp => addComponentRow(comp.itemId, comp.qty, comp.unitConversionId));
+            } else {
+                addComponentRow();
+            }
+        }
+
+        function showBundleListPage() {
+            let rows = '';
+            bundles.forEach(b => {
+                rows += `
+                    <tr>
+                        <td>${b.name}</td>
+                        <td>${formatRupiah(b.price)}</td>
+                        <td>${b.active ? 'Aktif' : 'Tidak'}</td>
+                        <td>${b.components ? b.components.length : 0} komponen</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editBundle', ${b.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteBundlePrompt(${b.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Bundle
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addBundle')">+ Tambah Bundle</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Harga</th>
+                                    <th>Status</th>
+                                    <th>Komponen</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || '<tr><td colspan="5" style="text-align:center;">Belum ada bundle</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        async function deleteBundlePrompt(id) {
+            if (confirm('Hapus bundle ini?')) {
+                await deleteBundle(id);
+                showBundleListPage();
+            }
+        }
+
+        function addComponentRow(itemId = '', qty = 1, unitConversionId = '') {
+            const container = document.getElementById('components-container');
+            const index = container.children.length;
+            const itemOptions = kasirItems.map(i => `<option value="${i.id}" ${i.id == itemId ? 'selected' : ''}>${i.name}</option>`).join('');
+            const unitOptions = (selectedItemId) => {
+                const item = kasirItems.find(i => i.id == selectedItemId);
+                if (!item || !item.unitConversions || item.unitConversions.length === 0) {
+                    return '<option value="">Tidak ada konversi</option>';
+                }
+                return item.unitConversions.map(c => `<option value="${c.id}" ${c.id == unitConversionId ? 'selected' : ''}>${kasirSatuan.find(s => s.id == c.unit)?.name} (${c.value})</option>`).join('');
+            };
+            const div = document.createElement('div');
+            div.className = 'conversion-item';
+            div.innerHTML = `
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <select class="form-input component-item" style="flex:2;" onchange="updateUnitOptions(this, ${index})">
+                        <option value="">-- Pilih Item --</option>
+                        ${itemOptions}
+                    </select>
+                    <input type="number" class="form-input component-qty" style="flex:1;" value="${qty}" min="0.01" step="0.01">
+                    <select class="form-input component-unit" style="flex:1;" data-index="${index}">
+                        ${unitOptions(itemId)}
+                    </select>
+                    <button class="level-harga-remove" onclick="this.closest('.conversion-item').remove()">×</button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function updateUnitOptions(select, index) {
+            const itemId = select.value;
+            const unitSelect = document.querySelector(`.component-unit[data-index="${index}"]`);
+            if (!unitSelect) return;
+            const item = kasirItems.find(i => i.id == itemId);
+            let options = '<option value="">Tanpa konversi</option>';
+            if (item && item.unitConversions) {
+                item.unitConversions.forEach(c => {
+                    const unitName = kasirSatuan.find(s => s.id == c.unit)?.name || '?';
+                    options += `<option value="${c.id}">${unitName} (${c.value})</option>`;
+                });
+            }
+            unitSelect.innerHTML = options;
+        }
+
+        function collectComponents() {
+            const rows = document.querySelectorAll('.conversion-item');
+            const components = [];
+            rows.forEach(row => {
+                const itemId = row.querySelector('.component-item').value;
+                const qty = parseFloat(row.querySelector('.component-qty').value);
+                const unitConversionId = row.querySelector('.component-unit').value;
+                if (itemId && qty > 0) {
+                    components.push({ itemId: parseInt(itemId), qty, unitConversionId: unitConversionId || null });
+                }
+            });
+            return components;
+        }
+
+        async function saveBundleFromPage() {
+            const name = document.getElementById('bundle-name').value.trim();
+            const price = parseFloat(document.getElementById('bundle-price').value);
+            if (!name || !price) {
+                showNotification('Nama dan harga harus diisi', 'error');
+                return;
+            }
+            const components = collectComponents();
+            if (components.length === 0) {
+                showNotification('Bundle harus memiliki minimal satu komponen', 'error');
+                return;
+            }
+
+            const bundleData = {
+                name,
+                description: document.getElementById('bundle-description').value.trim(),
+                price,
+                active: document.getElementById('bundle-active').checked,
+                startDate: document.getElementById('bundle-start-date').value || null,
+                endDate: document.getElementById('bundle-end-date').value || null,
+                components
+            };
+
+            try {
+                await saveBundle(bundleData, editingBundleId);
+                showNotification('Bundle berhasil disimpan', 'success');
+                navigateTo('listBundles');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== FUNGSI ITEM ====================
+        function showAddItemPage() {
+            editingItemId = null;
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listItems')" title="Kembali ke Daftar Item">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Item Baru
+                    </h2>
+                    <form id="item-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Item *</label>
+                            <input type="text" id="kasir-item-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Kode Item *</label>
+                            <input type="text" id="kasir-item-code" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Barcode Item</label>
+                            <input type="text" id="kasir-item-barcode" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Kategori Kasir</label>
+                            <select id="kasir-item-category" class="form-input">
+                                <option value="">-- Pilih Kategori --</option>
+                                ${kasirCategories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Harga Dasar</label>
+                                <input type="number" id="kasir-item-harga-dasar" class="form-input" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Harga Jual</label>
+                                <input type="number" id="kasir-item-harga-jual" class="form-input" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Berat</label>
+                                <input type="number" id="kasir-item-berat" class="form-input" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Satuan</label>
+                                <select id="kasir-item-satuan" class="form-input">
+                                    <option value="">-- Pilih Satuan --</option>
+                                    ${kasirSatuan.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Diskon (%) *opsional</label>
+                            <input type="number" id="kasir-item-diskon" class="form-input" min="0" max="100" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Stok Awal</label>
+                            <input type="number" id="kasir-item-stock" class="form-input" min="0" value="0" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>Stok Minimal</label>
+                            <input type="number" id="kasir-item-min-stock" class="form-input" min="0" value="5" step="any">
+                            <small>Jika stok di bawah angka ini, akan muncul notifikasi</small>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="kasir-item-weighable"> Produk Timbangan (harga per kg)
+                            </label>
+                        </div>
+                        <div class="conversions-section">
+                            <label style="font-weight:500;">Konversi Satuan</label>
+                            <button type="button" id="add-conversion-btn" onclick="showConversionModal()">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                Tambah Konversi Satuan
+                            </button>
+                            <div id="conversions-list" class="conversions-list"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Level Harga (Qty Break)</label>
+                            <div class="level-harga-container" id="level-harga-container"></div>
+                            <button type="button" class="btn-add-level" onclick="addLevelRow()">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                Tambah Level
+                            </button>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listItems')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveKasirItemFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+
+            const levelContainer = document.getElementById('level-harga-container');
+            levelContainer.innerHTML = '';
+            addLevelRow();
+            addLevelRow();
+            addLevelRow();
+
+            tempUnitConversions = [];
+            renderConversionsList();
+        }
+
+        function showEditItemPage(itemId) {
+            const item = kasirItems.find(i => i.id === itemId);
+            if (!item) {
+                showNotification('Item tidak ditemukan', 'error');
+                navigateTo('listItems');
+                return;
+            }
+            editingItemId = itemId;
+            showAddItemPage();
+            document.getElementById('kasir-item-name').value = item.name;
+            document.getElementById('kasir-item-code').value = item.code;
+            document.getElementById('kasir-item-barcode').value = item.barcode || item.code;
+            document.getElementById('kasir-item-category').value = item.categoryId || '';
+            document.getElementById('kasir-item-harga-dasar').value = item.hargaDasar || '';
+            document.getElementById('kasir-item-harga-jual').value = item.hargaJual || '';
+            document.getElementById('kasir-item-berat').value = item.berat || '';
+            document.getElementById('kasir-item-satuan').value = item.satuanId || '';
+            document.getElementById('kasir-item-diskon').value = item.diskon || '';
+            document.getElementById('kasir-item-stock').value = item.stock || 0;
+            document.getElementById('kasir-item-min-stock').value = item.minStock || 5;
+            document.getElementById('kasir-item-weighable').checked = item.isWeighable || false;
+
+            const levelContainer = document.getElementById('level-harga-container');
+            levelContainer.innerHTML = '';
+            if (item.priceLevels && item.priceLevels.length > 0) {
+                item.priceLevels.forEach(l => addLevelRow(l.minQty, l.price));
+            } else {
+                addLevelRow();
+                addLevelRow();
+                addLevelRow();
+            }
+
+            tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
+            renderConversionsList();
+        }
+
+        function showItemListPage() {
+            let rows = '';
+            kasirItems.forEach(item => {
+                rows += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.code}</td>
+                        <td>Rp ${item.hargaJual?.toLocaleString()}</td>
+                        <td>${item.stock ?? 0}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editItem', ${item.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteItemPrompt(${item.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Item
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addItem')">+ Tambah Item</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Kode</th>
+                                    <th>Harga Jual</th>
+                                    <th>Stok</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || '<tr><td colspan="5" style="text-align:center;">Belum ada item</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        async function deleteItemPrompt(id) {
+            if (!confirm('Hapus item ini?')) return;
+            await deleteKasirItem(id);
+            showItemListPage();
+        }
+
+        async function deleteKasirItem(id) {
+            const usedInBundles = bundles.filter(b => b.components && b.components.some(c => c.itemId === id));
+            if (usedInBundles.length > 0) {
+                const bundleNames = usedInBundles.map(b => b.name).join(', ');
+                if (!confirm(`Item ini digunakan dalam bundle: ${bundleNames}. Hapus akan menghapus item dari bundle tersebut. Lanjutkan?`)) {
+                    return;
+                }
+                for (let bundle of usedInBundles) {
+                    bundle.components = bundle.components.filter(c => c.itemId !== id);
+                    await saveBundle(bundle, bundle.id);
+                }
+            }
+            await dbDelete(STORES.KASIR_ITEMS, id);
+            await loadKasirItems();
+        }
+
+        // ==================== FUNGSI KATEGORI ====================
+        function showAddCategoryPage() {
+            editingCategoryId = null;
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listCategories')">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Kategori
+                    </h2>
+                    <form id="category-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Kategori *</label>
+                            <input type="text" id="kasir-category-name" class="form-input" required>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listCategories')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveCategoryFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showEditCategoryPage(id) {
+            const cat = kasirCategories.find(c => c.id === id);
+            if (!cat) { navigateTo('listCategories'); return; }
+            editingCategoryId = id;
+            showAddCategoryPage();
+            document.getElementById('kasir-category-name').value = cat.name;
+        }
+
+        function showCategoryListPage() {
+            let rows = '';
+            kasirCategories.forEach(cat => {
+                rows += `
+                    <tr>
+                        <td>${cat.name}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editCategory', ${cat.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteCategoryPrompt(${cat.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Kategori
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addCategory')">+ Tambah Kategori</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
+                            <tbody>${rows || '<tr><td colspan="2" style="text-align:center;">Belum ada kategori</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        async function deleteCategoryPrompt(id) {
+            if (confirm('Hapus kategori ini?')) {
+                const used = kasirItems.some(i => i.categoryId === id);
+                if (used) {
+                    if (!confirm('Kategori ini digunakan oleh beberapa item. Hapus tetap akan menghapus kategori dan item akan kehilangan kategori. Lanjutkan?')) {
+                        return;
+                    }
+                    for (let item of kasirItems.filter(i => i.categoryId === id)) {
+                        item.categoryId = null;
+                        await dbPut(STORES.KASIR_ITEMS, item);
+                    }
+                }
+                await dbDelete(STORES.KASIR_CATEGORIES, id);
+                await loadKasirCategories();
+                await loadKasirItems();
+                showCategoryListPage();
+            }
+        }
+
+        // ==================== FUNGSI SATUAN ====================
+        function showAddUnitPage() {
+            editingUnitId = null;
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listUnits')">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Satuan
+                    </h2>
+                    <form id="unit-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Satuan *</label>
+                            <input type="text" id="satuan-name" class="form-input" required>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listUnits')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveUnitFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showEditUnitPage(id) {
+            const unit = kasirSatuan.find(u => u.id === id);
+            if (!unit) { navigateTo('listUnits'); return; }
+            editingUnitId = id;
+            showAddUnitPage();
+            document.getElementById('satuan-name').value = unit.name;
+        }
+
+        function showUnitListPage() {
+            let rows = '';
+            kasirSatuan.forEach(unit => {
+                rows += `
+                    <tr>
+                        <td>${unit.name}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editUnit', ${unit.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteUnitPrompt(${unit.id})">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Satuan
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addUnit')">+ Tambah Satuan</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
+                            <tbody>${rows || '<tr><td colspan="2" style="text-align:center;">Belum ada satuan</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        async function deleteUnitPrompt(id) {
+            if (confirm('Hapus satuan ini?')) {
+                const used = kasirItems.some(i => i.satuanId === id);
+                if (used) {
+                    if (!confirm('Satuan ini digunakan oleh beberapa item. Hapus tetap akan menghapus satuan dan item akan kehilangan satuan. Lanjutkan?')) {
+                        return;
+                    }
+                    for (let item of kasirItems.filter(i => i.satuanId === id)) {
+                        item.satuanId = null;
+                        await dbPut(STORES.KASIR_ITEMS, item);
+                    }
+                }
+                for (let item of kasirItems) {
+                    if (item.unitConversions && item.unitConversions.some(c => c.unit == id)) {
+                        item.unitConversions = item.unitConversions.filter(c => c.unit != id);
+                        await dbPut(STORES.KASIR_ITEMS, item);
+                    }
+                }
+                await dbDelete(STORES.KASIR_SATUAN, id);
+                await loadKasirSatuan();
+                await loadKasirItems();
+                showUnitListPage();
+            }
+        }
+
+        // ==================== FUNGSI KONVERSI SATUAN ====================
+        window.showConversionModal = function() {
+            const modal = document.getElementById('conversion-modal');
+            const selectUnit = document.getElementById('conv-unit');
+            selectUnit.innerHTML = '<option value="">-- Pilih Satuan --</option>';
+            kasirSatuan.forEach(sat => {
+                selectUnit.innerHTML += `<option value="${sat.id}">${sat.name}</option>`;
+            });
+            document.getElementById('conv-value').value = '';
+            document.getElementById('conv-barcode').value = '';
+            document.getElementById('conv-sku').value = '';
+            document.getElementById('conv-base-price').value = '';
+            document.getElementById('conv-sell-price').value = '';
+            document.getElementById('conv-points').value = '';
+            document.getElementById('conv-commission').value = '';
+            editingConversionIndex = -1;
+            modal.style.display = 'flex';
+        };
+
+        window.closeConversionModal = function() {
+            document.getElementById('conversion-modal').style.display = 'none';
+        };
+
+        window.saveConversionFromModal = function() {
+            const unit = document.getElementById('conv-unit').value;
+            const value = parseFloat(document.getElementById('conv-value').value);
+            const barcode = document.getElementById('conv-barcode').value.trim();
+            const sku = document.getElementById('conv-sku').value.trim();
+            const basePrice = parseFloat(document.getElementById('conv-base-price').value) || 0;
+            const sellPrice = parseFloat(document.getElementById('conv-sell-price').value) || 0;
+            const customerPoint = parseFloat(document.getElementById('conv-points').value) || 0;
+            const salesCommission = parseFloat(document.getElementById('conv-commission').value) || 0;
+
+            if (!unit) { showNotification('Satuan harus dipilih', 'error'); return; }
+            if (!value || value <= 0) { showNotification('Nilai satuan harus > 0', 'error'); return; }
+            if (!barcode) { showNotification('Barcode satuan harus diisi', 'error'); return; }
+
+            const conv = { unit, value, barcode, sku, basePrice, sellPrice, customerPoint, salesCommission };
+
+            if (!tempUnitConversions) tempUnitConversions = [];
+
+            if (editingConversionIndex >= 0) {
+                tempUnitConversions[editingConversionIndex] = conv;
+            } else {
+                tempUnitConversions.push(conv);
+            }
+
+            renderConversionsList();
+            closeConversionModal();
+        };
+
+        window.renderConversionsList = function() {
+            const container = document.getElementById('conversions-list');
+            if (!container) return;
+            if (!tempUnitConversions || tempUnitConversions.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">Belum ada konversi.</div>';
+                return;
+            }
+            let html = '';
+            tempUnitConversions.forEach((conv, idx) => {
+                const unitName = kasirSatuan.find(s => s.id == conv.unit)?.name || '?';
+                html += `
+                    <div class="conversion-item">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span><strong>${unitName}</strong> (${conv.value})</span>
+                            <div>
+                                <button class="action-btn edit-btn" style="width:30px; height:30px;" onclick="editConversion(${idx})">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                </button>
+                                <button class="action-btn delete-btn" style="width:30px; height:30px;" onclick="deleteConversion(${idx})">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div><small>Barcode: ${conv.barcode}</small></div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.editConversion = function(index) {
+            editingConversionIndex = index;
+            const conv = tempUnitConversions[index];
+            document.getElementById('conv-unit').value = conv.unit;
+            document.getElementById('conv-value').value = conv.value;
+            document.getElementById('conv-barcode').value = conv.barcode;
+            document.getElementById('conv-sku').value = conv.sku || '';
+            document.getElementById('conv-base-price').value = conv.basePrice || '';
+            document.getElementById('conv-sell-price').value = conv.sellPrice || '';
+            document.getElementById('conv-points').value = conv.customerPoint || '';
+            document.getElementById('conv-commission').value = conv.salesCommission || '';
+            document.getElementById('conversion-modal').style.display = 'flex';
+        };
+
+        window.deleteConversion = function(index) {
+            if (confirm('Hapus konversi ini?')) {
+                tempUnitConversions.splice(index, 1);
+                renderConversionsList();
+            }
+        };
+
+        // ==================== FUNGSI LEVEL HARGA ====================
+        window.addLevelRow = function(qty = '', price = '') {
+            const container = document.getElementById('level-harga-container');
+            if (!container) return;
+            const div = document.createElement('div');
+            div.className = 'level-harga-item';
+            const number = container.children.length + 1;
+            div.innerHTML = `
+                <span class="level-number">Level ${number}</span>
+                <input type="number" class="form-input level-qty" placeholder="Min Qty" value="${qty}" min="0" step="any">
+                <input type="number" class="form-input level-price" placeholder="Harga" value="${price}" min="0" step="0.01">
+                <button type="button" class="level-harga-remove" onclick="this.closest('.level-harga-item').remove(); renumberLevels()">×</button>
+            `;
+            container.appendChild(div);
+        };
+
+        window.renumberLevels = function() {
+            const items = document.querySelectorAll('.level-harga-item');
+            items.forEach((item, index) => {
+                const span = item.querySelector('.level-number');
+                span.textContent = `Level ${index + 1}`;
+            });
+        };
+
+        function getPriceLevelsFromDOM() {
+            const items = document.querySelectorAll('.level-harga-item');
+            const priceLevels = [];
+            items.forEach((item, index) => {
+                const qty = parseFloat(item.querySelector('.level-qty').value) || 0;
+                const price = parseFloat(item.querySelector('.level-price').value) || 0;
+                priceLevels.push({ level: index + 1, minQty: qty, price });
+            });
+            return priceLevels;
+        }
+
+        // ==================== FUNGSI PENYIMPANAN ====================
+        async function saveKasirItemFromPage() {
+            const name = document.getElementById('kasir-item-name').value.trim();
+            const code = document.getElementById('kasir-item-code').value.trim();
+            const barcode = document.getElementById('kasir-item-barcode').value.trim() || code;
+            const categoryId = document.getElementById('kasir-item-category').value || null;
+            const hargaDasar = parseFloat(document.getElementById('kasir-item-harga-dasar').value) || null;
+            const hargaJual = parseFloat(document.getElementById('kasir-item-harga-jual').value) || null;
+            const berat = parseFloat(document.getElementById('kasir-item-berat').value) || null;
+            const satuanId = document.getElementById('kasir-item-satuan').value || null;
+            const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || null;
+            const stock = parseFloat(document.getElementById('kasir-item-stock').value) || 0;
+            const minStock = parseFloat(document.getElementById('kasir-item-min-stock').value) || 5;
+            const isWeighable = document.getElementById('kasir-item-weighable').checked;
+
+            const priceLevels = getPriceLevelsFromDOM();
+
+            if (!name || !code) {
+                showNotification('Nama dan kode harus diisi!', 'error');
+                return;
+            }
+
+            const duplicate = kasirItems.find(i => i.code === code && i.id !== editingItemId);
+            if (duplicate) {
+                showNotification(`Kode "${code}" sudah digunakan!`, 'error');
+                return;
+            }
+
+            const unitConversions = tempUnitConversions || [];
+
+            const now = new Date().toISOString();
+
+            try {
+                if (editingItemId) {
+                    const item = kasirItems.find(i => i.id === editingItemId);
+                    if (item) {
+                        item.name = name;
+                        item.code = code;
+                        item.barcode = barcode;
+                        item.categoryId = categoryId;
+                        item.hargaDasar = hargaDasar;
+                        item.hargaJual = hargaJual;
+                        item.berat = berat;
+                        item.satuanId = satuanId;
+                        item.diskon = diskon;
+                        item.stock = stock;
+                        item.minStock = minStock;
+                        item.isWeighable = isWeighable;
+                        item.priceLevels = priceLevels;
+                        item.unitConversions = unitConversions;
+                        item.updatedAt = now;
+                        await dbPut(STORES.KASIR_ITEMS, item);
+                    }
+                } else {
+                    const newItem = {
+                        name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
+                        diskon, stock, minStock, isWeighable, priceLevels, unitConversions,
+                        createdAt: now, updatedAt: now
+                    };
+                    await dbAdd(STORES.KASIR_ITEMS, newItem);
+                }
+                await loadKasirItems();
+                showNotification('Item berhasil disimpan', 'success');
+                navigateTo('listItems');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        async function saveCategoryFromPage() {
+            const name = document.getElementById('kasir-category-name').value.trim();
+            if (!name) { showNotification('Nama kategori harus diisi', 'error'); return; }
+            const now = new Date().toISOString();
+            try {
+                if (editingCategoryId) {
+                    const cat = kasirCategories.find(c => c.id === editingCategoryId);
+                    if (cat) {
+                        const duplicate = kasirCategories.find(c => c.id !== editingCategoryId && c.name.toLowerCase() === name.toLowerCase());
+                        if (duplicate) { showNotification(`Kategori "${name}" sudah ada`, 'error'); return; }
+                        cat.name = name;
+                        cat.updatedAt = now;
+                        await dbPut(STORES.KASIR_CATEGORIES, cat);
+                    }
+                } else {
+                    const duplicate = kasirCategories.find(c => c.name.toLowerCase() === name.toLowerCase());
+                    if (duplicate) { showNotification(`Kategori "${name}" sudah ada`, 'error'); return; }
+                    const newCat = { name, createdAt: now, updatedAt: now };
+                    await dbAdd(STORES.KASIR_CATEGORIES, newCat);
+                }
+                await loadKasirCategories();
+                showNotification('Kategori disimpan', 'success');
+                navigateTo('listCategories');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        async function saveUnitFromPage() {
+            const name = document.getElementById('satuan-name').value.trim();
+            if (!name) { showNotification('Nama satuan harus diisi', 'error'); return; }
+            const now = new Date().toISOString();
+            try {
+                if (editingUnitId) {
+                    const unit = kasirSatuan.find(u => u.id === editingUnitId);
+                    if (unit) {
+                        const duplicate = kasirSatuan.find(u => u.id !== editingUnitId && u.name.toLowerCase() === name.toLowerCase());
+                        if (duplicate) { showNotification(`Satuan "${name}" sudah ada`, 'error'); return; }
+                        unit.name = name;
+                        unit.updatedAt = now;
+                        await dbPut(STORES.KASIR_SATUAN, unit);
+                    }
+                } else {
+                    const duplicate = kasirSatuan.find(u => u.name.toLowerCase() === name.toLowerCase());
+                    if (duplicate) { showNotification(`Satuan "${name}" sudah ada`, 'error'); return; }
+                    const newUnit = { name, createdAt: now, updatedAt: now };
+                    await dbAdd(STORES.KASIR_SATUAN, newUnit);
+                }
+                await loadKasirSatuan();
+                showNotification('Satuan disimpan', 'success');
+                navigateTo('listUnits');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== LOGOUT ====================
+        function logout() {
+            if (confirm('Apakah Anda yakin ingin keluar?')) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // ==================== INISIALISASI HALAMAN ====================
+        async function initMasterPage() {
+            try {
+                await initDatabase();
+                await loadKasirCategories();
+                await loadKasirItems();
+                await loadKasirSatuan();
+                await loadBundles();
+
+                const savedUser = sessionStorage.getItem('currentUser');
+                if (savedUser) {
+                    const parsed = JSON.parse(savedUser);
+                    if (parsed.id === 'bypass') {
+                        currentUser = { ...parsed, permissions: [] };
+                        document.getElementById('user-name-display').textContent = parsed.name;
+                    } else {
+                        const user = await dbGet(STORES.USERS, parsed.id);
+                        if (user) {
+                            currentUser = user;
+                            document.getElementById('user-name-display').textContent = user.name;
+                        } else {
+                            sessionStorage.removeItem('currentUser');
+                            window.location.href = 'index.html';
+                            return;
+                        }
+                    }
+                } else {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const action = urlParams.get('action');
+                const id = urlParams.get('id');
+
+                if (action === 'addItem') {
+                    showAddItemPage();
+                } else if (action === 'editItem' && id) {
+                    showEditItemPage(parseInt(id));
+                } else if (action === 'listItems') {
+                    showItemListPage();
+                } else if (action === 'addCategory') {
+                    showAddCategoryPage();
+                } else if (action === 'editCategory' && id) {
+                    showEditCategoryPage(parseInt(id));
+                } else if (action === 'listCategories') {
+                    showCategoryListPage();
+                } else if (action === 'addUnit') {
+                    showAddUnitPage();
+                } else if (action === 'editUnit' && id) {
+                    showEditUnitPage(parseInt(id));
+                } else if (action === 'listUnits') {
+                    showUnitListPage();
+                } else if (action === 'addBundle') {
+                    showAddBundlePage();
+                } else if (action === 'editBundle' && id) {
+                    showEditBundlePage(parseInt(id));
+                } else if (action === 'listBundles') {
+                    showBundleListPage();
+                } else {
+                    document.getElementById('master-content').innerHTML = `
+                        <div class="content-card">
+                            <h2 class="page-title">Master Data</h2>
+                            <p>Silakan pilih menu di samping.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                showNotification('Gagal memuat: ' + error.message, 'error');
+            }
+        }
+
+        initMasterPage();
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+                if (event.target.id === 'conversion-modal') closeConversionModal();
+            }
+        };
+    </script>
+</body>
+</html>
