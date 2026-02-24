@@ -970,7 +970,8 @@
         }
 
         function showDetail(id) {
-            const trx = salesData.find(t => t.id === id);
+            const numId = Number(id);
+            const trx = salesData.find(t => t.id === numId);
             if (!trx) return;
             let itemsHtml = '';
             trx.items.forEach(item => {
