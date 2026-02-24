@@ -53,6 +53,34 @@
             gap: 8px;
             color: #006B54;
         }
+        #user-name-display {
+            font-weight: 600;
+            color: #006B54;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 8px 12px;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
 
         /* ==================== DRAWER SIDEBAR ==================== */
         .sidebar {
@@ -116,7 +144,6 @@
             stroke-width: 2;
             fill: none;
         }
-        /* Drawer overlay */
         .drawer-overlay {
             position: fixed;
             top: 0;
@@ -137,8 +164,6 @@
             margin: 0 auto;
             padding: 20px;
         }
-
-        /* Filter section (tetap di atas) */
         .filter-section {
             display: flex;
             flex-wrap: wrap;
@@ -188,8 +213,6 @@
         button:hover {
             opacity: 0.9;
         }
-
-        /* Section containers */
         .report-section {
             display: none;
             background: white;
@@ -201,8 +224,6 @@
         .report-section.active {
             display: block;
         }
-
-        /* Kartu Ringkasan */
         .cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -228,8 +249,6 @@
             color: #006B54;
             margin-top: 10px;
         }
-
-        /* Charts row */
         .charts-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -259,8 +278,6 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        /* Tabel produk */
         #productTable {
             width: 100%;
             border-collapse: collapse;
@@ -297,8 +314,6 @@
         #productTable tr:hover {
             background: #f5f5f5;
         }
-
-        /* Tabel transaksi */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -328,8 +343,6 @@
         .detail-btn:hover {
             background: #e0f2f1;
         }
-
-        /* Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -377,7 +390,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Header dengan hamburger -->
+    <!-- Header dengan hamburger dan user info -->
     <header class="app-header">
         <button class="drawer-toggle" id="drawer-toggle" onclick="toggleDrawer()">
             <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
@@ -393,6 +406,17 @@
                 <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             Laporan Penjualan
+        </div>
+        <div style="flex:1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="user-name-display" style="font-weight:600; color:#006B54;"></span>
+            <button class="logout-btn" onclick="logout()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
         </div>
     </header>
 
@@ -435,6 +459,11 @@
             </svg>
             Arus Kas
         </button>
+        <!-- ===== TOMBOL BUNDLE BARU ===== -->
+        <button onclick="showSection('bundle')">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            Penjualan Bundle
+        </button>
         <div style="flex:1;"></div>
         <button onclick="exportAllCSV()" style="border-top:1px solid #ddd; border-radius:0;">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -445,7 +474,7 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Filter Section (tetap di atas) -->
+        <!-- Filter Section -->
         <div class="filter-section">
             <div class="filter-group">
                 <label>Tanggal Mulai</label>
@@ -469,7 +498,7 @@
             </div>
         </div>
 
-        <!-- Section: Ringkasan (cards) -->
+        <!-- Section: Ringkasan -->
         <div id="section-summary" class="report-section active">
             <div class="cards">
                 <div class="card">
@@ -634,6 +663,26 @@
                 </div>
             </div>
         </div>
+
+        <!-- ===== SECTION BUNDLE BARU ===== -->
+        <div id="section-bundle" class="report-section">
+            <h2 style="color: #006B54; margin-bottom: 15px;">Penjualan Bundle</h2>
+            <div style="overflow-x: auto;">
+                <table id="bundleTable">
+                    <thead>
+                        <tr>
+                            <th>Nama Bundle</th>
+                            <th>Jumlah Terjual</th>
+                            <th>Total Pendapatan</th>
+                            <th>Komponen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bundleTableBody">
+                        <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Detail Transaksi -->
@@ -649,7 +698,7 @@
 
     <script>
         const DB_NAME = 'POSKasirDB';
-        const DB_VERSION = 15;
+        const DB_VERSION = 20; // Sesuaikan dengan versi di app.js
         let db = null;
         let salesData = [];
         let chartInstance = null;
@@ -662,6 +711,55 @@
         let productAggregatedData = [];
         let productSortColumn = 'totalRevenue';
         let productSortDirection = 'desc';
+        let currentUser = null;
+
+        // ===== VARIABEL UNTUK BUNDLE =====
+        let bundles = [];
+        let bundleSalesData = [];
+
+        // ==================== SESSION CHECK ====================
+        async function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            try {
+                const parsed = JSON.parse(savedUser);
+                const tx = db.transaction(['users'], 'readonly');
+                const store = tx.objectStore('users');
+                const request = store.get(parsed.id);
+                return new Promise((resolve) => {
+                    request.onsuccess = () => {
+                        const user = request.result;
+                        if (user) {
+                            currentUser = user;
+                            const userNameSpan = document.getElementById('user-name-display');
+                            if (userNameSpan) userNameSpan.textContent = user.name;
+                            resolve(true);
+                        } else {
+                            sessionStorage.removeItem('currentUser');
+                            window.location.href = 'index.html';
+                            resolve(false);
+                        }
+                    };
+                    request.onerror = () => {
+                        sessionStorage.removeItem('currentUser');
+                        window.location.href = 'index.html';
+                        resolve(false);
+                    };
+                });
+            } catch (e) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
 
         // ==================== DRAWER FUNCTIONS ====================
         function toggleDrawer() {
@@ -677,13 +775,9 @@
 
         // ==================== SECTION NAVIGATION ====================
         function showSection(sectionId) {
-            // Sembunyikan semua section
             document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
-            // Tampilkan section yang dipilih
             document.getElementById(`section-${sectionId}`).classList.add('active');
-            // Update active class di sidebar
             document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
-            // Cari tombol yang sesuai (berdasarkan onclick) dan beri class active
             const buttons = document.querySelectorAll('.sidebar button');
             for (let btn of buttons) {
                 if (btn.getAttribute('onclick')?.includes(sectionId)) {
@@ -691,25 +785,15 @@
                     break;
                 }
             }
-            // Tutup drawer di mobile
             closeDrawer();
 
-            // Resize chart jika diperlukan
-            if (sectionId === 'dailyChart' && chartInstance) {
-                chartInstance.resize();
-            }
-            if (sectionId === 'categoryChart' && categoryChartInstance) {
-                categoryChartInstance.resize();
-            }
-            if (sectionId === 'profitloss' && profitLossChartInstance) {
-                profitLossChartInstance.resize();
-            }
-            if (sectionId === 'cashflow' && cashFlowChartInstance) {
-                cashFlowChartInstance.resize();
-            }
+            if (sectionId === 'dailyChart' && chartInstance) chartInstance.resize();
+            if (sectionId === 'categoryChart' && categoryChartInstance) categoryChartInstance.resize();
+            if (sectionId === 'profitloss' && profitLossChartInstance) profitLossChartInstance.resize();
+            if (sectionId === 'cashflow' && cashFlowChartInstance) cashFlowChartInstance.resize();
         }
 
-        // Inisialisasi database
+        // ==================== DATABASE ====================
         async function initDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -721,7 +805,28 @@
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('sales')) {
-                        alert('Database belum memiliki data penjualan. Silakan buka aplikasi utama terlebih dahulu untuk membuat database.');
+                        alert('Database belum memiliki data penjualan. Silakan buka aplikasi utama terlebih dahulu.');
+                    }
+                    if (!db.objectStoreNames.contains('users')) {
+                        db.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('bundles')) {
+                        db.createObjectStore('bundles', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (db.objectStoreNames.contains('kasirItems')) {
+                        const transaction = e.target.transaction;
+                        const store = transaction.objectStore('kasirItems');
+                        store.openCursor().onsuccess = (ev) => {
+                            const cursor = ev.target.result;
+                            if (cursor) {
+                                const item = cursor.value;
+                                if (item.minStock === undefined) {
+                                    item.minStock = 5;
+                                    cursor.update(item);
+                                }
+                                cursor.continue();
+                            }
+                        };
                     }
                 };
             });
@@ -737,14 +842,8 @@
 
         async function fetchSales(start, end, method) {
             return new Promise((resolve, reject) => {
-                if (!db) {
-                    reject('Database tidak tersedia');
-                    return;
-                }
-                if (!db.objectStoreNames.contains('sales')) {
-                    reject('Store sales tidak ditemukan.');
-                    return;
-                }
+                if (!db) { reject('Database tidak tersedia'); return; }
+                if (!db.objectStoreNames.contains('sales')) { resolve([]); return; }
                 const transaction = db.transaction(['sales'], 'readonly');
                 const store = transaction.objectStore('sales');
                 const index = store.index('date');
@@ -753,7 +852,12 @@
                 request.onsuccess = () => {
                     let data = request.result || [];
                     if (method !== 'all') {
-                        data = data.filter(item => item.paymentMethod === method);
+                        data = data.filter(item => {
+                            if (Array.isArray(item.payments)) {
+                                return item.payments.some(p => p.method === method);
+                            }
+                            return item.paymentMethod === method;
+                        });
                     }
                     resolve(data);
                 };
@@ -764,19 +868,13 @@
         async function fetchPurchases(start, end) {
             return new Promise((resolve, reject) => {
                 if (!db) { reject('Database tidak tersedia'); return; }
-                if (!db.objectStoreNames.contains('purchases')) {
-                    resolve([]); // tidak ada data pembelian
-                    return;
-                }
+                if (!db.objectStoreNames.contains('purchases')) { resolve([]); return; }
                 const transaction = db.transaction(['purchases'], 'readonly');
                 const store = transaction.objectStore('purchases');
                 const index = store.index('date');
                 const range = IDBKeyRange.bound(start + 'T00:00:00.000Z', end + 'T23:59:59.999Z');
                 const request = index.getAll(range);
-                request.onsuccess = () => {
-                    let data = request.result || [];
-                    resolve(data);
-                };
+                request.onsuccess = () => resolve(request.result || []);
                 request.onerror = () => reject(request.error);
             });
         }
@@ -785,12 +883,10 @@
             let totalSales = 0;
             let totalTransactions = data.length;
             let totalOutstanding = 0;
-
             data.forEach(item => {
                 totalSales += item.total;
                 totalOutstanding += item.outstandingAdded || 0;
             });
-
             const average = totalTransactions > 0 ? totalSales / totalTransactions : 0;
             return { totalSales, totalTransactions, average, totalOutstanding };
         }
@@ -847,25 +943,26 @@
             });
         }
 
-        // Render tabel transaksi
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data</td></tr>';
                 return;
             }
-
             let html = '';
             data.forEach(trx => {
                 const date = new Date(trx.date).toLocaleString('id-ID');
+                const metode = Array.isArray(trx.payments) 
+                    ? trx.payments.map(p => p.method).join(', ') 
+                    : (trx.paymentMethod || '-');
                 html += `
                     <tr>
                         <td>${trx.transactionNumber}</td>
                         <td>${date}</td>
                         <td>${trx.customerName || '-'}</td>
                         <td>${formatRupiah(trx.total)}</td>
-                        <td>${trx.paymentMethod === 'cash' ? 'Tunai' : trx.paymentMethod === 'card' ? 'Kartu' : 'Transfer'}</td>
-                        <td><button class="detail-btn" onclick="showDetail(${trx.id})">🔽</button></td>
+                        <td>${metode}</td>
+                        <td><button class="detail-btn" onclick="showDetail(${trx.id})">🔻</button></td>
                     </tr>
                 `;
             });
@@ -875,7 +972,6 @@
         function showDetail(id) {
             const trx = salesData.find(t => t.id === id);
             if (!trx) return;
-
             let itemsHtml = '';
             trx.items.forEach(item => {
                 itemsHtml += `
@@ -887,7 +983,6 @@
                     </div>
                 `;
             });
-
             document.getElementById('modalBody').innerHTML = `
                 <p><strong>No. Transaksi:</strong> ${trx.transactionNumber}</p>
                 <p><strong>Tanggal:</strong> ${new Date(trx.date).toLocaleString('id-ID')}</p>
@@ -896,7 +991,7 @@
                 <p><strong>Diskon:</strong> ${formatRupiah(trx.discount)}</p>
                 <p><strong>Pajak:</strong> ${formatRupiah(trx.tax)}</p>
                 <p><strong>Total:</strong> ${formatRupiah(trx.total)}</p>
-                <p><strong>Metode:</strong> ${trx.paymentMethod}</p>
+                <p><strong>Metode:</strong> ${Array.isArray(trx.payments) ? trx.payments.map(p => p.method).join(', ') : trx.paymentMethod}</p>
                 <p><strong>Dibayar:</strong> ${formatRupiah(trx.paidAmount)}</p>
                 <p><strong>Kembalian:</strong> ${formatRupiah(trx.change)}</p>
                 <p><strong>Piutang ditambahkan:</strong> ${formatRupiah(trx.outstandingAdded)}</p>
@@ -910,19 +1005,14 @@
             document.getElementById('detailModal').style.display = 'none';
         }
 
-        // Fungsi ekspor CSV transaksi (tetap)
         function exportCSV() {
-            if (salesData.length === 0) {
-                alert('Tidak ada data untuk diekspor');
-                return;
-            }
-
+            if (salesData.length === 0) { alert('Tidak ada data untuk diekspor'); return; }
             let csv = 'No. Transaksi,Tanggal,Pelanggan,Total,Metode\n';
             salesData.forEach(trx => {
                 const date = new Date(trx.date).toLocaleString('id-ID');
-                csv += `"${trx.transactionNumber}","${date}","${trx.customerName || ''}",${trx.total},"${trx.paymentMethod}"\n`;
+                const metode = Array.isArray(trx.payments) ? trx.payments.map(p => p.method).join(' ') : trx.paymentMethod;
+                csv += `"${trx.transactionNumber}","${date}","${trx.customerName || ''}",${trx.total},"${metode}"\n`;
             });
-
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
@@ -934,7 +1024,6 @@
             URL.revokeObjectURL(url);
         }
 
-        // Ekspor semua data (gabungan)
         function exportAllCSV() {
             exportCSV();
             exportProductCSV();
@@ -973,7 +1062,6 @@
                         const categories = catRequest.result || [];
                         categoryMap = {};
                         categories.forEach(cat => { categoryMap[cat.id] = cat.name; });
-
                         const itemTx = db.transaction(['kasirItems'], 'readonly');
                         const itemStore = itemTx.objectStore('kasirItems');
                         const itemRequest = itemStore.getAll();
@@ -997,20 +1085,42 @@
             salesData.forEach(transaction => {
                 if (!transaction.items) return;
                 transaction.items.forEach(item => {
-                    const productId = item.itemId;
-                    if (!productId) return;
-                    let qtyBase = item.qty;
-                    if (item.unitConversion && item.unitConversion.value) qtyBase *= item.unitConversion.value;
-                    const revenue = item.subtotal || 0;
-                    if (!productSales[productId]) {
-                        productSales[productId] = { productId, productName: item.itemName, totalQtyBase: 0, totalRevenue: 0, grossProfit: 0 };
-                    }
-                    productSales[productId].totalQtyBase += qtyBase;
-                    productSales[productId].totalRevenue += revenue;
-                    const productInfo = productMap[productId];
-                    if (productInfo && productInfo.hargaDasar > 0) {
-                        const cost = productInfo.hargaDasar * qtyBase;
-                        productSales[productId].grossProfit += (revenue - cost);
+                    if (item.isBundle) {
+                        // Jika item adalah bundle, kita perlu "meledakkan" komponennya agar laporan produk akurat
+                        if (item.components && Array.isArray(item.components)) {
+                            item.components.forEach(comp => {
+                                const productId = comp.itemId;
+                                if (!productId) return;
+                                let qtyBase = comp.qty * item.qty;
+                                if (comp.unitConversionId) {
+                                    const conv = productMap[productId]?.unitConversions?.find(u => u.id == comp.unitConversionId);
+                                    if (conv) qtyBase *= conv.value;
+                                }
+                                const revenue = 0; // Pendapatan dari bundle tidak dialokasikan ke produk, hanya ke bundle
+                                if (!productSales[productId]) {
+                                    productSales[productId] = { productId, productName: productMap[productId]?.name || 'Unknown', totalQtyBase: 0, totalRevenue: 0, grossProfit: 0 };
+                                }
+                                productSales[productId].totalQtyBase += qtyBase;
+                                // Untuk laba kotor, kita perlu menghitung harga pokok dari komponen? 
+                                // Bisa diabaikan dulu atau dihitung nanti
+                            });
+                        }
+                    } else {
+                        const productId = item.itemId;
+                        if (!productId) return;
+                        let qtyBase = item.qty;
+                        if (item.unitConversion && item.unitConversion.value) qtyBase *= item.unitConversion.value;
+                        const revenue = item.subtotal || 0;
+                        if (!productSales[productId]) {
+                            productSales[productId] = { productId, productName: item.itemName, totalQtyBase: 0, totalRevenue: 0, grossProfit: 0 };
+                        }
+                        productSales[productId].totalQtyBase += qtyBase;
+                        productSales[productId].totalRevenue += revenue;
+                        const productInfo = productMap[productId];
+                        if (productInfo && productInfo.hargaDasar > 0) {
+                            const cost = productInfo.hargaDasar * qtyBase;
+                            productSales[productId].grossProfit += (revenue - cost);
+                        }
                     }
                 });
             });
@@ -1040,7 +1150,6 @@
                 html += `<tr><td>${p.productName}</td><td>${p.totalQtyBase.toFixed(2)}</td><td>${formatRupiah(p.totalRevenue)}</td><td>${formatRupiah(p.avgPrice)}</td><td>${laba}</td><td>${p.contribution.toFixed(2)}%</td></tr>`;
             });
             tbody.innerHTML = html;
-            // Update sort icons
             document.querySelectorAll('#productTable th').forEach(th => {
                 th.classList.remove('sort-asc', 'sort-desc');
                 if (th.dataset.sort === productSortColumn) {
@@ -1087,6 +1196,11 @@
             salesData.forEach(transaction => {
                 if (!transaction.items) return;
                 transaction.items.forEach(item => {
+                    if (item.isBundle) {
+                        // Untuk bundle, kita alokasikan pendapatan ke kategori berdasarkan komponen? 
+                        // Sederhana: kita bisa alokasikan ke kategori "Bundle" atau mengabaikan. Di sini kita abaikan.
+                        return;
+                    }
                     const catId = itemCategoryMap[item.itemId];
                     if (!catId) return;
                     const revenue = item.subtotal || 0;
@@ -1148,21 +1262,35 @@
             let totalDiscount = 0;
             let totalTax = 0;
             let totalHPP = 0;
-
             salesData.forEach(trx => {
                 totalSales += trx.total || 0;
                 totalDiscount += trx.discount || 0;
                 totalTax += trx.tax || 0;
-
                 if (trx.items) {
                     trx.items.forEach(item => {
-                        if (item.cost !== undefined) {
-                            totalHPP += (item.qty || 0) * item.cost;
+                        if (item.isBundle) {
+                            // Untuk bundle, kita perlu menghitung HPP dari komponen
+                            if (item.components && Array.isArray(item.components)) {
+                                item.components.forEach(comp => {
+                                    const product = productMap[comp.itemId];
+                                    if (product && product.hargaDasar > 0) {
+                                        let qtyBase = comp.qty * item.qty;
+                                        if (comp.unitConversionId) {
+                                            const conv = productMap[comp.itemId]?.unitConversions?.find(u => u.id == comp.unitConversionId);
+                                            if (conv) qtyBase *= conv.value;
+                                        }
+                                        totalHPP += product.hargaDasar * qtyBase;
+                                    }
+                                });
+                            }
+                        } else {
+                            if (item.cost !== undefined) {
+                                totalHPP += (item.qty || 0) * item.cost;
+                            }
                         }
                     });
                 }
             });
-
             const grossProfit = totalSales - totalHPP;
             return { totalSales, totalDiscount, totalTax, totalHPP, grossProfit };
         }
@@ -1170,7 +1298,6 @@
         function renderProfitLossChart(data) {
             const ctx = document.getElementById('profitLossChart').getContext('2d');
             if (profitLossChartInstance) profitLossChartInstance.destroy();
-
             const { totalSales, totalHPP, grossProfit } = data;
             if (totalSales === 0) {
                 ctx.font = '14px sans-serif';
@@ -1179,7 +1306,6 @@
                 ctx.fillText('Tidak ada data', 150, 150);
                 return;
             }
-
             profitLossChartInstance = new Chart(ctx, {
                 type: 'pie',
                 data: {
@@ -1214,15 +1340,12 @@
         function calculateCashFlow(salesData, purchasesData) {
             let income = 0;
             let expense = 0;
-
             salesData.forEach(trx => {
                 income += trx.paidAmount || 0;
             });
-
             purchasesData.forEach(trx => {
                 expense += trx.paidAmount || 0;
             });
-
             const net = income - expense;
             return { income, expense, net };
         }
@@ -1230,8 +1353,6 @@
         async function renderCashFlowChart(salesData, purchasesData, start, end) {
             const ctx = document.getElementById('cashFlowChart').getContext('2d');
             if (cashFlowChartInstance) cashFlowChartInstance.destroy();
-
-            // Kelompokkan per bulan
             const monthMap = new Map();
             const startDate = new Date(start);
             const endDate = new Date(end);
@@ -1239,7 +1360,6 @@
                 const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                 monthMap.set(monthKey, { income: 0, expense: 0 });
             }
-
             salesData.forEach(trx => {
                 const date = new Date(trx.date);
                 const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -1247,7 +1367,6 @@
                     monthMap.get(monthKey).income += trx.paidAmount || 0;
                 }
             });
-
             purchasesData.forEach(trx => {
                 const date = new Date(trx.date);
                 const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -1255,11 +1374,9 @@
                     monthMap.get(monthKey).expense += trx.paidAmount || 0;
                 }
             });
-
             const labels = Array.from(monthMap.keys()).sort();
             const incomeData = labels.map(m => monthMap.get(m).income);
             const expenseData = labels.map(m => monthMap.get(m).expense);
-
             cashFlowChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1300,15 +1417,75 @@
             });
         }
 
+        // ==================== FITUR BUNDLE ====================
+        async function loadBundles() {
+            return new Promise((resolve, reject) => {
+                if (!db) { resolve(); return; }
+                const tx = db.transaction(['bundles'], 'readonly');
+                const store = tx.objectStore('bundles');
+                const request = store.getAll();
+                request.onsuccess = () => {
+                    bundles = request.result || [];
+                    resolve();
+                };
+                request.onerror = reject;
+            });
+        }
+
+        function aggregateBundleSales(salesData) {
+            const bundleMap = {};
+            salesData.forEach(trx => {
+                if (!trx.items) return;
+                trx.items.forEach(item => {
+                    if (item.isBundle && item.bundleId) {
+                        const bundleId = item.bundleId;
+                        if (!bundleMap[bundleId]) {
+                            const bundle = bundles.find(b => b.id === bundleId);
+                            bundleMap[bundleId] = { 
+                                bundleId, 
+                                bundleName: item.itemName, 
+                                totalQty: 0, 
+                                totalRevenue: 0,
+                                components: bundle ? bundle.components : (item.components || [])
+                            };
+                        }
+                        bundleMap[bundleId].totalQty += item.qty;
+                        bundleMap[bundleId].totalRevenue += item.subtotal;
+                    }
+                });
+            });
+            return Object.values(bundleMap);
+        }
+
+        function renderBundleTable(bundleSales) {
+            const tbody = document.getElementById('bundleTableBody');
+            if (!bundleSales || bundleSales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada data bundle</td></tr>';
+                return;
+            }
+            let html = '';
+            bundleSales.forEach(b => {
+                const komponen = b.components.map(c => {
+                    const item = productMap[c.itemId];
+                    return item ? `${item.name} x${c.qty}` : '';
+                }).filter(Boolean).join(', ');
+                html += `<tr>
+                    <td>${b.bundleName}</td>
+                    <td>${b.totalQty}</td>
+                    <td>${formatRupiah(b.totalRevenue)}</td>
+                    <td>${komponen}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
         // ==================== LOAD DATA UTAMA ====================
         async function loadData() {
             const start = document.getElementById('startDate').value;
             const end = document.getElementById('endDate').value;
             const method = document.getElementById('paymentMethod').value;
-
             if (!start || !end) { alert('Pilih tanggal mulai dan akhir'); return; }
             if (new Date(start) > new Date(end)) { alert('Tanggal akhir harus setelah tanggal mulai'); return; }
-
             try {
                 if (!db) await initDB();
                 salesData = await fetchSales(start, end, method);
@@ -1318,23 +1495,17 @@
                 } catch (e) {
                     console.warn('Gagal mengambil data pembelian', e);
                 }
-
                 const summary = calculateSummary(salesData);
                 document.getElementById('totalSales').textContent = formatRupiah(summary.totalSales);
                 document.getElementById('totalTransactions').textContent = summary.totalTransactions;
                 document.getElementById('averageTransaction').textContent = formatRupiah(summary.average);
                 document.getElementById('totalOutstanding').textContent = formatRupiah(summary.totalOutstanding);
-
                 renderChart(salesData, start, end);
                 renderTable(salesData);
-
                 productAggregatedData = aggregateProductSales(salesData);
                 renderProductTable(productAggregatedData);
-
                 const categoryData = aggregateCategorySales(salesData);
                 renderCategoryChart(categoryData);
-
-                // Laba Rugi
                 const pl = calculateProfitLoss(salesData);
                 document.getElementById('pl-total-sales').textContent = formatRupiah(pl.totalSales);
                 document.getElementById('pl-total-discount').textContent = formatRupiah(pl.totalDiscount);
@@ -1342,14 +1513,16 @@
                 document.getElementById('pl-hpp').textContent = formatRupiah(pl.totalHPP);
                 document.getElementById('pl-gross-profit').textContent = formatRupiah(pl.grossProfit);
                 renderProfitLossChart(pl);
-
-                // Arus Kas
                 const cf = calculateCashFlow(salesData, purchasesData);
                 document.getElementById('cf-income').textContent = formatRupiah(cf.income);
                 document.getElementById('cf-expense').textContent = formatRupiah(cf.expense);
                 document.getElementById('cf-net').textContent = formatRupiah(cf.net);
                 await renderCashFlowChart(salesData, purchasesData, start, end);
 
+                // ===== BUNDLE =====
+                await loadBundles();
+                bundleSalesData = aggregateBundleSales(salesData);
+                renderBundleTable(bundleSalesData);
             } catch (error) {
                 console.error(error);
                 alert('Gagal memuat data.');
@@ -1368,13 +1541,16 @@
             setDefaultDates();
             try {
                 await initDB();
+                const sessionOk = await checkSession();
+                if (!sessionOk) return;
                 await loadProducts();
                 await loadCategoriesAndItems();
+                await loadBundles(); // muat bundle untuk keperluan agregasi
                 await loadData();
                 initProductTableSort();
-                // Set active menu ke Ringkasan
                 document.querySelector('.sidebar button').classList.add('active');
             } catch (error) {
+                console.error(error);
                 document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" class="error-message">Gagal mengakses database.</td></tr>`;
             }
         };
