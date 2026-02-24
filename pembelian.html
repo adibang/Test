@@ -5,329 +5,357 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POSPLUS - Pembelian Barang</title>
     <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            }
-            body {
-                background: #f5f5f5;
-                min-height: 100vh;
-                color: #333;
-            }
-            .app-header {
-                background: #FFFFFF;
-                color: #006B54;
-                padding: 16px 20px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                display: flex;
-                align-items: center;
-                gap: 15px;
-            }
-            .app-header h1 {
-                font-size: 1.2rem;
-                font-weight: 600;
-                color: #006B54;
-            }
-            .app-header .back-btn {
-                background: none;
-                border: none;
-                cursor: pointer;
-                color: #006B54;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px;
-            }
-            .app-header .back-btn svg {
-                width: 24px;
-                height: 24px;
-                stroke: currentColor;
-                stroke-width: 2;
-                fill: none;
-            }
-            .main-container {
-                max-width: 1200px;
-                margin: 20px auto;
-                padding: 0 20px;
-            }
-            .supplier-section {
-                background: white;
-                border-radius: 15px;
-                padding: 20px;
-                margin-bottom: 20px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                display: flex;
-                align-items: center;
-                gap: 20px;
-                flex-wrap: wrap;
-            }
-            .supplier-section label {
-                font-weight: 600;
-                color: #006B54;
-            }
-            .supplier-section select {
-                flex: 1;
-                min-width: 250px;
-                padding: 12px 16px;
-                border: 1px solid #333;
-                border-radius: 15px;
-                font-size: 1rem;
-            }
-            .search-section {
-                background: white;
-                border-radius: 15px;
-                padding: 20px;
-                margin-bottom: 20px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            .search-section input {
-                width: 100%;
-                padding: 12px 16px;
-                border: 1px solid #333;
-                border-radius: 15px;
-                font-size: 1rem;
-            }
-            .product-results {
-                max-height: 300px;
-                overflow-y: auto;
-                border: 1px solid #ddd;
-                border-radius: 15px;
-                padding: 10px;
-                margin-top: 10px;
-                background: white;
-            }
-            .product-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 8px;
-                border-bottom: 1px solid #eee;
-                cursor: pointer;
-            }
-            .product-item:hover {
-                background: #f0f9f6;
-            }
-            .product-item .name {
-                font-weight: 600;
-                color: #006B54;
-            }
-            .product-item .price {
-                font-size: 0.9rem;
-                color: #333;
-            }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            color: #333;
+        }
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .app-header .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #006B54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .app-header .back-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        #user-name-display {
+            font-weight: 600;
+            color: #006B54;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 8px 12px;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .supplier-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .supplier-section label {
+            font-weight: 600;
+            color: #006B54;
+        }
+        .supplier-section select {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .search-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .search-section input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .product-results {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 10px;
+            margin-top: 10px;
+            background: white;
+        }
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .product-item:hover {
+            background: #f0f9f6;
+        }
+        .product-item .name {
+            font-weight: 600;
+            color: #006B54;
+        }
+        .product-item .price {
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .cart-table-wrapper {
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        .cart-table th {
+            background: #006B54;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+        }
+        .cart-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-table input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 15%;
+            background: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #ff6b6b;
+        }
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+            color: #ff6b6b;
+        }
+        .action-btn.delete-btn:hover {
+            background: #ff6b6b;
+        }
+        .action-btn.delete-btn:hover svg {
+            color: white;
+        }
+        .summary {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .summary-row.total {
+            font-weight: 600;
+            font-size: 1.3rem;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        .summary input {
+            width: 150px;
+            padding: 8px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            text-align: right;
+        }
+        .payment-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .payment-section select, .payment-section input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .payment-section .row {
+            margin-bottom: 15px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        button {
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-size: 1rem;
+            min-height: 48px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+        }
+        .btn-primary:hover {
+            background: #005a46;
+        }
+        .btn-secondary {
+            background: #d9d9d9;
+            color: #333;
+            border: 1px solid #d9d9d9;
+        }
+        .btn-secondary:hover {
+            background: #cccccc;
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            border: 1px solid #ff6b6b;
+        }
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            background: #006B54;
+            color: white;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        @media (max-width: 768px) {
             .cart-table-wrapper {
-                width: 100%;
-                background: white;
-                border-radius: 15px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                margin-bottom: 20px;
-                overflow: hidden;
+                height: 375px;
+                overflow-y: auto;
             }
-            .cart-table {
-                width: 100%;
-                border-collapse: collapse;
-                background: white;
-            }
-            .cart-table th {
-                background: #006B54;
-                color: white;
-                padding: 12px 8px;
-                text-align: left;
-            }
+            .cart-table th,
             .cart-table td {
-                padding: 12px 8px;
-                border-bottom: 1px solid #eee;
+                font-size: 0.8rem;
+                padding: 8px 6px;
             }
             .cart-table input[type="number"] {
-                width: 80px;
-                padding: 8px;
-                border: 1px solid #333;
-                border-radius: 10px;
-                text-align: center;
+                width: 60px;
+                padding: 4px;
+                font-size: 0.8rem;
             }
             .action-btn {
                 width: 30px;
                 height: 30px;
-                border-radius: 15%;
-                background: white;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0;
-                cursor: pointer;
-                transition: all 0.2s;
-                border: 1px solid #ff6b6b;
             }
             .action-btn svg {
-                width: 20px;
-                height: 20px;
-                stroke-width: 2;
-                color: #ff6b6b;
+                width: 18px;
+                height: 18px;
             }
-            .action-btn.delete-btn:hover {
-                background: #ff6b6b;
-            }
-            .action-btn.delete-btn:hover svg {
-                color: white;
-            }
-            .summary {
-                background: white;
-                border-radius: 15px;
-                padding: 20px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                margin-bottom: 20px;
-            }
-            .summary-row {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 10px;
-                font-size: 1.1rem;
-            }
-            .summary-row.total {
-                font-weight: 600;
-                font-size: 1.3rem;
-                border-top: 1px solid #ddd;
-                padding-top: 10px;
-            }
-            .summary input {
-                width: 150px;
-                padding: 8px;
-                border: 1px solid #333;
-                border-radius: 10px;
-                text-align: right;
-            }
-            .payment-section {
-                background: white;
-                border-radius: 15px;
-                padding: 20px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                margin-bottom: 20px;
-            }
-            .payment-section select, .payment-section input {
-                width: 100%;
-                padding: 12px 16px;
-                border: 1px solid #333;
-                border-radius: 15px;
-                font-size: 1rem;
-            }
-            .payment-section .row {
-                margin-bottom: 15px;
-            }
-            .actions {
-                display: flex;
-                gap: 10px;
-                justify-content: flex-end;
-            }
-            button {
-                border-radius: 15px;
-                padding: 12px 24px;
-                font-weight: 600;
-                cursor: pointer;
-                border: 1px solid transparent;
-                font-size: 1rem;
-                min-height: 48px;
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .btn-primary {
-                background: #006B54;
-                color: white;
-                border: 1px solid #006B54;
-            }
-            .btn-primary:hover {
-                background: #005a46;
-            }
-            .btn-secondary {
-                background: #d9d9d9;
-                color: #333;
-                border: 1px solid #d9d9d9;
-            }
-            .btn-secondary:hover {
-                background: #cccccc;
-            }
-            .btn-danger {
-                background: #ff6b6b;
-                color: white;
-                border: 1px solid #ff6b6b;
-            }
-            .btn-danger:hover {
-                background: #ff5252;
-            }
-            .icon {
-                width: 20px;
-                height: 20px;
-                stroke: currentColor;
-                stroke-width: 2;
-                fill: none;
-            }
-            .notification {
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                padding: 12px 20px;
-                border-radius: 15px;
-                background: #006B54;
-                color: white;
-                display: none;
-                z-index: 1000;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            }
-            .loading-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(255,255,255,0.95);
-                z-index: 9999;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-            }
-            .loading-spinner {
-                width: 40px;
-                height: 40px;
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #006B54;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            }
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            .error-state {
-                text-align: center;
-                padding: 40px 20px;
-                color: #666;
-            }
-            @media (max-width: 768px) {
-                .cart-table-wrapper {
-                    height: 375px;
-                    overflow-y: auto;
-                }
-                .cart-table th,
-                .cart-table td {
-                    font-size: 0.8rem;
-                    padding: 8px 6px;
-                }
-                .cart-table input[type="number"] {
-                    width: 60px;
-                    padding: 4px;
-                    font-size: 0.8rem;
-                }
-                .action-btn {
-                    width: 30px;
-                    height: 30px;
-                }
-                .action-btn svg {
-                    width: 18px;
-                    height: 18px;
-                }
-            }
-      </style>
+        }
+    </style>
 </head>
 <body>
     <header class="app-header">
@@ -337,7 +365,18 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
         </button>
-        <h1>Pembelian Barang (Purchase Order)</h1>
+        <h1>Pembelian</h1>
+        <div style="flex:1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="user-name-display" style="font-weight:600; color:#006B54;"></span>
+            <button class="logout-btn" onclick="logout()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+        </div>
     </header>
 
     <div class="main-container">
@@ -448,7 +487,7 @@
     <script>
         // ==================== KONFIGURASI DATABASE ====================
         const DB_NAME = 'POSKasirDB';
-        const DB_VERSION = 15;
+        const DB_VERSION = 20; // Sesuaikan dengan versi di index.html
         let db = null;
 
         // Data global
@@ -456,11 +495,66 @@
         let kasirItems = [];
         let kasirSatuan = [];
         let cart = [];
+        let currentUser = null; // Untuk menyimpan data user yang login
 
-        // Ikon yang digunakan (line art)
+        // Ikon yang digunakan
         const icons = {
             delete: `<svg class="icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`
         };
+
+        // ==================== SESSION CHECK ====================
+        async function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            try {
+                const parsed = JSON.parse(savedUser);
+                const tx = db.transaction(['users', 'roles'], 'readonly');
+                const userStore = tx.objectStore('users');
+                const roleStore = tx.objectStore('roles');
+                
+                const userRequest = userStore.get(parsed.id);
+                const user = await new Promise((resolve, reject) => {
+                    userRequest.onsuccess = () => resolve(userRequest.result);
+                    userRequest.onerror = reject;
+                });
+                
+                if (!user) {
+                    sessionStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+                
+                // Ambil semua roles untuk mencari role admin
+                const roles = await new Promise((resolve, reject) => {
+                    const req = roleStore.getAll();
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+                
+                const adminRole = roles.find(r => r.name === 'Admin');
+                if (!adminRole || user.roleId !== adminRole.id) {
+                    alert('Hanya admin yang dapat mengakses halaman ini.');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+                
+                currentUser = user;
+                document.getElementById('user-name-display').textContent = user.name;
+                return true;
+            } catch (e) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
 
         // ==================== FUNGSI HELPER ====================
         function formatRupiah(angka) {
@@ -499,7 +593,6 @@
                 const saved = localStorage.getItem(CART_STORAGE_KEY);
                 if (saved) {
                     cart = JSON.parse(saved);
-                    // Validasi sederhana
                     cart = cart.filter(item => item.itemId && item.itemName !== undefined);
                 } else {
                     cart = [];
@@ -534,8 +627,21 @@
                     if (!db.objectStoreNames.contains('settings')) {
                         db.createObjectStore('settings', { keyPath: 'key' });
                     }
-                    if (!db.objectStoreNames.contains('kasirItems')) {
-                        db.createObjectStore('kasirItems', { keyPath: 'id', autoIncrement: true });
+                    // Migrasi: tambahkan minStock ke item yang belum memiliki
+                    if (db.objectStoreNames.contains('kasirItems')) {
+                        const transaction = e.target.transaction;
+                        const store = transaction.objectStore('kasirItems');
+                        store.openCursor().onsuccess = (ev) => {
+                            const cursor = ev.target.result;
+                            if (cursor) {
+                                const item = cursor.value;
+                                if (item.minStock === undefined) {
+                                    item.minStock = 5; // nilai default
+                                    cursor.update(item);
+                                }
+                                cursor.continue();
+                            }
+                        };
                     }
                     if (!db.objectStoreNames.contains('kasirSatuan')) {
                         db.createObjectStore('kasirSatuan', { keyPath: 'id', autoIncrement: true });
@@ -548,6 +654,10 @@
                         purchaseStore.createIndex('date', 'date', { unique: false });
                         purchaseStore.createIndex('supplierId', 'supplierId', { unique: false });
                         purchaseStore.createIndex('purchaseNumber', 'purchaseNumber', { unique: true });
+                    }
+                    // Pastikan object store users ada (untuk session)
+                    if (!db.objectStoreNames.contains('users')) {
+                        db.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
                     }
                 };
             });
@@ -670,7 +780,7 @@
             return purchaseNumber;
         }
 
-        // ==================== PENCARIAN PRODUK (MODIFIKASI) ====================
+        // ==================== PENCARIAN PRODUK ====================
         function searchProducts() {
             const keyword = document.getElementById('search-product').value.toLowerCase().trim();
             const listDiv = document.getElementById('product-list');
@@ -679,14 +789,12 @@
                 return;
             }
 
-            // Filter item berdasarkan nama, kode, atau barcode produk
             let results = kasirItems.filter(item => 
                 item.name.toLowerCase().includes(keyword) ||
                 item.code.toLowerCase().includes(keyword) ||
                 (item.barcode && item.barcode.toLowerCase().includes(keyword))
             );
 
-            // Cari juga berdasarkan barcode satuan
             const unitBarcodeMatches = [];
             kasirItems.forEach(item => {
                 if (item.unitConversions && Array.isArray(item.unitConversions)) {
@@ -699,7 +807,6 @@
                 }
             });
 
-            // Gabungkan hasil, hindari duplikat
             const allResults = [...results, ...unitBarcodeMatches.map(m => m.item)];
             const uniqueResults = [...new Set(allResults)].slice(0, 10);
 
@@ -709,15 +816,13 @@
             }
 
             listDiv.innerHTML = uniqueResults.map(item => {
-                // Cari konversi yang cocok (jika ada)
                 const match = unitBarcodeMatches.find(m => m.item.id === item.id);
                 let extraInfo = '';
-                let onclickAttr = `addToCart(${item.id})`; // default tanpa konversi
+                let onclickAttr = `addToCart(${item.id})`;
 
                 if (match) {
                     const unitName = kasirSatuan.find(s => s.id == match.conversion.unit)?.name || '';
                     extraInfo = ` (Satuan: ${unitName})`;
-                    // Sertakan data konversi dalam panggilan (escape JSON)
                     const convStr = JSON.stringify(match.conversion).replace(/"/g, '&quot;');
                     onclickAttr = `addToCart(${item.id}, ${convStr})`;
                 }
@@ -731,18 +836,16 @@
             }).join('');
         }
 
-        // ==================== KERANJANG (MODIFIKASI) ====================
+        // ==================== KERANJANG ====================
         function addToCart(itemId, conversion = null) {
             const item = kasirItems.find(i => i.id === itemId);
             if (!item) return;
 
-            // Tentukan harga beli: jika ada konversi dan memiliki basePrice, gunakan itu
             let purchasePrice = item.hargaDasar || 0;
             if (conversion && conversion.basePrice !== undefined) {
                 purchasePrice = conversion.basePrice;
             }
 
-            // Cek apakah item dengan satuan yang sama sudah ada di keranjang
             const existingIndex = cart.findIndex(c => 
                 c.itemId === itemId && 
                 (c.unitConversion?.barcode === conversion?.barcode)
@@ -790,7 +893,6 @@
             let subtotal = 0;
             tbody.innerHTML = cart.map((c, idx) => {
                 subtotal += c.subtotal;
-                // Tampilkan satuan jika ada
                 let unitText = '';
                 if (c.unitConversion) {
                     const unit = kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name || '?';
@@ -823,9 +925,8 @@
             document.getElementById('total').textContent = formatRupiah(total);
         }
 
-        // ==================== SIMPAN PEMBELIAN (MODIFIKASI) ====================
+        // ==================== SIMPAN PEMBELIAN ====================
         async function savePurchase() {
-            // Validasi supplier
             const supplierSelect = document.getElementById('supplier-select');
             const supplierId = supplierSelect.value;
             if (!supplierId) {
@@ -884,7 +985,7 @@
                     if (item) {
                         let qtyToAdd = c.qty;
                         if (c.unitConversion && c.unitConversion.value) {
-                            qtyToAdd *= c.unitConversion.value; // konversi ke satuan dasar
+                            qtyToAdd *= c.unitConversion.value;
                         }
                         item.stock += qtyToAdd;
                         item.updatedAt = new Date().toISOString();
@@ -931,6 +1032,8 @@
             showLoading();
             try {
                 await initDatabase();
+                const sessionOk = await checkSession(); // Cek session sebelum melanjutkan
+                if (!sessionOk) return;
                 await loadSuppliers();
                 await loadKasirItems();
                 await loadKasirSatuan();
