@@ -358,7 +358,7 @@
             background: #FFFFFF;
             border-radius: 15px;
             width: 100%;
-            max-width: 450px;
+            max-width: 800px; /* sedikit lebih lebar untuk kenyamanan */
             max-height: 90vh;
             overflow: hidden;
             box-shadow: 0 15px 40px rgba(0,0,0,0.3);
@@ -698,7 +698,7 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL PILIH ITEM ==================== -->
+    <!-- ==================== MODAL PILIH ITEM (SEDERHANA) ==================== -->
     <div class="modal-overlay" id="select-item-modal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
@@ -706,7 +706,7 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <input type="text" id="item-search-input" class="form-input" placeholder="Cari nama, kode, barcode produk, barcode satuan...">
+                    <input type="text" id="item-search-input" class="form-input" placeholder="Cari nama, kode, atau barcode...">
                 </div>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                     <table class="data-table" id="item-search-results">
@@ -714,13 +714,12 @@
                             <tr>
                                 <th>Nama</th>
                                 <th>Kode</th>
-                                <th>Barcode Produk</th>
-                                <th>Barcode Satuan</th>
+                                <th>Barcode</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="item-search-results-body">
-                            <tr><td colspan="5">Ketikkan pencarian...</td></tr>
+                            <tr><td colspan="4">Ketikkan pencarian...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1077,7 +1076,6 @@
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
-            // Tidak perlu menambah baris kosong secara otomatis, pengguna akan memilih item lewat modal
         }
 
         function showEditBundlePage(id) {
@@ -1100,7 +1098,6 @@
             if (bundle.components && bundle.components.length > 0) {
                 bundle.components.forEach(comp => addComponentRow(comp.itemId, comp.qty, comp.unitConversionId));
             }
-            // Jika tidak ada komponen, jangan tambahkan baris kosong, biarkan pengguna menambah lewat modal
         }
 
         function showBundleListPage() {
@@ -1258,7 +1255,6 @@
             const modal = document.getElementById('select-item-modal');
             if (!modal) return;
             modal.style.display = 'flex';
-            // Reset pencarian dan tampilkan semua item
             document.getElementById('item-search-input').value = '';
             renderItemSearchResults('');
         }
@@ -1289,31 +1285,26 @@
             });
 
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada item</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada item</td></tr>';
                 return;
             }
 
             let html = '';
             filtered.forEach(item => {
-                // Kumpulkan barcode satuan
-                let unitBarcodes = '';
-                if (item.unitConversions && item.unitConversions.length) {
-                    unitBarcodes = item.unitConversions.map(c => {
-                        const unitName = kasirSatuan.find(s => s.id == c.unit)?.name || '?';
-                        return `${unitName}: ${c.barcode}`;
-                    }).join(', ');
-                } else {
-                    unitBarcodes = '-';
+                // Gabungkan informasi barcode
+                let barcodeText = item.barcode || '-';
+                if (item.unitConversions && item.unitConversions.length > 0) {
+                    const count = item.unitConversions.length;
+                    barcodeText += ` (+${count} satuan)`;
                 }
 
                 html += `
                     <tr>
                         <td>${item.name}</td>
                         <td>${item.code}</td>
-                        <td>${item.barcode || '-'}</td>
-                        <td>${unitBarcodes}</td>
+                        <td>${barcodeText}</td>
                         <td>
-                            <button class="action-btn edit-btn" onclick="selectItemFromModal(${item.id})">Pilih</button>
+                            <button class="form-button-primary" style="padding:6px 12px;" onclick="selectItemFromModal(${item.id})">Pilih</button>
                         </td>
                     </tr>
                 `;
@@ -1322,7 +1313,6 @@
         }
 
         function selectItemFromModal(itemId) {
-            // Tambahkan baris komponen dengan item yang dipilih
             addComponentRow(itemId, 1, '');
             closeSelectItemModal();
         }
