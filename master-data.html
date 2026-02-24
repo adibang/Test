@@ -280,7 +280,7 @@
         .form-button-secondary:hover {
             background: #cccccc;
         }
-        /* ==================== TABLE STYLES ==================== */
+        /* ==================== TABLE STYLES (untuk halaman lain) ==================== */
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -358,7 +358,7 @@
             background: #FFFFFF;
             border-radius: 15px;
             width: 100%;
-            max-width: 800px; /* sedikit lebih lebar untuk kenyamanan */
+            max-width: 600px;
             max-height: 90vh;
             overflow: hidden;
             box-shadow: 0 15px 40px rgba(0,0,0,0.3);
@@ -392,6 +392,62 @@
             padding: 15px 20px;
             border-top: 1px solid #eee;
             background: #fafafa;
+        }
+        /* ==================== LIST ITEM UNTUK MODAL ==================== */
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 12px 15px;
+        }
+        .item-info {
+            flex: 1;
+            min-width: 0; /* menghindari overflow */
+        }
+        .item-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #006B54;
+            margin-bottom: 4px;
+        }
+        .item-details {
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .item-details span {
+            white-space: nowrap;
+        }
+        .item-code, .item-barcode {
+            background: #eaeaea;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        .select-btn {
+            background: #006B54;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 10px;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .select-btn:hover {
+            background: #004d3e;
         }
         /* ==================== KONVERSI SATUAN & LEVEL HARGA ==================== */
         .conversions-section, .level-harga-container {
@@ -448,7 +504,7 @@
         }
         .level-harga-item .form-input {
             width: 100%;
-            min-width: 0; /* agar bisa menyusut */
+            min-width: 0;
         }
         .level-harga-remove {
             background: #ff6b6b;
@@ -698,9 +754,9 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL PILIH ITEM (SEDERHANA) ==================== -->
+    <!-- ==================== MODAL PILIH ITEM (VERSI LIST) ==================== -->
     <div class="modal-overlay" id="select-item-modal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
                 <h2 class="modal-title">Pilih Item</h2>
             </div>
@@ -708,20 +764,9 @@
                 <div class="form-group">
                     <input type="text" id="item-search-input" class="form-input" placeholder="Cari nama, kode, atau barcode...">
                 </div>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="data-table" id="item-search-results">
-                        <thead>
-                            <tr>
-                                <th>Nama</th>
-                                <th>Kode</th>
-                                <th>Barcode</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="item-search-results-body">
-                            <tr><td colspan="4">Ketikkan pencarian...</td></tr>
-                        </tbody>
-                    </table>
+                <div id="item-list-container" class="item-list">
+                    <!-- Hasil pencarian akan diisi di sini -->
+                    <div style="text-align:center; padding:20px; color:#666;">Ketikkan pencarian...</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -1250,32 +1295,30 @@
             }
         }
 
-        // ==================== FUNGSI MODAL PILIH ITEM ====================
+        // ==================== FUNGSI MODAL PILIH ITEM (LIST) ====================
         function showSelectItemModal() {
             const modal = document.getElementById('select-item-modal');
             if (!modal) return;
             modal.style.display = 'flex';
             document.getElementById('item-search-input').value = '';
-            renderItemSearchResults('');
+            renderItemList('');
         }
 
         function closeSelectItemModal() {
             document.getElementById('select-item-modal').style.display = 'none';
         }
 
-        function renderItemSearchResults(query) {
-            const tbody = document.getElementById('item-search-results-body');
-            if (!tbody) return;
+        function renderItemList(query) {
+            const container = document.getElementById('item-list-container');
+            if (!container) return;
 
             // Filter item berdasarkan query
             const filtered = kasirItems.filter(item => {
-                if (!query) return true; // tampilkan semua jika query kosong
+                if (!query) return true;
                 const q = query.toLowerCase();
-                // Cari di nama, kode, barcode produk
                 if (item.name.toLowerCase().includes(q)) return true;
                 if (item.code.toLowerCase().includes(q)) return true;
                 if (item.barcode && item.barcode.toLowerCase().includes(q)) return true;
-                // Cari di barcode satuan
                 if (item.unitConversions) {
                     for (let conv of item.unitConversions) {
                         if (conv.barcode && conv.barcode.toLowerCase().includes(q)) return true;
@@ -1285,31 +1328,33 @@
             });
 
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada item</td></tr>';
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tidak ada item</div>';
                 return;
             }
 
             let html = '';
             filtered.forEach(item => {
-                // Gabungkan informasi barcode
-                let barcodeText = item.barcode || '-';
+                // Format barcode untuk ditampilkan
+                let barcodeText = item.barcode ? item.barcode : '-';
                 if (item.unitConversions && item.unitConversions.length > 0) {
                     const count = item.unitConversions.length;
-                    barcodeText += ` (+${count} satuan)`;
+                    barcodeText += ` (${count} satuan)`;
                 }
 
                 html += `
-                    <tr>
-                        <td>${item.name}</td>
-                        <td>${item.code}</td>
-                        <td>${barcodeText}</td>
-                        <td>
-                            <button class="form-button-primary" style="padding:6px 12px;" onclick="selectItemFromModal(${item.id})">Pilih</button>
-                        </td>
-                    </tr>
+                    <div class="item-row">
+                        <div class="item-info">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-details">
+                                <span class="item-code">Kode: ${item.code}</span>
+                                <span class="item-barcode">Barcode: ${barcodeText}</span>
+                            </div>
+                        </div>
+                        <button class="select-btn" onclick="selectItemFromModal(${item.id})">Pilih</button>
+                    </div>
                 `;
             });
-            tbody.innerHTML = html;
+            container.innerHTML = html;
         }
 
         function selectItemFromModal(itemId) {
@@ -2055,7 +2100,7 @@
                 const searchInput = document.getElementById('item-search-input');
                 if (searchInput) {
                     searchInput.addEventListener('input', function(e) {
-                        renderItemSearchResults(e.target.value);
+                        renderItemList(e.target.value);
                     });
                 }
 
