@@ -586,7 +586,7 @@
             </div>
         </div>
 
-        <!-- Section: Daftar Transaksi -->
+        <!-- Section: Daftar Transaksi (TELAH DIPERBAIKI) -->
         <div id="section-transactions" class="report-section">
             <h2 style="color: #006B54; margin-bottom: 15px;">Daftar Transaksi</h2>
             <div style="overflow-x: auto;">
@@ -943,6 +943,7 @@
             });
         }
 
+        // ==================== RENDER TABEL DENGAN DATA-ID (PERBAIKAN) ====================
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
@@ -951,51 +952,66 @@
             }
             let html = '';
             data.forEach(trx => {
+                // Lewati jika tidak punya id (validasi)
+                if (!trx.id) return;
                 const date = new Date(trx.date).toLocaleString('id-ID');
                 const metode = Array.isArray(trx.payments) 
                     ? trx.payments.map(p => p.method).join(', ') 
                     : (trx.paymentMethod || '-');
                 html += `
                     <tr>
-                        <td>${trx.transactionNumber}</td>
+                        <td>${trx.transactionNumber || '-'}</td>
                         <td>${date}</td>
                         <td>${trx.customerName || '-'}</td>
-                        <td>${formatRupiah(trx.total)}</td>
+                        <td>${formatRupiah(trx.total || 0)}</td>
                         <td>${metode}</td>
-                        <td><button class="detail-btn" onclick="showDetail(${trx.id})">🔻</button></td>
+                        <td><button class="detail-btn" data-id="${trx.id}">🔻</button></td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
         }
 
+        // ==================== FUNGSI DETAIL DENGAN EVENT DELEGATION ====================
         function showDetail(id) {
-            const numId = Number(id);
-            const trx = salesData.find(t => t.id === numId);
-            if (!trx) return;
+            // Konversi ke string untuk perbandingan yang aman
+            const idStr = String(id).trim();
+            const trx = salesData.find(t => String(t.id) === idStr);
+            if (!trx) {
+                console.warn('Transaksi tidak ditemukan untuk id:', id);
+                alert('Data transaksi tidak ditemukan');
+                return;
+            }
+
+            // Bangun konten modal dengan pengecekan properti
             let itemsHtml = '';
-            trx.items.forEach(item => {
-                itemsHtml += `
-                    <div class="item-detail">
-                        <strong>${item.itemName}</strong><br>
-                        Jumlah: ${item.qty} ${item.unitConversion ? '(' + item.unitConversion.name + ')' : ''} ${item.weightGram ? '(' + item.weightGram + ' g)' : ''}<br>
-                        Harga Satuan: ${formatRupiah(item.pricePerUnit)}<br>
-                        Subtotal: ${formatRupiah(item.subtotal)}
-                    </div>
-                `;
-            });
+            if (trx.items && Array.isArray(trx.items)) {
+                trx.items.forEach(item => {
+                    itemsHtml += `
+                        <div class="item-detail">
+                            <strong>${item.itemName || 'Produk'}</strong><br>
+                            Jumlah: ${item.qty || 0} ${item.unitConversion ? '(' + item.unitConversion.name + ')' : ''} ${item.weightGram ? '(' + item.weightGram + ' g)' : ''}<br>
+                            Harga Satuan: ${formatRupiah(item.pricePerUnit || 0)}<br>
+                            Subtotal: ${formatRupiah(item.subtotal || 0)}
+                        </div>
+                    `;
+                });
+            } else {
+                itemsHtml = '<p>Tidak ada item</p>';
+            }
+
             document.getElementById('modalBody').innerHTML = `
-                <p><strong>No. Transaksi:</strong> ${trx.transactionNumber}</p>
+                <p><strong>No. Transaksi:</strong> ${trx.transactionNumber || '-'}</p>
                 <p><strong>Tanggal:</strong> ${new Date(trx.date).toLocaleString('id-ID')}</p>
                 <p><strong>Pelanggan:</strong> ${trx.customerName || '-'}</p>
-                <p><strong>Subtotal:</strong> ${formatRupiah(trx.subtotal)}</p>
-                <p><strong>Diskon:</strong> ${formatRupiah(trx.discount)}</p>
-                <p><strong>Pajak:</strong> ${formatRupiah(trx.tax)}</p>
-                <p><strong>Total:</strong> ${formatRupiah(trx.total)}</p>
-                <p><strong>Metode:</strong> ${Array.isArray(trx.payments) ? trx.payments.map(p => p.method).join(', ') : trx.paymentMethod}</p>
-                <p><strong>Dibayar:</strong> ${formatRupiah(trx.paidAmount)}</p>
-                <p><strong>Kembalian:</strong> ${formatRupiah(trx.change)}</p>
-                <p><strong>Piutang ditambahkan:</strong> ${formatRupiah(trx.outstandingAdded)}</p>
+                <p><strong>Subtotal:</strong> ${formatRupiah(trx.subtotal || 0)}</p>
+                <p><strong>Diskon:</strong> ${formatRupiah(trx.discount || 0)}</p>
+                <p><strong>Pajak:</strong> ${formatRupiah(trx.tax || 0)}</p>
+                <p><strong>Total:</strong> ${formatRupiah(trx.total || 0)}</p>
+                <p><strong>Metode:</strong> ${Array.isArray(trx.payments) ? trx.payments.map(p => p.method).join(', ') : (trx.paymentMethod || '-')}</p>
+                <p><strong>Dibayar:</strong> ${formatRupiah(trx.paidAmount || 0)}</p>
+                <p><strong>Kembalian:</strong> ${formatRupiah(trx.change || 0)}</p>
+                <p><strong>Piutang ditambahkan:</strong> ${formatRupiah(trx.outstandingAdded || 0)}</p>
                 <h3>Item yang dibeli:</h3>
                 ${itemsHtml}
             `;
@@ -1005,6 +1021,21 @@
         function closeModal() {
             document.getElementById('detailModal').style.display = 'none';
         }
+
+        // Event listener untuk delegasi tombol detail
+        document.addEventListener('DOMContentLoaded', function() {
+            const transactionsTable = document.getElementById('transactionsTable');
+            if (transactionsTable) {
+                transactionsTable.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.detail-btn');
+                    if (!btn) return;
+                    const id = btn.getAttribute('data-id');
+                    if (id) {
+                        showDetail(id);
+                    }
+                });
+            }
+        });
 
         function exportCSV() {
             if (salesData.length === 0) { alert('Tidak ada data untuk diekspor'); return; }
@@ -1087,7 +1118,6 @@
                 if (!transaction.items) return;
                 transaction.items.forEach(item => {
                     if (item.isBundle) {
-                        // Jika item adalah bundle, kita perlu "meledakkan" komponennya agar laporan produk akurat
                         if (item.components && Array.isArray(item.components)) {
                             item.components.forEach(comp => {
                                 const productId = comp.itemId;
@@ -1097,13 +1127,10 @@
                                     const conv = productMap[productId]?.unitConversions?.find(u => u.id == comp.unitConversionId);
                                     if (conv) qtyBase *= conv.value;
                                 }
-                                const revenue = 0; // Pendapatan dari bundle tidak dialokasikan ke produk, hanya ke bundle
                                 if (!productSales[productId]) {
                                     productSales[productId] = { productId, productName: productMap[productId]?.name || 'Unknown', totalQtyBase: 0, totalRevenue: 0, grossProfit: 0 };
                                 }
                                 productSales[productId].totalQtyBase += qtyBase;
-                                // Untuk laba kotor, kita perlu menghitung harga pokok dari komponen? 
-                                // Bisa diabaikan dulu atau dihitung nanti
                             });
                         }
                     } else {
@@ -1198,8 +1225,6 @@
                 if (!transaction.items) return;
                 transaction.items.forEach(item => {
                     if (item.isBundle) {
-                        // Untuk bundle, kita alokasikan pendapatan ke kategori berdasarkan komponen? 
-                        // Sederhana: kita bisa alokasikan ke kategori "Bundle" atau mengabaikan. Di sini kita abaikan.
                         return;
                     }
                     const catId = itemCategoryMap[item.itemId];
@@ -1270,7 +1295,6 @@
                 if (trx.items) {
                     trx.items.forEach(item => {
                         if (item.isBundle) {
-                            // Untuk bundle, kita perlu menghitung HPP dari komponen
                             if (item.components && Array.isArray(item.components)) {
                                 item.components.forEach(comp => {
                                     const product = productMap[comp.itemId];
@@ -1546,7 +1570,7 @@
                 if (!sessionOk) return;
                 await loadProducts();
                 await loadCategoriesAndItems();
-                await loadBundles(); // muat bundle untuk keperluan agregasi
+                await loadBundles();
                 await loadData();
                 initProductTableSort();
                 document.querySelector('.sidebar button').classList.add('active');
