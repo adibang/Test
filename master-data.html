@@ -698,6 +698,39 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL PILIH ITEM ==================== -->
+    <div class="modal-overlay" id="select-item-modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Pilih Item</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="item-search-input" class="form-input" placeholder="Cari nama, kode, barcode produk, barcode satuan...">
+                </div>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table" id="item-search-results">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Kode</th>
+                                <th>Barcode Produk</th>
+                                <th>Barcode Satuan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="item-search-results-body">
+                            <tr><td colspan="5">Ketikkan pencarian...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="form-button-secondary" onclick="closeSelectItemModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
 
@@ -1025,7 +1058,7 @@
 
                         <div class="conversions-section">
                             <label style="font-weight:500;">Komponen Bundle</label>
-                            <button type="button" id="add-component-btn" class="btn-add-level" onclick="addComponentRow()">
+                            <button type="button" id="add-component-btn" class="btn-add-level" onclick="showSelectItemModal()">
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
                                     <circle cx="12" cy="12" r="10"/>
                                     <line x1="12" y1="8" x2="12" y2="16"/>
@@ -1044,7 +1077,7 @@
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
-            addComponentRow();
+            // Tidak perlu menambah baris kosong secara otomatis, pengguna akan memilih item lewat modal
         }
 
         function showEditBundlePage(id) {
@@ -1066,9 +1099,8 @@
             container.innerHTML = '';
             if (bundle.components && bundle.components.length > 0) {
                 bundle.components.forEach(comp => addComponentRow(comp.itemId, comp.qty, comp.unitConversionId));
-            } else {
-                addComponentRow();
             }
+            // Jika tidak ada komponen, jangan tambahkan baris kosong, biarkan pengguna menambah lewat modal
         }
 
         function showBundleListPage() {
@@ -1219,6 +1251,80 @@
             } catch (error) {
                 showNotification('Gagal menyimpan: ' + error.message, 'error');
             }
+        }
+
+        // ==================== FUNGSI MODAL PILIH ITEM ====================
+        function showSelectItemModal() {
+            const modal = document.getElementById('select-item-modal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            // Reset pencarian dan tampilkan semua item
+            document.getElementById('item-search-input').value = '';
+            renderItemSearchResults('');
+        }
+
+        function closeSelectItemModal() {
+            document.getElementById('select-item-modal').style.display = 'none';
+        }
+
+        function renderItemSearchResults(query) {
+            const tbody = document.getElementById('item-search-results-body');
+            if (!tbody) return;
+
+            // Filter item berdasarkan query
+            const filtered = kasirItems.filter(item => {
+                if (!query) return true; // tampilkan semua jika query kosong
+                const q = query.toLowerCase();
+                // Cari di nama, kode, barcode produk
+                if (item.name.toLowerCase().includes(q)) return true;
+                if (item.code.toLowerCase().includes(q)) return true;
+                if (item.barcode && item.barcode.toLowerCase().includes(q)) return true;
+                // Cari di barcode satuan
+                if (item.unitConversions) {
+                    for (let conv of item.unitConversions) {
+                        if (conv.barcode && conv.barcode.toLowerCase().includes(q)) return true;
+                    }
+                }
+                return false;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada item</td></tr>';
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(item => {
+                // Kumpulkan barcode satuan
+                let unitBarcodes = '';
+                if (item.unitConversions && item.unitConversions.length) {
+                    unitBarcodes = item.unitConversions.map(c => {
+                        const unitName = kasirSatuan.find(s => s.id == c.unit)?.name || '?';
+                        return `${unitName}: ${c.barcode}`;
+                    }).join(', ');
+                } else {
+                    unitBarcodes = '-';
+                }
+
+                html += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.code}</td>
+                        <td>${item.barcode || '-'}</td>
+                        <td>${unitBarcodes}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="selectItemFromModal(${item.id})">Pilih</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function selectItemFromModal(itemId) {
+            // Tambahkan baris komponen dengan item yang dipilih
+            addComponentRow(itemId, 1, '');
+            closeSelectItemModal();
         }
 
         // ==================== FUNGSI ITEM ====================
@@ -1955,6 +2061,14 @@
                     return;
                 }
 
+                // Event listener untuk pencarian di modal pilih item
+                const searchInput = document.getElementById('item-search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('input', function(e) {
+                        renderItemSearchResults(e.target.value);
+                    });
+                }
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const action = urlParams.get('action');
                 const id = urlParams.get('id');
@@ -2001,8 +2115,13 @@
 
         window.onclick = function(event) {
             if (event.target.classList.contains('modal-overlay')) {
-                event.target.style.display = 'none';
-                if (event.target.id === 'conversion-modal') closeConversionModal();
+                if (event.target.id === 'conversion-modal') {
+                    closeConversionModal();
+                } else if (event.target.id === 'select-item-modal') {
+                    closeSelectItemModal();
+                } else {
+                    event.target.style.display = 'none';
+                }
             }
         };
     </script>
