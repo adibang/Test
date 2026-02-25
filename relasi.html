@@ -6,12 +6,11 @@
     <title>POSPLUS - Manajemen Relasi</title>
     <link rel="stylesheet" href="css/app.css">
     <style>
-        /* Gaya tambahan khusus untuk halaman relasi jika diperlukan */
+        /* Gaya tambahan khusus untuk halaman relasi */
         .page {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            display: block !important;
         }
         .page-header {
             display: flex;
@@ -79,10 +78,21 @@
             background: #f5f5f5;
             z-index: 1;
         }
+        /* Debug error */
+        #debug-error {
+            background: #ffdddd;
+            border: 2px solid #ff0000;
+            padding: 15px;
+            margin: 20px;
+            color: #ff0000;
+            font-weight: bold;
+            border-radius: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <!-- Header sederhana -->
+    <!-- Header -->
     <header class="app-header">
         <div class="header-content">
             <div class="app-title">
@@ -113,6 +123,9 @@
         </div>
     </header>
 
+    <!-- Elemen debug untuk menampilkan error -->
+    <div id="debug-error"></div>
+
     <!-- Konten dinamis -->
     <main class="main-content" id="relasi-content">
         <!-- Diisi oleh JavaScript -->
@@ -121,7 +134,7 @@
     <!-- Notifikasi -->
     <div id="notification"></div>
 
-    <!-- Scripts -->
+    <!-- Scripts (pastikan urutannya benar) -->
     <script src="js/constants.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/globals.js"></script>
