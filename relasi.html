@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>POSPLUS - Customer & Supplier</title>
+    <style>
+        /* ==================== RESET & BASE STYLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #FFFFFF;
+            min-height: 100vh;
+            color: #333333;
+        }
+        /* ==================== LOGIN OVERLAY ==================== */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f5f5f5;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            font-family: sans-serif;
+            transition: opacity 0.5s;
+        }
+        #login-overlay {
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #login-overlay[style*="display: flex"] {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 300px;
+            text-align: center;
+        }
+        .login-container h2 {
+            color: #006B54;
+            margin-bottom: 20px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: #006B54;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #import-login-btn {
+            margin-top: 10px;
+            background: transparent !important;
+            border: 1px solid #006B54 !important;
+            color: #006B54 !important;
+        }
+        .login-container .error-message {
+            color: red;
+            margin-top: 15px;
+            display: none;
+        }
+        .login-container .hint {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+        /* ==================== HEADER ==================== */
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .app-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #006B54;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .header-actions button {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 8px 12px;
+            border-radius: 15px;
+            border: 1px solid #006B54;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-actions button:hover {
+            background: #006B54;
+            color: white;
+        }
+        #user-name-display {
+            margin-right: 10px;
+            font-weight: 600;
+            color: #006B54;
+        }
+        /* ==================== MAIN CONTENT (untuk halaman ini) ==================== */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+            color: #666;
+        }
+        /* ==================== NOTIFICATIONS ==================== */
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            display: none;
+            color: white;
+            background-color: #006B54;
+            max-width: 90%;
+            text-align: center;
+            z-index: 1001;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        /* ==================== HALAMAN CUSTOMER & SUPPLIER ==================== */
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .page-header h2 {
+            color: #006B54;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .page-content {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .data-table tr:hover {
+            background: #f9f9f9;
+        }
+        /* ==================== PERBAIKAN TABEL CUSTOMER & SUPPLIER ==================== */
+        #customer-list-container,
+        #supplier-list-container {
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        #customer-list-container table,
+        #supplier-list-container table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        #customer-list-container thead th,
+        #supplier-list-container thead th {
+            position: sticky;
+            top: 0;
+            background: #f5f5f5;
+            z-index: 1;
+        }
+        #customer-list-container .action-btn,
+        #supplier-list-container .action-btn {
+            width: 32px;
+            height: 32px;
+            min-height: 32px;
+            padding: 0;
+            margin: 0 2px;
+        }
+        #customer-list-container .action-btn svg,
+        #supplier-list-container .action-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        /* ==================== FORM STYLES ==================== */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+            background: white;
+            color: #333;
+            transition: all 0.2s;
+        }
+        .form-input:focus {
+            border-color: #006B54;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,107,84,0.1);
+        }
+        .form-button-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+            min-height: 48px;
+        }
+        .form-button-primary:hover {
+            background: #005a46;
+        }
+        .form-button-secondary {
+            background: #d9d9d9;
+            color: #333333;
+            border: 1px solid #d9d9d9;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+            min-height: 48px;
+        }
+        .form-button-secondary:hover {
+            background: #cccccc;
+        }
+        .action-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 15px;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            min-height: auto;
+            position: relative;
+        }
+        .action-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+        }
+        .action-btn.delete-btn {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .action-btn.delete-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+        .action-btn.edit-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        /* ==================== NAVIGASI DALAM HALAMAN ==================== */
+        .page-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .page-nav button {
+            background: white;
+            border: 1px solid #006B54;
+            color: #006B54;
+            padding: 10px 16px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-nav button:hover {
+            background: #006B54;
+            color: white;
+        }
+        .page-nav button.active {
+            background: #006B54;
+            color: white;
+        }
+        /* ==================== LOADING OVERLAY ==================== */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* ==================== AUDIO NOTIFICATION ==================== */
+        .audio-notification {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        /* ==================== MODAL OVERLAY ==================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+        .modal-content {
+            background: #FFFFFF;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.2s ease;
+        }
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .modal-header {
+            padding: 12px 20px;
+            color: #006B54;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 107, 84, 0.1);
+            position: relative;
+            background: #FFFFFF;
+        }
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #006B54;
+        }
+        .modal-body {
+            padding: 20px;
+            max-height: calc(90vh - 60px);
+            overflow-y: auto;
+            background: #FFFFFF;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            background: #fafafa;
+            border-radius: 0 0 15px 15px;
+        }
+        /* Password wrapper */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper .form-input {
+            padding-right: 40px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            transition: color 0.2s;
+        }
+        .password-toggle:hover {
+            color: #006B54;
+        }
+        .password-toggle .eye-icon {
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== LOGIN OVERLAY ==================== -->
+    <div id="login-overlay">
+        <div class="login-container">
+            <h2>POSPLUS</h2>
+            <input type="text" id="login-username" placeholder="Username" autocomplete="off">
+            <input type="password" id="login-password" placeholder="Password">
+            <button id="login-btn">Masuk</button>
+            <button id="import-login-btn">Import Data</button>
+            <div id="login-error" class="error-message">Username atau password salah</div>
+            <div class="hint">Hubungi administrator</div>
+        </div>
+    </div>
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="app-title">
+                <div class="icon-container">
+                    <svg class="icon box-icon icon-primary" viewBox="0 0 24 24" width="24" height="24">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                </div>
+                <span>POSPLUS - Customer & Supplier</span>
+            </div>
+            <div class="header-actions">
+                <span id="user-name-display"></span>
+                <!-- Tombol Home -->
+                <button onclick="goHome()" title="Beranda">
+                    <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </button>
+                <button onclick="logout()">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== AUDIO ELEMENTS ==================== -->
+    <audio id="notification-success" class="audio-notification" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
+    </audio>
+    <audio id="notification-warning" class="audio-notification" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
+    </audio>
+    <audio id="notification-error" class="audio-notification" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
+    </audio>
+    <audio id="button-click-sound" class="audio-notification" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
+    </audio>
+
+    <!-- ==================== LOADING OVERLAY ==================== -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div style="margin-top: 20px; color: #006B54; font-weight: 600;">Memuat data...</div>
+    </div>
+
+    <!-- ==================== NAVIGASI CEPAT ==================== -->
+    <div class="page-nav">
+        <button onclick="openAddCustomerPage()">Tambah Pelanggan</button>
+        <button onclick="openListCustomerPage()">Daftar Pelanggan</button>
+        <button onclick="openAddSupplierPage()">Tambah Supplier</button>
+        <button onclick="openListSupplierPage()">Daftar Supplier</button>
+    </div>
+
+    <!-- ==================== HALAMAN CUSTOMER TAMBAH ==================== -->
+    <div id="customer-add-page" class="page">
+        <div class="page-header">
+            <button class="back-button" onclick="closeCustomerPage()" title="Kembali">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <h2 id="customer-page-title">Tambah Pelanggan</h2>
+        </div>
+        <div class="page-content">
+            <form id="customer-form" onsubmit="event.preventDefault();">
+                <div class="form-group">
+                    <label>Kode Pelanggan</label>
+                    <input type="text" id="customer-code" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama Pelanggan</label>
+                    <input type="text" id="customer-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Level Pelanggan</label>
+                    <select id="customer-level" class="form-input">
+                        <option value="Bronze">Bronze</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Platinum">Platinum</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Kontak (Telp/HP)</label>
+                    <input type="text" id="customer-contact" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>No Rekening</label>
+                    <input type="text" id="customer-account" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Nama Bank</label>
+                    <input type="text" id="customer-bank" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>No Token Listrik</label>
+                    <input type="text" id="customer-token" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="customer-email" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Alamat</label>
+                    <textarea id="customer-address" class="form-input" rows="3"></textarea>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button type="button" class="form-button-secondary" onclick="closeCustomerPage()">Batal</button>
+                    <button type="button" class="form-button-primary" onclick="saveCustomer()">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== HALAMAN CUSTOMER DAFTAR ==================== -->
+    <div id="customer-list-page" class="page">
+        <div class="page-header">
+            <h2>Daftar Pelanggan</h2>
+            <button class="form-button-primary" style="margin-left:auto;" onclick="openAddCustomerPage()">+ Tambah</button>
+        </div>
+        <div class="page-content">
+            <div id="customer-list-container"></div>
+        </div>
+    </div>
+
+    <!-- ==================== HALAMAN SUPPLIER TAMBAH ==================== -->
+    <div id="supplier-add-page" class="page">
+        <div class="page-header">
+            <button class="back-button" onclick="closeSupplierPage()" title="Kembali">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <h2 id="supplier-page-title">Tambah Supplier</h2>
+        </div>
+        <div class="page-content">
+            <form id="supplier-form" onsubmit="event.preventDefault();">
+                <div class="form-group">
+                    <label>Kode Supplier</label>
+                    <input type="text" id="supplier-code" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama Supplier</label>
+                    <input type="text" id="supplier-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Kontak (Telp/HP)</label>
+                    <input type="text" id="supplier-contact" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Alamat</label>
+                    <textarea id="supplier-address" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="supplier-email" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>No Rekening</label>
+                    <input type="text" id="supplier-account" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Nama Bank</label>
+                    <input type="text" id="supplier-bank" class="form-input">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button type="button" class="form-button-secondary" onclick="closeSupplierPage()">Batal</button>
+                    <button type="button" class="form-button-primary" onclick="saveSupplier()">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== HALAMAN SUPPLIER DAFTAR ==================== -->
+    <div id="supplier-list-page" class="page">
+        <div class="page-header">
+            <h2>Daftar Supplier</h2>
+            <button class="form-button-primary" style="margin-left:auto;" onclick="openAddSupplierPage()">+ Tambah</button>
+        </div>
+        <div class="page-content">
+            <div id="supplier-list-container"></div>
+        </div>
+    </div>
+
+    <!-- ==================== NOTIFICATION ==================== -->
+    <div id="notification"></div>
+
+    <script src="app.js"></script>
+    <script>
+        // Routing berdasarkan hash saat halaman dimuat
+        window.addEventListener('load', function() {
+            if (window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                switch(hash) {
+                    case 'add-customer': openAddCustomerPage(); break;
+                    case 'list-customer': openListCustomerPage(); break;
+                    case 'add-supplier': openAddSupplierPage(); break;
+                    case 'list-supplier': openListSupplierPage(); break;
+                    default: openListCustomerPage();
+                }
+            } else {
+                openListCustomerPage(); // default
+            }
+        });
+    </script>
+</body>
+</html>
