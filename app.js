@@ -311,15 +311,15 @@ document.addEventListener('click', function initAudioOnInteraction() {
     }
 }, { once: true });
 
-// ==================== LOADING STATE FUNCTIONS ====================
+// ==================== LOADING STATE FUNCTIONS (DIHAPUS) ====================
 function showLoading() {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.style.display = 'flex';
+    // Tidak melakukan apa-apa karena loading overlay sudah dihapus
+    console.log('showLoading dipanggil (no operation)');
 }
 
 function hideLoading() {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.style.display = 'none';
+    // Tidak melakukan apa-apa
+    console.log('hideLoading dipanggil (no operation)');
 }
 
 function showError(message) {
@@ -3003,13 +3003,11 @@ async function deletePendingTransaction(id) {
 
 // ==================== FUNGSI LAPORAN PENJUALAN ====================
 function openLaporanPage() {
-    // Ubah dari window.open menjadi navigasi di tab yang sama
     window.location.href = 'laporan.html';
 }
 
 // ==================== FUNGSI PEMBELIAN ====================
 function openPembelianPage() {
-    // Ubah dari window.open menjadi navigasi di tab yang sama
     window.location.href = 'pembelian.html';
 }
 
