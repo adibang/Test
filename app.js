@@ -17,8 +17,8 @@ let receiptConfig = {
 let kasirCategories = [];
 let kasirItems = [];
 let kasirSatuan = [];
-let customers = [];
-let suppliers = [];
+let customers = [];          // masih diperlukan untuk dashboard & piutang
+let suppliers = [];          // masih diperlukan (misal untuk laporan)
 let pendingTransactions = [];
 let users = [];
 let roles = [];
@@ -27,8 +27,6 @@ let currentUser = null;
 let editingKasirCategoryId = null;
 let editingKasirItemId = null;
 let editingSatuanId = null;
-let editingCustomerId = null;
-let editingSupplierId = null;
 let selectedCustomer = null;
 let tempUnitConversions = [];
 let editingConversionIndex = -1;
@@ -63,22 +61,7 @@ const icons = {
     download: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 };
 
-// ==================== FUNGSI HOME ====================
-function goHome() {
-    // Jika berada di halaman relasi.html (ditandai dengan adanya elemen customer-add-page)
-    if (document.getElementById('customer-add-page') || document.getElementById('customer-list-page')) {
-        window.location.href = 'index.html';
-    } else {
-        // Di index.html: sembunyikan semua halaman tambahan, tampilkan main-content
-        document.querySelector('.main-content').style.display = 'block';
-        document.getElementById('transaksi-page').style.display = 'none';
-        document.getElementById('cart-page').style.display = 'none';
-        document.getElementById('payment-page').style.display = 'none';
-        // Jika ada halaman customer/supplier (seharusnya sudah dihapus)
-    }
-}
-
-// ==================== FUNGSI CEK STOK BUNDLE (DIPINDAHKAN KE ATAS) ====================
+// ==================== FUNGSI CEK STOK BUNDLE ====================
 function checkBundleStock(bundle, qty) {
     if (!bundle.components || !Array.isArray(bundle.components)) return false;
     for (let comp of bundle.components) {
@@ -1706,7 +1689,7 @@ async function addBundleToCart(bundleId) {
         return;
     }
     
-    await loadBundles();
+    await loadBundles(); // muat ulang data terbaru
     const bundle = bundles.find(b => b.id == bundleId);
     console.log('Bundle ditemukan:', bundle);
     
@@ -1715,6 +1698,7 @@ async function addBundleToCart(bundleId) {
         return;
     }
     
+    // Cek apakah bundle sudah ada di keranjang
     const existingBundleInCart = cart.find(c => c.isBundle && c.bundleId == bundleId);
     if (existingBundleInCart) {
         showNotification('Bundle ini sudah ada di keranjang', 'warning');
@@ -1929,7 +1913,7 @@ function renderCustomerListForSelect() {
     if (!container) return;
 
     if (!customers || customers.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px;">Belum ada pelanggan. <br><button class="form-button-primary" onclick="openAddCustomerPage(); closeSelectCustomerModal();">Tambah Pelanggan</button></div>';
+        container.innerHTML = '<div style="text-align:center; padding:20px;">Belum ada pelanggan. <br><button class="form-button-primary" onclick="window.location.href=\'relasi.html#customer-add\'; closeSelectCustomerModal();">Tambah Pelanggan</button></div>';
         return;
     }
 
@@ -3178,7 +3162,7 @@ function renderNotifications(lowStockItems) {
     if (customersWithOutstanding.length > 0) {
         const notif = document.createElement('div');
         notif.className = 'notification danger';
-        notif.innerHTML = `💰 Total piutang dari ${customersWithOutstanding.length} pelanggan: ${formatRupiah(totalOutstanding)}. <button onclick="openListCustomerPage()">Lihat</button>`;
+        notif.innerHTML = `💰 Total piutang dari ${customersWithOutstanding.length} pelanggan: ${formatRupiah(totalOutstanding)}. <button onclick="window.location.href='relasi.html#customers'">Lihat</button>`;
         area.appendChild(notif);
     }
 
@@ -3265,343 +3249,6 @@ function updatePendingBadge() {
     }
 }
 
-// ==================== FUNGSI HALAMAN CUSTOMER ====================
-function openAddCustomerPage() {
-    editingCustomerId = null;
-    document.getElementById('customer-page-title').textContent = 'Tambah Pelanggan';
-    document.getElementById('customer-code').value = '';
-    document.getElementById('customer-name').value = '';
-    document.getElementById('customer-level').value = 'Bronze';
-    document.getElementById('customer-contact').value = '';
-    document.getElementById('customer-account').value = '';
-    document.getElementById('customer-bank').value = '';
-    document.getElementById('customer-token').value = '';
-    document.getElementById('customer-email').value = '';
-    document.getElementById('customer-address').value = '';
-    showCustomerPage();
-}
-
-function openEditCustomerPage(id) {
-    const cust = customers.find(c => c.id === id);
-    if (!cust) return;
-    editingCustomerId = id;
-    document.getElementById('customer-page-title').textContent = 'Edit Pelanggan';
-    document.getElementById('customer-code').value = cust.code || '';
-    document.getElementById('customer-name').value = cust.name || '';
-    document.getElementById('customer-level').value = cust.level || 'Bronze';
-    document.getElementById('customer-contact').value = cust.contact || '';
-    document.getElementById('customer-account').value = cust.accountNumber || '';
-    document.getElementById('customer-bank').value = cust.bankName || '';
-    document.getElementById('customer-token').value = cust.token || '';
-    document.getElementById('customer-email').value = cust.email || '';
-    document.getElementById('customer-address').value = cust.address || '';
-    showCustomerPage();
-}
-
-function showCustomerPage() {
-    // Sembunyikan halaman lain jika ada
-    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
-    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
-    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
-    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
-    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
-    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
-    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
-    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'block';
-    closeDrawer();
-}
-
-function openListCustomerPage() {
-    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
-    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
-    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
-    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
-    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
-    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
-    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
-    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'block';
-    renderCustomerList();
-    closeDrawer();
-}
-
-function closeCustomerPage() {
-    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
-    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
-    // Jika di relasi.html, kembali ke daftar pelanggan secara default
-    if (document.getElementById('customer-list-page')) {
-        document.getElementById('customer-list-page').style.display = 'block';
-        renderCustomerList();
-    } else {
-        // Di index.html (seharusnya tidak ada, tapi amankan)
-        if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'block';
-    }
-}
-
-function renderCustomerList() {
-    const container = document.getElementById('customer-list-container');
-    if (!container) return;
-    if (customers.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding:20px;">Belum ada pelanggan.</p>';
-        return;
-    }
-    let html = '<table class="data-table"><thead><tr><th>Kode</th><th>Nama</th><th>Level</th><th>Kontak</th><th>Piutang</th><th>Aksi</th></tr></thead><tbody>';
-    customers.forEach(c => {
-        html += `<tr>
-            <td>${c.code || '-'}</td>
-            <td>${c.name}</td>
-            <td>${c.level || 'Bronze'}</td>
-            <td>${c.contact || '-'}</td>
-            <td>${formatRupiah(c.outstanding || 0)}</td>
-            <td>
-                <button class="action-btn edit-btn" onclick="openEditCustomerPage(${c.id})">${icons.edit}</button>
-                <button class="action-btn delete-btn" onclick="deleteCustomer(${c.id})">${icons.delete}</button>
-            </td>
-        </tr>`;
-    });
-    html += '</tbody></table>';
-    container.innerHTML = html;
-}
-
-async function saveCustomer() {
-    const code = document.getElementById('customer-code').value.trim();
-    const name = document.getElementById('customer-name').value.trim();
-    const level = document.getElementById('customer-level').value;
-    const contact = document.getElementById('customer-contact').value.trim();
-    const accountNumber = document.getElementById('customer-account').value.trim();
-    const bankName = document.getElementById('customer-bank').value.trim();
-    const token = document.getElementById('customer-token').value.trim();
-    const email = document.getElementById('customer-email').value.trim();
-    const address = document.getElementById('customer-address').value.trim();
-
-    if (!code || !name) {
-        showNotification('Kode dan Nama harus diisi', 'error');
-        return;
-    }
-
-    const duplicate = customers.find(c => c.code === code && c.id !== editingCustomerId);
-    if (duplicate) {
-        showNotification('Kode pelanggan sudah digunakan', 'error');
-        return;
-    }
-
-    const now = new Date().toISOString();
-    try {
-        showLoading();
-        if (editingCustomerId) {
-            const cust = customers.find(c => c.id === editingCustomerId);
-            if (cust) {
-                cust.code = code;
-                cust.name = name;
-                cust.level = level;
-                cust.contact = contact;
-                cust.accountNumber = accountNumber;
-                cust.bankName = bankName;
-                cust.token = token;
-                cust.email = email;
-                cust.address = address;
-                cust.updatedAt = now;
-                await dbPut(STORES.CUSTOMERS, cust);
-            }
-        } else {
-            const newCust = {
-                code, name, level, contact, accountNumber, bankName, token, email, address,
-                outstanding: 0,
-                createdAt: now,
-                updatedAt: now
-            };
-            await dbAdd(STORES.CUSTOMERS, newCust);
-        }
-        await loadCustomers();
-        showNotification('Pelanggan berhasil disimpan', 'success');
-        openListCustomerPage();
-    } catch (error) {
-        showNotification('Gagal menyimpan: ' + error.message, 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function deleteCustomer(id) {
-    if (!confirm('Hapus pelanggan ini?')) return;
-    try {
-        showLoading();
-        await dbDelete(STORES.CUSTOMERS, id);
-        customers = customers.filter(c => c.id !== id);
-        if (selectedCustomer && selectedCustomer.id === id) {
-            selectedCustomer = null;
-            document.getElementById('customer-badge').style.display = 'none';
-        }
-        renderCustomerList();
-        showNotification('Pelanggan dihapus', 'success');
-    } catch (error) {
-        showNotification('Gagal hapus: ' + error.message, 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-function openDaftarCustomerModal() {
-    openListCustomerPage();
-}
-
-// ==================== FUNGSI HALAMAN SUPPLIER ====================
-function openAddSupplierPage() {
-    editingSupplierId = null;
-    document.getElementById('supplier-page-title').textContent = 'Tambah Supplier';
-    document.getElementById('supplier-code').value = '';
-    document.getElementById('supplier-name').value = '';
-    document.getElementById('supplier-contact').value = '';
-    document.getElementById('supplier-address').value = '';
-    document.getElementById('supplier-email').value = '';
-    document.getElementById('supplier-account').value = '';
-    document.getElementById('supplier-bank').value = '';
-    showSupplierPage();
-}
-
-function openEditSupplierPage(id) {
-    const sup = suppliers.find(s => s.id === id);
-    if (!sup) return;
-    editingSupplierId = id;
-    document.getElementById('supplier-page-title').textContent = 'Edit Supplier';
-    document.getElementById('supplier-code').value = sup.code || '';
-    document.getElementById('supplier-name').value = sup.name || '';
-    document.getElementById('supplier-contact').value = sup.contact || '';
-    document.getElementById('supplier-address').value = sup.address || '';
-    document.getElementById('supplier-email').value = sup.email || '';
-    document.getElementById('supplier-account').value = sup.accountNumber || '';
-    document.getElementById('supplier-bank').value = sup.bankName || '';
-    showSupplierPage();
-}
-
-function showSupplierPage() {
-    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
-    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
-    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
-    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
-    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
-    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
-    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
-    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'block';
-    closeDrawer();
-}
-
-function openListSupplierPage() {
-    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
-    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
-    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
-    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
-    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
-    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
-    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
-    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'block';
-    renderSupplierList();
-    closeDrawer();
-}
-
-function closeSupplierPage() {
-    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
-    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
-    if (document.getElementById('supplier-list-page')) {
-        document.getElementById('supplier-list-page').style.display = 'block';
-        renderSupplierList();
-    } else {
-        if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'block';
-    }
-}
-
-function renderSupplierList() {
-    const container = document.getElementById('supplier-list-container');
-    if (!container) return;
-    if (suppliers.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding:20px;">Belum ada supplier.</p>';
-        return;
-    }
-    let html = '<table class="data-table"><thead><tr><th>Kode</th><th>Nama</th><th>Kontak</th><th>Email</th><th>Aksi</th></tr></thead><tbody>';
-    suppliers.forEach(s => {
-        html += `<tr>
-            <td>${s.code || '-'}</td>
-            <td>${s.name}</td>
-            <td>${s.contact || '-'}</td>
-            <td>${s.email || '-'}</td>
-            <td>
-                <button class="action-btn edit-btn" onclick="openEditSupplierPage(${s.id})">${icons.edit}</button>
-                <button class="action-btn delete-btn" onclick="deleteSupplier(${s.id})">${icons.delete}</button>
-            </td>
-        </tr>`;
-    });
-    html += '</tbody></table>';
-    container.innerHTML = html;
-}
-
-async function saveSupplier() {
-    const code = document.getElementById('supplier-code').value.trim();
-    const name = document.getElementById('supplier-name').value.trim();
-    const contact = document.getElementById('supplier-contact').value.trim();
-    const address = document.getElementById('supplier-address').value.trim();
-    const email = document.getElementById('supplier-email').value.trim();
-    const accountNumber = document.getElementById('supplier-account').value.trim();
-    const bankName = document.getElementById('supplier-bank').value.trim();
-
-    if (!code || !name) {
-        showNotification('Kode dan Nama harus diisi', 'error');
-        return;
-    }
-
-    const duplicate = suppliers.find(s => s.code === code && s.id !== editingSupplierId);
-    if (duplicate) {
-        showNotification('Kode supplier sudah digunakan', 'error');
-        return;
-    }
-
-    const now = new Date().toISOString();
-    try {
-        showLoading();
-        if (editingSupplierId) {
-            const sup = suppliers.find(s => s.id === editingSupplierId);
-            if (sup) {
-                sup.code = code;
-                sup.name = name;
-                sup.contact = contact;
-                sup.address = address;
-                sup.email = email;
-                sup.accountNumber = accountNumber;
-                sup.bankName = bankName;
-                sup.updatedAt = now;
-                await dbPut(STORES.SUPPLIERS, sup);
-            }
-        } else {
-            const newSup = {
-                code, name, contact, address, email, accountNumber, bankName,
-                createdAt: now,
-                updatedAt: now
-            };
-            await dbAdd(STORES.SUPPLIERS, newSup);
-        }
-        await loadSuppliers();
-        showNotification('Supplier berhasil disimpan', 'success');
-        openListSupplierPage();
-    } catch (error) {
-        showNotification('Gagal menyimpan: ' + error.message, 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function deleteSupplier(id) {
-    if (!confirm('Hapus supplier ini?')) return;
-    try {
-        showLoading();
-        await dbDelete(STORES.SUPPLIERS, id);
-        suppliers = suppliers.filter(s => s.id !== id);
-        renderSupplierList();
-        showNotification('Supplier dihapus', 'success');
-    } catch (error) {
-        showNotification('Gagal hapus: ' + error.message, 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
 // ==================== INISIALISASI APLIKASI ====================
 async function initApp() {
     try {
@@ -3674,14 +3321,7 @@ async function initApp() {
             showLoginScreen();
         }
 
-        // Tampilkan halaman yang sesuai berdasarkan konteks
-        if (document.getElementById('customer-list-page')) {
-            // Berada di relasi.html
-            openListCustomerPage();
-        } else {
-            // Berada di index.html
-            await updateDashboard();
-        }
+        await updateDashboard();
 
         console.log('App initialized successfully');
     } catch (error) {
@@ -3707,9 +3347,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.onclick = function(event) {
     if (event.target.classList.contains('modal-overlay')) {
         event.target.style.display = 'none';
-        // Tutup modal yang sesuai (daftar disesuaikan)
-        if (event.target.id === 'settings-modal') closeSettingsModal();
+        if (event.target.id === 'kasir-category-modal') closeKasirCategoryModal?.();
+        else if (event.target.id === 'kasir-item-modal') closeKasirItemModal?.();
+        else if (event.target.id === 'list-kasir-category-modal') closeListKasirCategoryModal?.();
+        else if (event.target.id === 'list-kasir-item-modal') closeListKasirItemModal?.();
+        else if (event.target.id === 'list-satuan-modal') closeListSatuanModal?.();
+        else if (event.target.id === 'satuan-modal') closeSatuanModal?.();
+        else if (event.target.id === 'settings-modal') closeSettingsModal();
         else if (event.target.id === 'inventory-modal') closeInventoryModal();
+        else if (event.target.id === 'customer-modal') closeCustomerModal?.();
+        else if (event.target.id === 'list-customer-modal') closeListCustomerModal?.();
+        else if (event.target.id === 'supplier-modal') closeSupplierModal?.();
+        else if (event.target.id === 'list-supplier-modal') closeListSupplierModal?.();
         else if (event.target.id === 'select-customer-modal') closeSelectCustomerModal();
         else if (event.target.id === 'pending-transactions-modal') closePendingTransactionsModal();
         else if (event.target.id === 'confirm-piutang-modal') closeConfirmPiutangModal();
