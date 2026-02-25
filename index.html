@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <title>POSPLUS - Dashboard</title>
+    <title>POSPLUS</title>
     <style>
         /* ==================== RESET & BASE STYLES ==================== */
         * {
@@ -430,6 +430,285 @@
                 align-self: flex-end;
             }
         }
+        /* ==================== HALAMAN TRANSAKSI (PRODUK) ==================== */
+        #transaksi-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+        .transaksi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .transaksi-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .transaksi-header-left h2 {
+            color: #006B54;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .back-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #006B54;
+            border-radius: 15px;
+            transition: background 0.2s;
+        }
+        .back-button:hover {
+            background: #f0f9f6;
+        }
+        .back-button svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+        }
+        .transaksi-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+        .view-toggle button {
+            width: 40px;
+            height: 40px;
+            border-radius: 15px;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            min-height: auto;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-toggle button.active {
+            background: #006B54;
+            color: white;
+        }
+        .view-toggle button svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        /* ==================== HALAMAN CART ==================== */
+        #cart-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+        .cart-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .cart-header h2 {
+            color: #006B54;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .cart-content {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .cart-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .cart-items-table th {
+            text-align: left;
+            padding: 12px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .cart-items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-total {
+            text-align: right;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .cart-items-table th,
+            .cart-items-table td {
+                font-size: 0.8rem;
+                padding: 6px;
+            }
+            .cart-total {
+                font-size: 1.1rem;
+            }
+        }
+        .cart-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        /* ==================== HALAMAN PEMBAYARAN (MODIFIKASI) ==================== */
+        #payment-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+        .payment-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .payment-header h2 {
+            color: #006B54;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .payment-content {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .payment-summary {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 15px;
+        }
+        .payment-summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .payment-summary-row.total {
+            font-weight: 600;
+            font-size: 1.3rem;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        .payment-methods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .payment-method-item {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        .payment-method-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .payment-method-item input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            font-size: 1rem;
+            text-align: right;
+        }
+        #shortage-display {
+            display: none;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #fff3f3;
+            border-radius: 10px;
+            border: 1px solid #ff6b6b;
+            color: #ff0000;
+            font-weight: 600;
+        }
+        .change-amount {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .payment-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .printer-section {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+        }
+        .printer-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-light {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #ff4444;
+            transition: background-color 0.3s;
+        }
+        .status-light.connected {
+            background-color: #00C851;
+        }
+        #connect-printer-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+        }
+        #connect-printer-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        #print-receipt-btn {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #print-receipt-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         /* ==================== MODAL OVERLAY ==================== */
         .modal-overlay {
             display: none;
@@ -519,7 +798,7 @@
         input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            accent-color: #006B54;
+            accent-color: #006B54; /* Warna hijau sesuai tema */
             margin-right: 5px;
         }
         button {
@@ -595,6 +874,40 @@
             height: 24px;
             stroke-width: 2;
         }
+        .customer-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background: #006B54;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .cart-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #006B54;
+            color: white;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            font-weight: bold;
+            padding: 0 4px;
+        }
         .action-btn.delete-btn {
             border-color: #ff6b6b;
             color: #ff6b6b;
@@ -665,6 +978,18 @@
             white-space: nowrap;
             border: 0;
         }
+        /* ==================== MODAL KONFIRMASI PIUTANG ==================== */
+        #confirm-piutang-modal {
+            display: none;
+        }
+        /* ==================== MODAL PILIH CUSTOMER ==================== */
+        #select-customer-modal {
+            display: none;
+        }
+        /* ==================== MODAL INPUT KODE PENDING ==================== */
+        #pending-code-modal {
+            display: none;
+        }
         /* ==================== SETTINGS MODAL ==================== */
         #settings-modal {
             display: none;
@@ -685,9 +1010,74 @@
         #user-modal {
             display: none;
         }
-        /* ==================== TOMBOL FLOATING UNTUK PENDING (DIHAPUS) ==================== */
-        /* (Kode tombol floating telah dihapus) */
-        
+        /* ==================== MODAL BUNDLE (BARU) ==================== */
+        #bundle-modal {
+            display: none;
+        }
+        /* ==================== TOMBOL FLOATING UNTUK PENDING ==================== */
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #006B54;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            transition: transform 0.2s;
+        }
+        .floating-btn:hover {
+            transform: scale(1.1);
+        }
+        .floating-btn svg {
+            width: 30px;
+            height: 30px;
+        }
+        .pending-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            font-weight: bold;
+            padding: 0 4px;
+        }
+        .piutang-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: #ccc;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .piutang-btn.active {
+            background: #dc3545;
+        }
+        .piutang-btn:hover {
+            opacity: 0.8;
+        }
         #notification {
             position: fixed;
             top: 20px;
@@ -711,7 +1101,7 @@
             align-items: center;
         }
         .password-wrapper .form-input {
-            padding-right: 40px;
+            padding-right: 40px; /* ruang untuk ikon */
         }
         .password-toggle {
             position: absolute;
@@ -730,6 +1120,278 @@
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
+        }
+        /* ==================== PERBAIKAN TAMPILAN INPUT QTY ==================== */
+        .qty-control {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .qty-control button {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: auto;
+        }
+        
+        .qty-control button:hover {
+            background: #006B54;
+            color: white;
+        }
+        
+        .qty-control .qty-input {
+            width: 60px;
+            text-align: center;
+            padding: 6px 4px;
+            font-size: 1rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin: 0 2px;
+        }
+        
+        /* Perbaikan tampilan item produk */
+        .product-list-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .product-list-item:hover {
+            background: #f9f9f9;
+        }
+        
+        .product-list-item .name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        /* Responsif untuk layar kecil (HP) */
+        @media (max-width: 480px) {
+            .qty-control .qty-input {
+                width: 45px;
+                font-size: 0.9rem;
+            }
+            
+            .qty-control button {
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+            
+            .product-list-item > div:first-of-type {
+                flex-wrap: wrap;
+            }
+            
+            .product-list-item .price {
+                font-size: 0.85rem;
+            }
+            
+            .product-grid .product-card {
+                padding: 10px;
+            }
+            
+            .product-grid .qty-control .qty-input {
+                width: 40px;
+            }
+        }
+        /* ==================== TAMPILAN GRID PRODUK ==================== */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            padding: 10px;
+        }
+        
+        .product-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .product-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .product-card .product-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .product-card .name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+            line-height: 1.3;
+            min-height: 2.6em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .product-card .price {
+            font-weight: 600;
+            color: #006B54;
+            font-size: 1rem;
+        }
+        
+        .product-card .stock {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .product-card .qty-control {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            margin-top: 5px;
+        }
+        
+        .product-card .qty-control button {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: auto;
+        }
+        
+        .product-card .qty-control button:hover {
+            background: #006B54;
+            color: white;
+        }
+        
+        .product-card .qty-control .qty-input {
+            width: 50px;
+            text-align: center;
+            padding: 4px;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        
+        /* ==================== TAMPILAN LIST PRODUK (sudah ada, dipastikan rapi) ==================== */
+        .product-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .product-list-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .product-list-item:hover {
+            background: #f9f9f9;
+        }
+        
+        .product-list-item .name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .product-list-item .price {
+            color: #006B54;
+            font-weight: 500;
+        }
+        
+        .product-list-item .qty-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .product-list-item .qty-control button {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: auto;
+        }
+        
+        .product-list-item .qty-control button:hover {
+            background: #006B54;
+            color: white;
+        }
+        
+        .product-list-item .qty-control .qty-input {
+            width: 60px;
+            text-align: center;
+            padding: 4px;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        
+        /* ==================== RESPONSIF UNTUK LAYAR KECIL ==================== */
+        @media (max-width: 480px) {
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 8px;
+            }
+            
+            .product-card {
+                padding: 10px 5px;
+            }
+            
+            .product-card .name {
+                font-size: 0.85rem;
+            }
+            
+            .product-card .price {
+                font-size: 0.9rem;
+            }
+            
+            .product-card .qty-control .qty-input {
+                width: 40px;
+            }
         }
     </style>
 </head>
@@ -852,7 +1514,7 @@
                 <span class="arrow">></span>
             </div>
             <div class="sub-menu">
-                <button onclick="window.location.href='transaksi.html'; closeSubMenu(this);">
+                <button onclick="openTransaksiPage(); closeSubMenu(this);">
                     <svg class="icon" viewBox="0 0 24 24">
                         <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
                         <line x1="2" y1="10" x2="22" y2="10"/>
@@ -1067,6 +1729,237 @@
         </div>
     </main>
 
+    <!-- ==================== HALAMAN TRANSAKSI (PRODUK) ==================== -->
+    <div id="transaksi-page">
+        <div class="transaksi-header">
+            <div class="transaksi-header-left">
+                <button class="back-button" onclick="closeTransaksiPage()" title="Kembali ke Beranda">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+                <h2>Transaksi Kasir</h2>
+            </div>
+            <div class="transaksi-header-right">
+                <div class="view-toggle">
+                    <button id="view-list-btn" onclick="setProductViewMode('list')" title="Tampilan List">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                    </button>
+                    <button id="view-grid-btn" onclick="setProductViewMode('grid')" title="Tampilan Grid">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="barcode-input" class="form-input" placeholder="Cari produk atau scan barcode..." oninput="filterProductList(this.value)" onkeypress="if(event.key==='Enter') processBarcode()" style="flex: 2; min-width: 200px;">
+            <button id="customer-select-btn" class="action-btn" onclick="openSelectCustomerModal()" title="Pilih Pelanggan">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
+                </svg>
+                <span id="customer-badge" class="customer-badge" style="display: none;"></span>
+            </button>
+            <button id="bundle-btn" class="action-btn" onclick="openBundleModal()" title="Pilih Bundle">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="9" y1="21" x2="9" y2="9"/>
+                </svg>
+                <span id="bundle-badge" class="cart-badge" style="display: none;">0</span>
+            </button>
+            <button id="cart-icon-btn" class="action-btn" onclick="openCartPage()" title="Lihat Keranjang">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                <span id="cart-count" class="cart-badge">0</span>
+            </button>
+        </div>
+        <div id="product-container" style="max-height: 500px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 15px; padding: 10px;"></div>
+    </div>
+
+    <!-- ==================== HALAMAN CART ==================== -->
+    <div id="cart-page">
+        <div class="cart-header">
+            <button class="back-button" onclick="closeCartPage()" title="Kembali ke Transaksi">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <h2>Keranjang Belanja</h2>
+        </div>
+        <div class="cart-content">
+            <table class="cart-items-table">
+                <thead>
+                    <tr>
+                        <th>Produk</th>
+                        <th>Jumlah</th>
+                        <th>Harga Satuan</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cart-items-page"></tbody>
+            </table>
+            <div class="cart-total">
+                Total: <span id="cart-total-page">Rp 0</span>
+            </div>
+            <div class="cart-actions">
+                <button id="piutang-btn-cart" class="piutang-btn" onclick="addOutstandingToCart()">!</button>
+                <button class="form-button-secondary" onclick="saveDraftTransaction()">Simpan Draft</button>
+                <button class="form-button-primary" onclick="openPaymentPage()">Bayar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== HALAMAN PEMBAYARAN ==================== -->
+    <div id="payment-page">
+        <div class="payment-header">
+            <button class="back-button" onclick="closePaymentPage()" title="Kembali ke Keranjang">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <h2>Pembayaran</h2>
+        </div>
+        <div class="payment-content">
+            <div class="payment-summary">
+                <div class="payment-summary-row">
+                    <span>Total Belanja</span>
+                    <span id="payment-total">Rp 0</span>
+                </div>
+                <div class="payment-summary-row total">
+                    <span>Total Dibayar</span>
+                    <span id="payment-grand-total">Rp 0</span>
+                </div>
+            </div>
+            <div class="payment-methods-grid">
+                <div class="payment-method-item">
+                    <label>Tunai</label>
+                    <input type="number" id="payment-cash" class="payment-input" min="0" step="0.01" value="0" oninput="updatePaymentSummary()">
+                </div>
+                <div class="payment-method-item">
+                    <label>Kartu Debit/Kredit</label>
+                    <input type="number" id="payment-card" class="payment-input" min="0" step="0.01" value="0" oninput="updatePaymentSummary()">
+                </div>
+                <div class="payment-method-item">
+                    <label>Transfer Bank</label>
+                    <input type="number" id="payment-transfer" class="payment-input" min="0" step="0.01" value="0" oninput="updatePaymentSummary()">
+                </div>
+                <div class="payment-method-item">
+                    <label>E-Wallet</label>
+                    <input type="number" id="payment-ewallet" class="payment-input" min="0" step="0.01" value="0" oninput="updatePaymentSummary()">
+                </div>
+            </div>
+            <div id="shortage-display" style="display:none; color:red; margin-bottom:10px; padding:10px; background:#fff3f3; border-radius:10px;">
+                Kurang bayar: Rp <span id="shortage-amount">0</span>
+            </div>
+            <div class="change-amount" id="change-amount">Kembalian: Rp 0</div>
+            <div class="payment-actions">
+                <button class="form-button-secondary" onclick="closePaymentPage()">Batal</button>
+                <button class="form-button-primary" onclick="processPayment()">Proses Pembayaran</button>
+            </div>
+            <div class="printer-section">
+                <button id="connect-printer-btn" class="form-button-secondary" onclick="togglePrinter()">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                        <path d="M6 9V3h12v6"/>
+                        <rect x="6" y="15" width="12" height="6" rx="2"/>
+                    </svg>
+                    <span id="connect-btn-text">Connect</span>
+                </button>
+                <div class="printer-status-indicator">
+                    <span class="status-light" id="printer-status-light"></span>
+                    <span id="printer-status-text"></span>
+                </div>
+                <button id="print-receipt-btn" class="form-button-primary" onclick="printReceipt()" disabled style="margin-left: auto;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                        <path d="M6 9V3h12v6"/>
+                        <rect x="6" y="15" width="12" height="6" rx="2"/>
+                    </svg>
+                    Print Struk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL KONFIRMASI PIUTANG ==================== -->
+    <div class="modal-overlay" id="confirm-piutang-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Konfirmasi Piutang</h2>
+            </div>
+            <div class="modal-body">
+                <p>Jumlah bayar kurang sebesar <span id="shortage-confirm">Rp 0</span>.</p>
+                <p>Apakah ingin melanjutkan transaksi dengan mencatat sisa sebagai piutang?</p>
+                <p style="font-size:0.9rem; color:#666;">Pastikan pelanggan telah dipilih.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-top:20px;">
+                    <button class="form-button-secondary" onclick="closeConfirmPiutangModal()">Batal</button>
+                    <button class="form-button-primary" onclick="processPaymentWithPiutang()">Ya, Lanjutkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL PILIH CUSTOMER ==================== -->
+    <div class="modal-overlay" id="select-customer-modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <svg class="icon icon-primary" viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
+                    </svg>
+                    Pilih Pelanggan
+                </h2>
+            </div>
+            <div class="modal-body">
+                <div id="select-customer-list" style="max-height:400px; overflow-y:auto;"></div>
+                <div style="margin-top:20px;">
+                    <button type="button" class="form-button-secondary" style="width:100%;" onclick="closeSelectCustomerModal()">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL INPUT KODE PENDING ==================== -->
+    <div class="modal-overlay" id="pending-code-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Simpan Draft Transaksi</h2>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:8px; color:#333; font-weight:500;">Kode / Nama Pending</label>
+                    <input type="text" id="pending-code-input" class="form-input" placeholder="Misal: PENDING-001" autocomplete="off">
+                    <small style="color:#666;">Kosongkan untuk menggunakan nama default</small>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <button type="button" class="form-button-secondary" onclick="closePendingCodeModal()">Batal</button>
+                    <button type="button" class="form-button-primary" onclick="confirmSaveDraft()">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== SETTINGS MODAL ==================== -->
     <div class="modal-overlay" id="settings-modal">
         <div class="modal-content" style="max-width:500px;">
@@ -1210,291 +2103,40 @@
         </div>
     </div>
 
-    <!-- ==================== TOMBOL FLOATING UNTUK PENDING (DIHAPUS) ==================== -->
-    <!-- Tombol floating telah dipindahkan ke transaksi.html -->
+    <!-- ==================== MODAL BUNDLE (BARU) ==================== -->
+    <div class="modal-overlay" id="bundle-modal">
+        <div class="modal-content" style="max-width:600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <svg class="icon icon-primary" viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </svg>
+                    Pilih Bundle
+                </h2>
+            </div>
+            <div class="modal-body">
+                <div id="bundle-list-container" style="max-height:400px; overflow-y:auto;"></div>
+                <div style="margin-top:20px;">
+                    <button class="form-button-secondary" onclick="closeBundleModal()">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOMBOL FLOATING UNTUK PENDING ==================== -->
+    <button id="pending-transactions-btn" class="floating-btn" onclick="openPendingTransactionsModal()" title="Transaksi Pending">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span id="pending-badge" class="pending-badge" style="display: none;">0</span>
+    </button>
 
     <!-- ==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
 
-    <!-- Muat app.js untuk fungsi umum -->
     <script src="app.js"></script>
-
-    <!-- Script khusus untuk halaman index (dashboard, inventory, dll) -->
-    <script>
-        // ==================== FUNGSI INVENTORY (diambil dari app.js lama) ====================
-        function openInventoryStokModal() {
-            document.getElementById('inventory-modal-title').innerHTML = `
-                <svg class="icon icon-primary" viewBox="0 0 24 24">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    <line x1="12" y1="11" x2="12" y2="17"/>
-                </svg> Stok Barang`;
-
-            let html = `
-                <div>
-                    <input type="text" id="inventory-search-input" class="form-input" 
-                           placeholder="Cari item..." style="margin-bottom:10px;" 
-                           oninput="filterInventoryTable(this.value)">
-                    <div id="inventory-table-container"></div>
-                    <div style="margin-top:20px;">
-                        <button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('inventory-modal-body').innerHTML = html;
-            filterInventoryTable('');
-            document.getElementById('inventory-modal').style.display = 'flex';
-            closeDrawer();
-        }
-
-        function filterInventoryTable(filterText) {
-            const container = document.getElementById('inventory-table-container');
-            if (!container) return;
-
-            const filter = filterText.toLowerCase();
-
-            const filteredItems = kasirItems.filter(item => {
-                const matchesName = item.name.toLowerCase().includes(filter);
-                const matchesCode = item.code.toLowerCase().includes(filter);
-                const matchesBarcode = item.barcode && item.barcode.toLowerCase().includes(filter);
-
-                let matchesUnitBarcode = false;
-                if (item.unitConversions && Array.isArray(item.unitConversions)) {
-                    matchesUnitBarcode = item.unitConversions.some(conv =>
-                        conv.barcode && conv.barcode.toLowerCase().includes(filter)
-                    );
-                }
-
-                return matchesName || matchesCode || matchesBarcode || matchesUnitBarcode;
-            });
-
-            let tableHtml = '<table style="width:100%; border-collapse:collapse;">';
-            tableHtml += '<thead><tr><th>Nama Item</th><th>Stok</th><th>Aksi</th></tr></thead><tbody>';
-
-            filteredItems.forEach(item => {
-                tableHtml += `<tr>
-                    <td>${item.name}</td>
-                    <td>${item.stock !== undefined ? item.stock : 0}</td>
-                    <td>
-                        <button class="action-btn edit-btn" onclick="openStockOpnameForItem(${item.id})">
-                            ${icons.edit}
-                        </button>
-                    </td>
-                </tr>`;
-            });
-
-            tableHtml += '</tbody></table>';
-            container.innerHTML = tableHtml;
-        }
-
-        function openInventoryOpnameModal() {
-            openInventoryStokModal();
-        }
-
-        function openStockOpnameForItem(itemId) {
-            const item = kasirItems.find(i => i.id === itemId);
-            if (!item) return;
-            
-            document.getElementById('inventory-modal-title').innerHTML = `
-                <svg class="icon icon-primary" viewBox="0 0 24 24">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="12" y1="18" x2="12" y2="12"/>
-                    <line x1="9" y1="15" x2="15" y2="15"/>
-                </svg> Stok Opname: ${item.name}`;
-            
-            const html = `
-                <div style="padding:20px;">
-                    <label>Stok Saat Ini: ${item.stock}</label>
-                    <input type="number" id="opname-stock-value" class="form-input" value="${item.stock}" step="any" min="0">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-top:20px;">
-                        <button class="form-button-secondary" onclick="openInventoryStokModal()">Batal</button>
-                        <button class="form-button-primary" onclick="updateStock(${item.id})">Simpan</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('inventory-modal-body').innerHTML = html;
-        }
-
-        async function updateStock(itemId) {
-            const newStock = parseFloat(document.getElementById('opname-stock-value').value);
-            if (isNaN(newStock) || newStock < 0) {
-                showNotification('Stok harus angka positif', 'error');
-                return;
-            }
-            try {
-                showLoading();
-                const item = kasirItems.find(i => i.id === itemId);
-                if (item) {
-                    item.stock = newStock;
-                    item.updatedAt = new Date().toISOString();
-                    await dbPut(STORES.KASIR_ITEMS, item);
-                    await loadKasirItems();
-                    await updateDashboard();
-                    showNotification('Stok diperbarui', 'success');
-                    openInventoryStokModal();
-                }
-            } catch (error) {
-                showNotification('Gagal update stok: ' + error.message, 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        function openInventoryLaporanModal() {
-            document.getElementById('inventory-modal-title').innerHTML = `
-                <svg class="icon icon-primary" viewBox="0 0 24 24">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg> Laporan Stok`;
-            
-            let html = '<div style="max-height:400px; overflow-y:auto;">';
-            html += '<table style="width:100%; border-collapse:collapse;">';
-            html += '<thead><tr><th>Nama Item</th><th>Stok</th></tr></thead><tbody>';
-            kasirItems.forEach(item => {
-                html += `<tr><td>${item.name}</td><td>${item.stock !== undefined ? item.stock : 0}</td></tr>`;
-            });
-            html += '</tbody></table></div>';
-            html += '<div style="margin-top:20px;"><button class="form-button-secondary" onclick="closeInventoryModal()">Tutup</button></div>';
-            
-            document.getElementById('inventory-modal-body').innerHTML = html;
-            document.getElementById('inventory-modal').style.display = 'flex';
-            closeDrawer();
-        }
-
-        function closeInventoryModal() {
-            document.getElementById('inventory-modal').style.display = 'none';
-        }
-
-        // ==================== FUNGSI PENDING TRANSACTIONS ====================
-        function openPendingTransactionsModal() {
-            const container = document.getElementById('pending-transactions-list');
-            container.innerHTML = '';
-            if (pendingTransactions.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tidak ada transaksi pending.</div>';
-            } else {
-                pendingTransactions.forEach((trans, index) => {
-                    const div = document.createElement('div');
-                    div.style.display = 'flex';
-                    div.style.justifyContent = 'space-between';
-                    div.style.alignItems = 'center';
-                    div.style.padding = '10px';
-                    div.style.borderBottom = '1px solid #eee';
-                    div.innerHTML = `
-                        <div style="flex:1;">
-                            <strong>${trans.pendingCode || 'Transaksi ' + trans.id}</strong><br>
-                            <span style="font-size:0.8rem;">
-                                Tanggal: ${new Date(trans.createdAt).toLocaleString()}<br>
-                                Total: ${formatRupiah(trans.total)}<br>
-                                Customer: ${trans.customerName || '-'}
-                            </span>
-                        </div>
-                        <div>
-                            <button class="action-btn edit-btn" onclick="goToTransaksiWithPending(${trans.id})">Muat</button>
-                            <button class="action-btn delete-btn" onclick="deletePendingTransactionPrompt(${trans.id})">Hapus</button>
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-            }
-            document.getElementById('pending-transactions-modal').style.display = 'flex';
-        }
-
-        function closePendingTransactionsModal() {
-            document.getElementById('pending-transactions-modal').style.display = 'none';
-        }
-
-        function goToTransaksiWithPending(id) {
-            // Arahkan ke halaman transaksi dengan parameter pendingId
-            window.location.href = 'transaksi.html?pendingId=' + id;
-        }
-
-        async function deletePendingTransactionPrompt(id) {
-            if (confirm('Hapus transaksi pending ini?')) {
-                await deletePendingTransaction(id);
-                openPendingTransactionsModal();
-            }
-        }
-
-        // ==================== FUNGSI DELETE PENDING (tetap di sini karena digunakan di modal) ====================
-        async function deletePendingTransaction(id) {
-            try {
-                await dbDelete(STORES.PENDING_TRANSACTIONS, id);
-                pendingTransactions = pendingTransactions.filter(t => t.id !== id);
-                updatePendingBadge();
-                await updateDashboard();
-            } catch (error) {
-                console.error('Error deleting pending transaction:', error);
-                throw error;
-            }
-        }
-
-        // Override fungsi renderPendingList untuk mengarahkan ke transaksi.html
-        function renderPendingList() {
-            const container = document.getElementById('pending-list-container');
-            if (!container) return;
-            if (pendingTransactions.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:#666;">Tidak ada transaksi pending.</p>';
-                return;
-            }
-            let html = '<table style="width:100%; border-collapse:collapse;">';
-            html += '<thead><tr><th>Kode</th><th>Tanggal</th><th>Total</th><th>Customer</th><th></th></tr></thead><tbody>';
-            pendingTransactions.forEach(t => {
-                html += `<tr>
-                    <td>${t.pendingCode || '-'}</td>
-                    <td>${new Date(t.createdAt).toLocaleString()}</td>
-                    <td>${formatRupiah(t.total)}</td>
-                    <td>${t.customerName || '-'}</td>
-                    <td><button class="action-btn edit-btn" onclick="goToTransaksiWithPending(${t.id})">Muat</button></td>
-                </tr>`;
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
-        // ==================== FUNGSI NOTIFIKASI (sudah ada di app.js, tapi kita override untuk tombol yang sesuai) ====================
-        function renderNotifications(lowStockItems) {
-            const area = document.getElementById('notifications-area');
-            if (!area) return;
-            area.innerHTML = '';
-
-            if (lowStockItems.length > 0) {
-                const notif = document.createElement('div');
-                notif.className = 'notification warning';
-                notif.innerHTML = `⚠️ Terdapat ${lowStockItems.length} produk dengan stok menipis. <button onclick="openInventoryStokModal()">Lihat</button>`;
-                area.appendChild(notif);
-            }
-
-            const customersWithOutstanding = customers.filter(c => c.outstanding > 0);
-            const totalOutstanding = customersWithOutstanding.reduce((sum, c) => sum + c.outstanding, 0);
-            if (customersWithOutstanding.length > 0) {
-                const notif = document.createElement('div');
-                notif.className = 'notification danger';
-                notif.innerHTML = `💰 Total piutang dari ${customersWithOutstanding.length} pelanggan: ${formatRupiah(totalOutstanding)}. <button onclick="window.location.href='relasi.html#customers'">Lihat</button>`;
-                area.appendChild(notif);
-            }
-
-            if (pendingTransactions.length > 0) {
-                const notif = document.createElement('div');
-                notif.className = 'notification info';
-                notif.innerHTML = `📋 Terdapat ${pendingTransactions.length} transaksi pending. <button onclick="openPendingTransactionsModal()">Lihat</button>`;
-                area.appendChild(notif);
-            }
-        }
-
-        // ==================== OVERRIDE FUNGSI DASHBOARD UNTUK MENGGUNAKAN RENDER YANG TEPAT ====================
-        // updateDashboard sudah ada di app.js, tapi akan memanggil renderNotifications dan renderPendingList versi ini
-        // Karena fungsi-fungsi ini didefinisikan setelah app.js dimuat, maka yang terpanggil adalah yang terakhir.
-        // Jadi kita tidak perlu mendefinisikan ulang updateDashboard.
-
-        // ==================== PASTIKAN ICONS TERSEDIA ====================
-        // icons sudah didefinisikan di app.js, jadi bisa digunakan.
-
-        // ==================== INISIALISASI TAMBAHAN ====================
-        // Setelah app.js selesai, kita bisa melakukan sesuatu jika perlu
-        console.log('Index page script loaded');
-    </script>
 </body>
 </html>
