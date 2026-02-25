@@ -1,3 +1,14 @@
+// ==================== FUNGSI DEBUG ====================
+function showDebugError(message) {
+    const el = document.getElementById('debug-error');
+    if (el) {
+        el.style.display = 'block';
+        el.innerHTML = '❌ Error: ' + message;
+    } else {
+        alert('Error: ' + message);
+    }
+}
+
 // ==================== VARIABEL GLOBAL KHUSUS HALAMAN ====================
 let editingCustomerId = null;
 let editingSupplierId = null;
@@ -22,6 +33,7 @@ async function checkSession() {
         document.getElementById('user-name-display').textContent = user ? user.name : parsed.name;
         return true;
     } catch (e) {
+        console.error('Error checkSession:', e);
         window.location.href = 'index.html';
         return false;
     }
@@ -31,6 +43,10 @@ async function checkSession() {
 async function initRelasiPage() {
     showLoading();
     try {
+        // Pastikan variabel global terdefinisi
+        if (typeof customers === 'undefined') window.customers = [];
+        if (typeof suppliers === 'undefined') window.suppliers = [];
+
         await initDatabase();
         const sessionOk = await checkSession();
         if (!sessionOk) return;
@@ -65,6 +81,7 @@ async function initRelasiPage() {
         }
     } catch (error) {
         console.error('Error init relasi page:', error);
+        showDebugError(error.message);
         showNotification('Gagal memuat halaman: ' + error.message, 'error');
     } finally {
         hideLoading();
@@ -495,4 +512,20 @@ async function deleteSupplier(id) {
 }
 
 // ==================== MULAI ====================
-window.addEventListener('DOMContentLoaded', initRelasiPage);
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Cek dependensi
+        if (typeof initDatabase !== 'function') throw new Error('initDatabase tidak ditemukan. Pastikan database.js dimuat.');
+        if (typeof loadCustomers !== 'function') throw new Error('loadCustomers tidak ditemukan. Pastikan data.js dimuat.');
+        if (typeof loadSuppliers !== 'function') throw new Error('loadSuppliers tidak ditemukan. Pastikan data.js dimuat.');
+        if (typeof STORES === 'undefined') throw new Error('STORES tidak ditemukan. Pastikan constants.js dimuat.');
+        if (typeof icons === 'undefined') throw new Error('icons tidak ditemukan. Pastikan constants.js dimuat.');
+        if (typeof formatRupiah !== 'function') throw new Error('formatRupiah tidak ditemukan. Pastikan utils.js dimuat.');
+
+        await initRelasiPage();
+    } catch (error) {
+        console.error('Fatal error:', error);
+        showDebugError(error.message);
+        hideLoading();
+    }
+});
