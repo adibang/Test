@@ -17,8 +17,8 @@ let receiptConfig = {
 let kasirCategories = [];
 let kasirItems = [];
 let kasirSatuan = [];
-let customers = [];          // masih diperlukan untuk dashboard & piutang
-let suppliers = [];          // masih diperlukan (misal untuk laporan)
+let customers = [];
+let suppliers = [];
 let pendingTransactions = [];
 let users = [];
 let roles = [];
@@ -304,22 +304,36 @@ function playErrorSound() {
     } catch (error) { console.log("Error sound failed:", error); }
 }
 
-document.add('click', function initAudioOnInteraction() {
+// Perbaikan: ganti document.add menjadi addEventListener
+document.addEventListener('click', function initAudioOnInteraction() {
     if (!audioInitialized) {
         initAudioSystem();
-        document.remove('click', initAudioOnInteraction);
+        document.removeEventListener('click', initAudioOnInteraction);
     }
 }, { once: true });
 
-// ==================== LOADING STATE FUNCTIONS (DIHAPUS) ====================
-function showLoading() {
-    // Tidak melakukan apa-apa karena loading overlay sudah dihapus
-    console.log('showLoading dipanggil (no operation)');
+// ==================== LOADING STATE FUNCTIONS (REVISED) ====================
+let loadingNotificationTimeout = null;
+
+function showLoading(message = 'Memproses...') {
+    const notif = document.getElementById('notification');
+    if (notif) {
+        notif.textContent = message;
+        notif.style.backgroundColor = '#006B54';
+        notif.style.display = 'block';
+        if (loadingNotificationTimeout) clearTimeout(loadingNotificationTimeout);
+    }
 }
 
 function hideLoading() {
-    // Tidak melakukan apa-apa
-    console.log('hideLoading dipanggil (no operation)');
+    const notif = document.getElementById('notification');
+    if (notif) {
+        notif.style.display = 'none';
+    }
+    if (loadingNotificationTimeout) {
+        clearTimeout(loadingNotificationTimeout);
+        loadingNotificationTimeout = null;
+    }
 }
 
 function showError(message) {
@@ -603,11 +617,11 @@ function showLoginScreen() {
 
     if (users.length === 0) {
         let tapCount = 0;
-        overlay.add('click', function tapHandler(e) {
+        overlay.addEventListener('click', function tapHandler(e) {
             if (e.target.closest('.login-container')) return;
             tapCount++;
             if (tapCount >= 10) {
-                overlay.remove('click', tapHandler);
+                overlay.removeEventListener('click', tapHandler);
                 openCreateAdminModal();
             }
         });
@@ -735,13 +749,14 @@ async function saveFirstAdmin() {
 }
 
 // ==================== FUNGSI SETTINGS MODAL ====================
+// Perbaikan: ganti document.add menjadi addEventListener dan perbaiki export/import
 async function exportData(skipAuth = false) {
     if (!skipAuth && (!currentUser || !currentUser.permissions || !currentUser.permissions.includes('menu-sistem'))) {
         showNotification('Anda tidak memiliki akses ke menu ini', 'error');
         return false;
     }
     try {
-        showLoading();
+        showLoading('Mengekspor data...');
         const exportData = {
             kasirCategories: await dbGetAll(STORES.KASIR_CATEGORIES),
             kasirItems: await dbGetAll(STORES.KASIR_ITEMS),
@@ -757,14 +772,16 @@ async function exportData(skipAuth = false) {
             version: DB_VERSION
         };
         const dataStr = JSON.stringify(exportData, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
         const exportFileName = `pos-backup-${new Date().toISOString().split('T')[0]}.json`;
         const link = document.createElement('a');
-        link.href = dataUri;
+        link.href = url;
         link.download = exportFileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         showNotification('Data berhasil dieksport!', 'success');
         return true;
     } catch (error) {
@@ -788,33 +805,49 @@ async function importData(skipAuth = false) {
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) { resolve(false); return; }
-            showLoading();
+            showLoading('Mengimpor data...');
             const reader = new FileReader();
             reader.onload = async (event) => {
                 try {
                     const importedData = JSON.parse(event.target.result);
                     
+                    // Validasi struktur data
+                    const requiredStores = [
+                        'kasirCategories', 'kasirItems', 'kasirSatuan',
+                        'customers', 'suppliers', 'pendingTransactions',
+                        'settings', 'users', 'roles', 'bundles'
+                    ];
+                    for (const store of requiredStores) {
+                        if (!importedData[store]) {
+                            throw new Error(`File tidak valid: properti "${store}" tidak ditemukan.`);
+                        }
+                    }
+
                     const putAll = async (storeName, items) => {
-                        if (!items || !Array.isArray(items)) return;
+                        const errors = [];
+                        if (!items || !Array.isArray(items)) return errors;
                         for (const item of items) {
                             try {
                                 await dbPut(storeName, item);
                             } catch (error) {
+                                errors.push({ item, error: error.message });
                                 console.warn(`Gagal mengupdate item di ${storeName}:`, item, error);
                             }
                         }
+                        return errors;
                     };
 
-                    await putAll(STORES.KASIR_CATEGORIES, importedData.kasirCategories);
-                    await putAll(STORES.KASIR_ITEMS, importedData.kasirItems);
-                    await putAll(STORES.KASIR_SATUAN, importedData.kasirSatuan);
-                    await putAll(STORES.CUSTOMERS, importedData.customers);
-                    await putAll(STORES.SUPPLIERS, importedData.suppliers);
-                    await putAll(STORES.PENDING_TRANSACTIONS, importedData.pendingTransactions);
-                    await putAll(STORES.SETTINGS, importedData.settings);
-                    await putAll(STORES.USERS, importedData.users);
-                    await putAll(STORES.ROLES, importedData.roles);
-                    await putAll(STORES.BUNDLES, importedData.bundles);
+                    const allErrors = [];
+                    allErrors.push(...await putAll(STORES.KASIR_CATEGORIES, importedData.kasirCategories));
+                    allErrors.push(...await putAll(STORES.KASIR_ITEMS, importedData.kasirItems));
+                    allErrors.push(...await putAll(STORES.KASIR_SATUAN, importedData.kasirSatuan));
+                    allErrors.push(...await putAll(STORES.CUSTOMERS, importedData.customers));
+                    allErrors.push(...await putAll(STORES.SUPPLIERS, importedData.suppliers));
+                    allErrors.push(...await putAll(STORES.PENDING_TRANSACTIONS, importedData.pendingTransactions));
+                    allErrors.push(...await putAll(STORES.SETTINGS, importedData.settings));
+                    allErrors.push(...await putAll(STORES.USERS, importedData.users));
+                    allErrors.push(...await putAll(STORES.ROLES, importedData.roles));
+                    allErrors.push(...await putAll(STORES.BUNDLES, importedData.bundles));
 
                     await loadKasirCategories();
                     await loadKasirItems();
@@ -825,10 +858,15 @@ async function importData(skipAuth = false) {
                     await loadUsers();
                     await loadRoles();
                     await loadBundles();
-
+                    await loadCartFromLocalStorage();
                     await updateDashboard();
 
-                    showNotification('Data berhasil diimport (merge)!', 'success');
+                    if (allErrors.length > 0) {
+                        console.warn('Beberapa item gagal diimpor:', allErrors);
+                        showNotification(`Import selesai dengan ${allErrors.length} error. Lihat konsol.`, 'warning');
+                    } else {
+                        showNotification('Data berhasil diimport (merge)!', 'success');
+                    }
                     resolve(true);
                 } catch (error) {
                     console.error('Error importing data:', error);
@@ -1093,9 +1131,9 @@ function showSettingsModal() {
         totalSpan.textContent = total;
         totalSpan.style.color = total === 13 ? 'green' : 'red';
     }
-    flexLen.add('input', updateTotal);
-    prodLen.add('input', updateTotal);
-    weightLen.add('input', updateTotal);
+    flexLen.addEventListener('input', updateTotal);
+    prodLen.addEventListener('input', updateTotal);
+    weightLen.addEventListener('input', updateTotal);
     
     renderUserListSettings();
     document.getElementById('settings-modal').style.display = 'flex';
@@ -1664,7 +1702,7 @@ async function loadAndRenderBundles() {
         container.innerHTML = html;
 
         if (container._bundleClickListener) {
-            container.remove('click', container._bundleClickListener);
+            container.removeEventListener('click', container._bundleClickListener);
         }
         container._bundleClickListener = function(e) {
             const btn = e.target.closest('button.select-bundle-btn');
@@ -1674,7 +1712,7 @@ async function loadAndRenderBundles() {
                 addBundleToCart(bundleId);
             }
         };
-        container.add('click', container._bundleClickListener);
+        container.addEventListener('click', container._bundleClickListener);
     } catch (error) {
         console.error('Error di loadAndRenderBundles:', error);
         container.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Gagal memuat bundle: ' + error.message + '</div>';
@@ -3347,7 +3385,7 @@ async function initApp() {
 async function retryAppLoad() { await initApp(); }
 
 // ==================== EVENT LISTENERS ====================
-document.add('DOMContentLoaded', async () => { 
+document.addEventListener('DOMContentLoaded', async () => { 
     console.log('DOM fully loaded, initializing app...'); 
     await initApp(); 
 });
@@ -3377,7 +3415,7 @@ window.onclick = function(event) {
     }
 };
 
-document.add('visibilitychange', () => { 
+document.addEventListener('visibilitychange', () => { 
     if (!document.hidden) { 
         console.log('Page became visible, refreshing data...'); 
         refreshData(); 
