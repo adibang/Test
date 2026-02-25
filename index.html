@@ -177,6 +177,23 @@
             width: 18px;
             height: 18px;
         }
+        .home-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 8px;
+            margin: 0 10px 10px;
+            color: #006B54;
+            font-weight: 600;
+            cursor: pointer;
+            width: calc(100% - 20px);
+        }
+        .home-button:hover {
+            background: #e0e0e0;
+        }
         .drawer-overlay {
             position: fixed;
             top: 0;
@@ -1450,6 +1467,15 @@
 
     <!-- ==================== DRAWER SIDEBAR ==================== -->
     <div class="sidebar" id="sidebar">
+        <div class="menu-group">
+            <button class="home-button" onclick="goHome()">
+                <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>Beranda</span>
+            </button>
+        </div>
         <!-- Grup MASTER DATA KASIR -->
         <div class="menu-group" id="menu-master">
             <div class="menu-header" onclick="toggleSubMenu(this)">
