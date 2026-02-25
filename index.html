@@ -62,7 +62,7 @@
 
     <!-- ==================== DRAWER SIDEBAR ==================== -->
     <div class="sidebar" id="sidebar">
-        <!-- Grup MASTER DATA KASIR -->
+        <!-- Grup MASTER DATA -->
         <div class="menu-group" id="menu-master">
             <div class="menu-header" onclick="toggleSubMenu(this)">
                 <span class="menu-title">MASTER DATA</span>
@@ -136,6 +136,7 @@
                 </button>
             </div>
         </div>
+
         <!-- Grup PEMBELIAN -->
         <div class="menu-group" id="menu-pembelian">
             <div class="menu-header" onclick="toggleSubMenu(this)">
@@ -152,6 +153,7 @@
                 </button>
             </div>
         </div>
+
         <!-- Grup INVENTORY -->
         <div class="menu-group" id="menu-inventory">
             <div class="menu-header" onclick="toggleSubMenu(this)">
@@ -187,21 +189,21 @@
             </div>
         </div>
 
-        <!-- Grup PELANGGAN & PEMASOK -->
+        <!-- Grup PELANGGAN & PEMASOK (diarahkan ke relasi.html) -->
         <div class="menu-group" id="menu-cust">
             <div class="menu-header" onclick="toggleSubMenu(this)">
                 <span class="menu-title">CUST & SUPL</span>
                 <span class="arrow">></span>
             </div>
             <div class="sub-menu">
-                <button onclick="openAddCustomerPage(); closeSubMenu(this);">
+                <button onclick="window.location.href='relasi.html?action=customerAdd'; closeSubMenu(this);">
                     <svg class="icon" viewBox="0 0 24 24">
                         <circle cx="12" cy="8" r="4"/>
                         <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
                     </svg>
                     <span>Tambah Pelanggan</span>
                 </button>
-                <button onclick="openListCustomerPage(); closeSubMenu(this);">
+                <button onclick="window.location.href='relasi.html?action=customerList'; closeSubMenu(this);">
                     <svg class="icon" viewBox="0 0 24 24">
                         <circle cx="12" cy="8" r="4"/>
                         <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
@@ -209,14 +211,14 @@
                     </svg>
                     <span>Daftar Pelanggan</span>
                 </button>
-                <button onclick="openAddSupplierPage(); closeSubMenu(this);">
+                <button onclick="window.location.href='relasi.html?action=supplierAdd'; closeSubMenu(this);">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                         <circle cx="12" cy="12" r="2"/>
                     </svg>
                     <span>Tambah Supplier</span>
                 </button>
-                <button onclick="openListSupplierPage(); closeSubMenu(this);">
+                <button onclick="window.location.href='relasi.html?action=supplierList'; closeSubMenu(this);">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                         <circle cx="12" cy="12" r="2"/>
@@ -244,6 +246,7 @@
                 </button>
             </div>
         </div>
+
         <!-- Grup SISTEM -->
         <div class="menu-group" id="menu-sistem">
             <div class="menu-header" onclick="toggleSubMenu(this)">
@@ -269,7 +272,6 @@
                 </button>
             </div>
         </div>
-        
     </div>
     <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 
@@ -519,151 +521,6 @@
         </div>
     </div>
 
-    <!-- ==================== HALAMAN CUSTOMER TAMBAH ==================== -->
-    <div id="customer-add-page" class="page">
-        <div class="page-header">
-            <button class="back-button" onclick="closeCustomerPage()" title="Kembali">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-            </button>
-            <h2 id="customer-page-title">Tambah Pelanggan</h2>
-        </div>
-        <div class="page-content">
-            <form id="customer-form" onsubmit="event.preventDefault();">
-                <div class="form-group">
-                    <label>Kode Pelanggan</label>
-                    <input type="text" id="customer-code" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label>Nama Pelanggan</label>
-                    <input type="text" id="customer-name" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label>Level Pelanggan</label>
-                    <select id="customer-level" class="form-input">
-                        <option value="Bronze">Bronze</option>
-                        <option value="Silver">Silver</option>
-                        <option value="Gold">Gold</option>
-                        <option value="Platinum">Platinum</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Kontak (Telp/HP)</label>
-                    <input type="text" id="customer-contact" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>No Rekening</label>
-                    <input type="text" id="customer-account" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>Nama Bank</label>
-                    <input type="text" id="customer-bank" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>No Token Listrik</label>
-                    <input type="text" id="customer-token" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="customer-email" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>Alamat</label>
-                    <textarea id="customer-address" class="form-input" rows="3"></textarea>
-                </div>
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button type="button" class="form-button-secondary" onclick="closeCustomerPage()">Batal</button>
-                    <button type="button" class="form-button-primary" onclick="saveCustomer()">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ==================== HALAMAN CUSTOMER DAFTAR ==================== -->
-    <div id="customer-list-page" class="page">
-        <div class="page-header">
-            <button class="back-button" onclick="closeCustomerPage()" title="Kembali">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-            </button>
-            <h2>Daftar Pelanggan</h2>
-            <button class="form-button-primary" style="margin-left:auto;" onclick="openAddCustomerPage()">+ Tambah</button>
-        </div>
-        <div class="page-content">
-            <div id="customer-list-container"></div>
-        </div>
-    </div>
-
-    <!-- ==================== HALAMAN SUPPLIER TAMBAH ==================== -->
-    <div id="supplier-add-page" class="page">
-        <div class="page-header">
-            <button class="back-button" onclick="closeSupplierPage()" title="Kembali">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-            </button>
-            <h2 id="supplier-page-title">Tambah Supplier</h2>
-        </div>
-        <div class="page-content">
-            <form id="supplier-form" onsubmit="event.preventDefault();">
-                <div class="form-group">
-                    <label>Kode Supplier</label>
-                    <input type="text" id="supplier-code" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label>Nama Supplier</label>
-                    <input type="text" id="supplier-name" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label>Kontak (Telp/HP)</label>
-                    <input type="text" id="supplier-contact" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>Alamat</label>
-                    <textarea id="supplier-address" class="form-input" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="supplier-email" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>No Rekening</label>
-                    <input type="text" id="supplier-account" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>Nama Bank</label>
-                    <input type="text" id="supplier-bank" class="form-input">
-                </div>
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button type="button" class="form-button-secondary" onclick="closeSupplierPage()">Batal</button>
-                    <button type="button" class="form-button-primary" onclick="saveSupplier()">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ==================== HALAMAN SUPPLIER DAFTAR ==================== -->
-    <div id="supplier-list-page" class="page">
-        <div class="page-header">
-            <button class="back-button" onclick="closeSupplierPage()" title="Kembali">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-            </button>
-            <h2>Daftar Supplier</h2>
-            <button class="form-button-primary" style="margin-left:auto;" onclick="openAddSupplierPage()">+ Tambah</button>
-        </div>
-        <div class="page-content">
-            <div id="supplier-list-container"></div>
-        </div>
-    </div>
-
     <!-- ==================== MODAL KONFIRMASI PIUTANG ==================== -->
     <div class="modal-overlay" id="confirm-piutang-modal">
         <div class="modal-content" style="max-width:400px;">
@@ -866,7 +723,7 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL BUNDLE (BARU) ==================== -->
+    <!-- ==================== MODAL BUNDLE ==================== -->
     <div class="modal-overlay" id="bundle-modal">
         <div class="modal-content" style="max-width:600px;">
             <div class="modal-header">
@@ -899,6 +756,8 @@
 
     <!-- ==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
+
+    <!-- ==================== SCRIPT LOADING ==================== -->
     <script src="js/constants.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/audio.js"></script>
