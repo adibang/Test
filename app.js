@@ -63,6 +63,21 @@ const icons = {
     download: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 };
 
+// ==================== FUNGSI HOME ====================
+function goHome() {
+    // Jika berada di halaman relasi.html (ditandai dengan adanya elemen customer-add-page)
+    if (document.getElementById('customer-add-page') || document.getElementById('customer-list-page')) {
+        window.location.href = 'index.html';
+    } else {
+        // Di index.html: sembunyikan semua halaman tambahan, tampilkan main-content
+        document.querySelector('.main-content').style.display = 'block';
+        document.getElementById('transaksi-page').style.display = 'none';
+        document.getElementById('cart-page').style.display = 'none';
+        document.getElementById('payment-page').style.display = 'none';
+        // Jika ada halaman customer/supplier (seharusnya sudah dihapus)
+    }
+}
+
 // ==================== FUNGSI CEK STOK BUNDLE (DIPINDAHKAN KE ATAS) ====================
 function checkBundleStock(bundle, qty) {
     if (!bundle.components || !Array.isArray(bundle.components)) return false;
@@ -1665,7 +1680,6 @@ async function loadAndRenderBundles() {
         }
         container.innerHTML = html;
 
-        // Hapus event listener lama jika ada (untuk menghindari duplikasi)
         if (container._bundleClickListener) {
             container.removeEventListener('click', container._bundleClickListener);
         }
@@ -1692,7 +1706,7 @@ async function addBundleToCart(bundleId) {
         return;
     }
     
-    await loadBundles(); // muat ulang data terbaru
+    await loadBundles();
     const bundle = bundles.find(b => b.id == bundleId);
     console.log('Bundle ditemukan:', bundle);
     
@@ -1701,7 +1715,6 @@ async function addBundleToCart(bundleId) {
         return;
     }
     
-    // Cek apakah bundle sudah ada di keranjang
     const existingBundleInCart = cart.find(c => c.isBundle && c.bundleId == bundleId);
     if (existingBundleInCart) {
         showNotification('Bundle ini sudah ada di keranjang', 'warning');
@@ -3165,7 +3178,7 @@ function renderNotifications(lowStockItems) {
     if (customersWithOutstanding.length > 0) {
         const notif = document.createElement('div');
         notif.className = 'notification danger';
-        notif.innerHTML = `💰 Total piutang dari ${customersWithOutstanding.length} pelanggan: ${formatRupiah(totalOutstanding)}. <button onclick="openDaftarCustomerModal()">Lihat</button>`;
+        notif.innerHTML = `💰 Total piutang dari ${customersWithOutstanding.length} pelanggan: ${formatRupiah(totalOutstanding)}. <button onclick="openListCustomerPage()">Lihat</button>`;
         area.appendChild(notif);
     }
 
@@ -3286,34 +3299,42 @@ function openEditCustomerPage(id) {
 }
 
 function showCustomerPage() {
-    document.querySelector('.main-content').style.display = 'none';
-    document.getElementById('transaksi-page').style.display = 'none';
-    document.getElementById('cart-page').style.display = 'none';
-    document.getElementById('payment-page').style.display = 'none';
-    document.getElementById('customer-list-page').style.display = 'none';
-    document.getElementById('supplier-add-page').style.display = 'none';
-    document.getElementById('supplier-list-page').style.display = 'none';
-    document.getElementById('customer-add-page').style.display = 'block';
+    // Sembunyikan halaman lain jika ada
+    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
+    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
+    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
+    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
+    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
+    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
+    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
+    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'block';
     closeDrawer();
 }
 
 function openListCustomerPage() {
-    document.querySelector('.main-content').style.display = 'none';
-    document.getElementById('transaksi-page').style.display = 'none';
-    document.getElementById('cart-page').style.display = 'none';
-    document.getElementById('payment-page').style.display = 'none';
-    document.getElementById('customer-add-page').style.display = 'none';
-    document.getElementById('supplier-add-page').style.display = 'none';
-    document.getElementById('supplier-list-page').style.display = 'none';
-    document.getElementById('customer-list-page').style.display = 'block';
+    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
+    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
+    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
+    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
+    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
+    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
+    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
+    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'block';
     renderCustomerList();
     closeDrawer();
 }
 
 function closeCustomerPage() {
-    document.getElementById('customer-add-page').style.display = 'none';
-    document.getElementById('customer-list-page').style.display = 'none';
-    document.querySelector('.main-content').style.display = 'block';
+    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
+    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
+    // Jika di relasi.html, kembali ke daftar pelanggan secara default
+    if (document.getElementById('customer-list-page')) {
+        document.getElementById('customer-list-page').style.display = 'block';
+        renderCustomerList();
+    } else {
+        // Di index.html (seharusnya tidak ada, tapi amankan)
+        if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'block';
+    }
 }
 
 function renderCustomerList() {
@@ -3453,34 +3474,39 @@ function openEditSupplierPage(id) {
 }
 
 function showSupplierPage() {
-    document.querySelector('.main-content').style.display = 'none';
-    document.getElementById('transaksi-page').style.display = 'none';
-    document.getElementById('cart-page').style.display = 'none';
-    document.getElementById('payment-page').style.display = 'none';
-    document.getElementById('customer-add-page').style.display = 'none';
-    document.getElementById('customer-list-page').style.display = 'none';
-    document.getElementById('supplier-list-page').style.display = 'none';
-    document.getElementById('supplier-add-page').style.display = 'block';
+    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
+    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
+    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
+    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
+    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
+    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
+    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
+    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'block';
     closeDrawer();
 }
 
 function openListSupplierPage() {
-    document.querySelector('.main-content').style.display = 'none';
-    document.getElementById('transaksi-page').style.display = 'none';
-    document.getElementById('cart-page').style.display = 'none';
-    document.getElementById('payment-page').style.display = 'none';
-    document.getElementById('customer-add-page').style.display = 'none';
-    document.getElementById('customer-list-page').style.display = 'none';
-    document.getElementById('supplier-add-page').style.display = 'none';
-    document.getElementById('supplier-list-page').style.display = 'block';
+    if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'none';
+    if (document.getElementById('transaksi-page')) document.getElementById('transaksi-page').style.display = 'none';
+    if (document.getElementById('cart-page')) document.getElementById('cart-page').style.display = 'none';
+    if (document.getElementById('payment-page')) document.getElementById('payment-page').style.display = 'none';
+    if (document.getElementById('customer-add-page')) document.getElementById('customer-add-page').style.display = 'none';
+    if (document.getElementById('customer-list-page')) document.getElementById('customer-list-page').style.display = 'none';
+    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
+    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'block';
     renderSupplierList();
     closeDrawer();
 }
 
 function closeSupplierPage() {
-    document.getElementById('supplier-add-page').style.display = 'none';
-    document.getElementById('supplier-list-page').style.display = 'none';
-    document.querySelector('.main-content').style.display = 'block';
+    if (document.getElementById('supplier-add-page')) document.getElementById('supplier-add-page').style.display = 'none';
+    if (document.getElementById('supplier-list-page')) document.getElementById('supplier-list-page').style.display = 'none';
+    if (document.getElementById('supplier-list-page')) {
+        document.getElementById('supplier-list-page').style.display = 'block';
+        renderSupplierList();
+    } else {
+        if (document.querySelector('.main-content')) document.querySelector('.main-content').style.display = 'block';
+    }
 }
 
 function renderSupplierList() {
@@ -3648,7 +3674,14 @@ async function initApp() {
             showLoginScreen();
         }
 
-        await updateDashboard();
+        // Tampilkan halaman yang sesuai berdasarkan konteks
+        if (document.getElementById('customer-list-page')) {
+            // Berada di relasi.html
+            openListCustomerPage();
+        } else {
+            // Berada di index.html
+            await updateDashboard();
+        }
 
         console.log('App initialized successfully');
     } catch (error) {
@@ -3674,18 +3707,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.onclick = function(event) {
     if (event.target.classList.contains('modal-overlay')) {
         event.target.style.display = 'none';
-        if (event.target.id === 'kasir-category-modal') closeKasirCategoryModal?.();
-        else if (event.target.id === 'kasir-item-modal') closeKasirItemModal?.();
-        else if (event.target.id === 'list-kasir-category-modal') closeListKasirCategoryModal?.();
-        else if (event.target.id === 'list-kasir-item-modal') closeListKasirItemModal?.();
-        else if (event.target.id === 'list-satuan-modal') closeListSatuanModal?.();
-        else if (event.target.id === 'satuan-modal') closeSatuanModal?.();
-        else if (event.target.id === 'settings-modal') closeSettingsModal();
+        // Tutup modal yang sesuai (daftar disesuaikan)
+        if (event.target.id === 'settings-modal') closeSettingsModal();
         else if (event.target.id === 'inventory-modal') closeInventoryModal();
-        else if (event.target.id === 'customer-modal') closeCustomerModal?.();
-        else if (event.target.id === 'list-customer-modal') closeListCustomerModal?.();
-        else if (event.target.id === 'supplier-modal') closeSupplierModal?.();
-        else if (event.target.id === 'list-supplier-modal') closeListSupplierModal?.();
         else if (event.target.id === 'select-customer-modal') closeSelectCustomerModal();
         else if (event.target.id === 'pending-transactions-modal') closePendingTransactionsModal();
         else if (event.target.id === 'confirm-piutang-modal') closeConfirmPiutangModal();
@@ -3693,10 +3717,6 @@ window.onclick = function(event) {
         else if (event.target.id === 'create-admin-modal') closeCreateAdminModal();
         else if (event.target.id === 'user-modal') closeUserModal();
         else if (event.target.id === 'bundle-modal') closeBundleModal();
-        else if (event.target.id === 'customer-add-page') closeCustomerPage();
-        else if (event.target.id === 'customer-list-page') closeCustomerPage();
-        else if (event.target.id === 'supplier-add-page') closeSupplierPage();
-        else if (event.target.id === 'supplier-list-page') closeSupplierPage();
     }
 };
 
