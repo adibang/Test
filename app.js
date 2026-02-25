@@ -1410,12 +1410,12 @@ async function deletePendingTransaction(id) {
 
 // ==================== FUNGSI LAPORAN PENJUALAN ====================
 function openLaporanPage() {
-    window.open('laporan.html', '_blank');
+    window.location.href = 'laporan.html';
 }
 
 // ==================== FUNGSI PEMBELIAN ====================
 function openPembelianPage() {
-    window.open('pembelian.html', '_blank');
+    window.location.href = 'pembelian.html';
 }
 
 // ==================== FUNGSI DASHBOARD ====================
