@@ -1,4 +1,69 @@
-// ==================== FUNGSI CEK STOK BUNDLE ====================
+// ==================== GLOBAL VARIABLES ====================
+let db = null;
+let barcodeConfig = {
+    flexLength: 2,
+    flexValue: '11',
+    productLength: 6,
+    weightLength: 5
+};
+let receiptConfig = {
+    paperWidth: 32,
+    header: "TOKO LOKABUMBU\nTAN KES \n PURB\nTelp: 082",
+    footer: "Terima kasih\nSelamat berbelanja kembali\nDelivery Order Via WhatsApp 082",
+    showDateTime: true,
+    showTransactionNumber: true,
+    showCashier: false
+};
+let kasirCategories = [];
+let kasirItems = [];
+let kasirSatuan = [];
+let customers = [];
+let suppliers = [];
+let pendingTransactions = [];
+let users = [];
+let roles = [];
+let bundles = [];
+let currentUser = null;
+let editingKasirCategoryId = null;
+let editingKasirItemId = null;
+let editingSatuanId = null;
+let editingCustomerId = null;
+let editingSupplierId = null;
+let selectedCustomer = null;
+let tempUnitConversions = [];
+let editingConversionIndex = -1;
+let currentFilteredItems = [];
+let cart = [];
+let productViewMode = 'list';
+let lastTransactionData = null;
+let printerPort = null;
+let pendingPayments = [];
+let pendingTotalPaid = 0;
+
+// Instance Chart.js untuk grafik
+let salesChartInstance = null;
+
+// Daftar semua menu yang tersedia (untuk permission)
+const ALL_MENUS = [
+    { id: 'menu-master', label: 'Master Data' },
+    { id: 'menu-transaksi', label: 'Transaksi' },
+    { id: 'menu-pembelian', label: 'Pembelian' },
+    { id: 'menu-inventory', label: 'Inventory' },
+    { id: 'menu-cust', label: 'Cust & Supl' },
+    { id: 'menu-laporan', label: 'Laporan' },
+    { id: 'menu-sistem', label: 'Sistem' },
+    { id: 'menu-bundle', label: 'Bundle' }
+];
+
+const icons = {
+    edit: `<svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    delete: `<svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
+    add: `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+    upload: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+    download: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
+};
+
+// ==================== FUNGSI CEK STOK BUNDLE (DIPINDAHKAN KE ATAS) ====================
 function checkBundleStock(bundle, qty) {
     if (!bundle.components || !Array.isArray(bundle.components)) return false;
     for (let comp of bundle.components) {
@@ -55,7 +120,1256 @@ function toggleDrawer() {
     overlay.classList.toggle('show');
 }
 
+// ==================== AUDIO NOTIFICATION SYSTEM ====================
+let audioContext = null;
+let audioInitialized = false;
+
+function initAudioSystem() {
+    if (audioInitialized) return;
+    try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioInitialized = true;
+        console.log("Audio system initialized");
+        createFallbackSounds();
+    } catch (error) {
+        console.log("AudioContext not supported, using fallback:", error);
+        createFallbackSounds();
+    }
+}
+
+function createFallbackSounds() {
+    const successAudio = document.getElementById('notification-success');
+    if (successAudio) successAudio.src = createBeepSound(800, 0.3);
+    const warningAudio = document.getElementById('notification-warning');
+    if (warningAudio) warningAudio.src = createBeepSound(600, 0.2);
+    const errorAudio = document.getElementById('notification-error');
+    if (errorAudio) errorAudio.src = createBeepSound(400, 0.5);
+    const buttonClickAudio = document.getElementById('button-click-sound');
+    if (buttonClickAudio) buttonClickAudio.src = createBeepSound(600, 0.1);
+}
+
+function createBeepSound(frequency, duration) {
+    const sampleRate = 44100;
+    const channels = 1;
+    const samples = Math.floor(sampleRate * duration);
+    const buffer = new ArrayBuffer(44 + samples * 2);
+    const view = new DataView(buffer);
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + samples * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * channels * 2, true);
+    view.setUint16(32, channels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, samples * 2, true);
+    const amplitude = 0.3;
+    for (let i = 0; i < samples; i++) {
+        const time = i / sampleRate;
+        const sample = Math.sin(2 * Math.PI * frequency * time) * amplitude;
+        const intSample = Math.max(-1, Math.min(1, sample)) * 32767;
+        view.setInt16(44 + i * 2, intSample, true);
+    }
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return 'data:audio/wav;base64,' + btoa(binary);
+}
+
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+}
+
+function playClickSound() {
+    try {
+        if (!audioInitialized) initAudioSystem();
+        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+        if (audioContext && audioContext.state === 'running') {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 600;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+            oscillator.onended = () => {
+                oscillator.disconnect();
+                gainNode.disconnect();
+            };
+        } else {
+            const buttonClickAudio = document.getElementById('button-click-sound');
+            if (buttonClickAudio) {
+                buttonClickAudio.currentTime = 0;
+                buttonClickAudio.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+    } catch (error) { console.log("Click sound play failed:", error); }
+}
+
+function playSuccessSound() {
+    try {
+        if (!audioInitialized) initAudioSystem();
+        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+        if (audioContext && audioContext.state === 'running') {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+            oscillator.onended = () => {
+                oscillator.disconnect();
+                gainNode.disconnect();
+            };
+        } else {
+            const successAudio = document.getElementById('notification-success');
+            if (successAudio) {
+                successAudio.currentTime = 0;
+                successAudio.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+    } catch (error) { console.log("Sound play failed:", error); }
+}
+
+function playWarningSound() {
+    try {
+        if (!audioInitialized) initAudioSystem();
+        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+        if (audioContext && audioContext.state === 'running') {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 600;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.2);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.35);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.35);
+            oscillator.onended = () => {
+                oscillator.disconnect();
+                gainNode.disconnect();
+            };
+        } else {
+            const warningAudio = document.getElementById('notification-warning');
+            if (warningAudio) {
+                warningAudio.currentTime = 0;
+                warningAudio.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+    } catch (error) { console.log("Warning sound failed:", error); }
+}
+
+function playErrorSound() {
+    try {
+        if (!audioInitialized) initAudioSystem();
+        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+        if (audioContext && audioContext.state === 'running') {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 400;
+            oscillator.type = 'sawtooth';
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.6);
+            oscillator.onended = () => {
+                oscillator.disconnect();
+                gainNode.disconnect();
+            };
+        } else {
+            const errorAudio = document.getElementById('notification-error');
+            if (errorAudio) {
+                errorAudio.currentTime = 0;
+                errorAudio.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+    } catch (error) { console.log("Error sound failed:", error); }
+}
+
+document.addEventListener('click', function initAudioOnInteraction() {
+    if (!audioInitialized) {
+        initAudioSystem();
+        document.removeEventListener('click', initAudioOnInteraction);
+    }
+}, { once: true });
+
+// ==================== LOADING STATE FUNCTIONS ====================
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.style.display = 'flex';
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function showError(message) {
+    const errorState = document.getElementById('error-state');
+    const errorMessage = document.getElementById('error-message');
+    const mainContent = document.querySelector('.main-content');
+    if (errorState && errorMessage) {
+        errorMessage.textContent = message;
+        errorState.style.display = 'block';
+    }
+    if (mainContent) mainContent.style.display = 'none';
+}
+
+function hideError() {
+    const errorState = document.getElementById('error-state');
+    const mainContent = document.querySelector('.main-content');
+    if (errorState) errorState.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'block';
+}
+
+// ==================== DATABASE CONFIGURATION ====================
+const DB_NAME = 'POSKasirDB';
+const DB_VERSION = 20;
+const STORES = {
+    SETTINGS: 'settings',
+    APP_STATE: 'appState',
+    KASIR_CATEGORIES: 'kasirCategories',
+    KASIR_ITEMS: 'kasirItems',
+    KASIR_SATUAN: 'kasirSatuan',
+    CUSTOMERS: 'customers',
+    SUPPLIERS: 'suppliers',
+    PENDING_TRANSACTIONS: 'pendingTransactions',
+    SALES: 'sales',
+    PURCHASES: 'purchases',
+    USERS: 'users',
+    ROLES: 'roles',
+    BUNDLES: 'bundles'
+};
+
+// ==================== DATABASE FUNCTIONS ====================
+async function initDatabase() {
+    return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+            const error = "Browser tidak mendukung IndexedDB. Gunakan Chrome, Edge, atau Firefox versi terbaru.";
+            console.error(error);
+            showError(error);
+            reject(new Error(error));
+            return;
+        }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = (event) => {
+            console.error('Database error:', event.target.error);
+            showError('Gagal membuka database: ' + event.target.error);
+            reject(event.target.error);
+        };
+        request.onblocked = () => {
+            console.warn('Database blocked. Tutup tab lain yang menggunakan aplikasi ini.');
+            showError('Database diblokir. Tutup tab lain dan refresh halaman.');
+            reject(new Error('Database blocked'));
+        };
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            db.onerror = (event) => {
+                console.error('Database error:', event.target.error);
+                showNotification('Error database: ' + event.target.error, 'error');
+            };
+            db.onversionchange = (event) => {
+                console.log('Database version changed, closing...');
+                db.close();
+                showNotification('Database diperbarui, silakan refresh halaman.', 'info');
+            };
+            console.log('Database initialized successfully');
+            resolve();
+        };
+        request.onupgradeneeded = (event) => {
+            console.log('Upgrading database from version', event.oldVersion, 'to', event.newVersion);
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+                db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
+            }
+            if (!db.objectStoreNames.contains(STORES.APP_STATE)) {
+                db.createObjectStore(STORES.APP_STATE, { keyPath: 'key' });
+            }
+            if (!db.objectStoreNames.contains(STORES.KASIR_CATEGORIES)) {
+                const kasirCatStore = db.createObjectStore(STORES.KASIR_CATEGORIES, { keyPath: 'id', autoIncrement: true });
+                kasirCatStore.createIndex('name', 'name', { unique: true });
+            }
+            if (!db.objectStoreNames.contains(STORES.KASIR_ITEMS)) {
+                const kasirItemStore = db.createObjectStore(STORES.KASIR_ITEMS, { keyPath: 'id', autoIncrement: true });
+                kasirItemStore.createIndex('code', 'code', { unique: true });
+                kasirItemStore.createIndex('categoryId', 'categoryId', { unique: false });
+            } else {
+                const transaction = event.target.transaction;
+                const store = transaction.objectStore(STORES.KASIR_ITEMS);
+                store.openCursor().onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        const item = cursor.value;
+                        if (item.minStock === undefined) {
+                            item.minStock = 5;
+                            cursor.update(item);
+                        }
+                        cursor.continue();
+                    }
+                };
+            }
+            if (!db.objectStoreNames.contains(STORES.KASIR_SATUAN)) {
+                const satuanStore = db.createObjectStore(STORES.KASIR_SATUAN, { keyPath: 'id', autoIncrement: true });
+                satuanStore.createIndex('name', 'name', { unique: true });
+            }
+            if (!db.objectStoreNames.contains(STORES.CUSTOMERS)) {
+                const customerStore = db.createObjectStore(STORES.CUSTOMERS, { keyPath: 'id', autoIncrement: true });
+                customerStore.createIndex('name', 'name', { unique: false });
+            }
+            if (!db.objectStoreNames.contains(STORES.SUPPLIERS)) {
+                const supplierStore = db.createObjectStore(STORES.SUPPLIERS, { keyPath: 'id', autoIncrement: true });
+                supplierStore.createIndex('name', 'name', { unique: false });
+            }
+            if (!db.objectStoreNames.contains(STORES.PENDING_TRANSACTIONS)) {
+                const pendingStore = db.createObjectStore(STORES.PENDING_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
+            }
+            if (!db.objectStoreNames.contains(STORES.SALES)) {
+                const salesStore = db.createObjectStore(STORES.SALES, { keyPath: 'id', autoIncrement: true });
+                salesStore.createIndex('date', 'date', { unique: false });
+                salesStore.createIndex('transactionNumber', 'transactionNumber', { unique: true });
+            }
+            if (!db.objectStoreNames.contains(STORES.PURCHASES)) {
+                const purchaseStore = db.createObjectStore(STORES.PURCHASES, { keyPath: 'id', autoIncrement: true });
+                purchaseStore.createIndex('date', 'date', { unique: false });
+                purchaseStore.createIndex('supplierId', 'supplierId', { unique: false });
+                purchaseStore.createIndex('purchaseNumber', 'purchaseNumber', { unique: true });
+            }
+            if (!db.objectStoreNames.contains(STORES.USERS)) {
+                const userStore = db.createObjectStore(STORES.USERS, { keyPath: 'id', autoIncrement: true });
+                userStore.createIndex('username', 'username', { unique: true });
+            }
+            if (!db.objectStoreNames.contains(STORES.ROLES)) {
+                const roleStore = db.createObjectStore(STORES.ROLES, { keyPath: 'id', autoIncrement: true });
+                roleStore.createIndex('name', 'name', { unique: true });
+            }
+            if (!db.objectStoreNames.contains(STORES.BUNDLES)) {
+                db.createObjectStore(STORES.BUNDLES, { keyPath: 'id', autoIncrement: true });
+            }
+            event.target.transaction.oncomplete = () => console.log('Database upgrade completed');
+        };
+    });
+}
+
+async function dbGetAll(storeName) {
+    return new Promise((resolve, reject) => {
+        if (!db) { reject(new Error('Database not initialized')); return; }
+        try {
+            const transaction = db.transaction([storeName], 'readonly');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.getAll();
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = (e) => reject(e.target.error);
+        } catch (error) { reject(error); }
+    });
+}
+
+async function dbGet(storeName, key) {
+    return new Promise((resolve, reject) => {
+        if (!db) { reject(new Error('Database not initialized')); return; }
+        try {
+            const transaction = db.transaction([storeName], 'readonly');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => reject(e.target.error);
+        } catch (error) { reject(error); }
+    });
+}
+
+async function dbAdd(storeName, data) {
+    return new Promise((resolve, reject) => {
+        if (!db) { reject(new Error('Database not initialized')); return; }
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.add(data);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => {
+                console.error(`Error adding to ${storeName}:`, data, e.target.error);
+                if (e.target.error.name === 'ConstraintError') {
+                    reject(new Error(`Data dengan key yang sama sudah ada di ${storeName}`));
+                } else { reject(e.target.error); }
+            };
+        } catch (error) { reject(error); }
+    });
+}
+
+async function dbPut(storeName, data) {
+    return new Promise((resolve, reject) => {
+        if (!db) { reject(new Error('Database not initialized')); return; }
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.put(data);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => reject(e.target.error);
+        } catch (error) { reject(error); }
+    });
+}
+
+async function dbDelete(storeName, key) {
+    return new Promise((resolve, reject) => {
+        if (!db) { reject(new Error('Database not initialized')); return; }
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.delete(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => reject(e.target.error);
+        } catch (error) { reject(error); }
+    });
+}
+
+async function dbClear(storeName) {
+    return new Promise((resolve, reject) => {
+        if (!db) { reject(new Error('Database not initialized')); return; }
+        try {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const objectStore = transaction.objectStore(storeName);
+            const request = objectStore.clear();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => reject(e.target.error);
+        } catch (error) { reject(error); }
+    });
+}
+
+// ==================== FUNGSI UNTUK USERS DAN ROLES ====================
+async function loadUsers() {
+    try { users = await dbGetAll(STORES.USERS); } 
+    catch (error) { console.error('Error loading users:', error); users = []; }
+}
+
+async function loadRoles() {
+    try { roles = await dbGetAll(STORES.ROLES); } 
+    catch (error) { console.error('Error loading roles:', error); roles = []; }
+}
+
+async function hashPassword(password) {
+    if (window.crypto && window.crypto.subtle) {
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) { console.warn('Crypto digest failed, using fallback', e); }
+    }
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    return hash.toString(16);
+}
+
+async function getUserPermissions(user) {
+    if (!user || !user.roleId) return [];
+    const role = await dbGet(STORES.ROLES, user.roleId);
+    return role ? role.permissions : [];
+}
+
+// ==================== LOGIN & LOGOUT ====================
+function showLoginScreen() {
+    const overlay = document.getElementById('login-overlay');
+    overlay.style.display = 'flex';
+
+    document.getElementById('login-btn').onclick = loginHandler;
+    document.getElementById('import-login-btn').onclick = async () => {
+        const success = await importData(true);
+        if (success) {
+            await loadUsers();
+            showNotification('Data berhasil diimpor. Silakan login.', 'success');
+        }
+    };
+
+    if (users.length === 0) {
+        let tapCount = 0;
+        overlay.addEventListener('click', function tapHandler(e) {
+            if (e.target.closest('.login-container')) return;
+            tapCount++;
+            if (tapCount >= 10) {
+                overlay.removeEventListener('click', tapHandler);
+                openCreateAdminModal();
+            }
+        });
+    }
+}
+
+async function loginHandler() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    if (!username || !password) {
+        showNotification('Isi username dan password', 'error');
+        return;
+    }
+    const hashed = await hashPassword(password);
+    const user = users.find(u => u.username === username && u.password === hashed);
+    if (user) {
+        currentUser = user;
+        const permissions = await getUserPermissions(user);
+        currentUser.permissions = permissions;
+        sessionStorage.setItem('currentUser', JSON.stringify({ 
+            id: user.id, 
+            roleId: user.roleId, 
+            name: user.name,
+            permissions: permissions 
+        }));
+        document.getElementById('login-overlay').style.display = 'none';
+        updateSidebarByPermissions(permissions);
+        document.getElementById('user-name-display').textContent = user.name;
+        showNotification(`Selamat datang, ${user.name}`, 'success');
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+        setTimeout(() => document.getElementById('login-error').style.display = 'none', 2000);
+    }
+}
+
+function logout() {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+        return;
+    }
+    currentUser = null;
+    sessionStorage.removeItem('currentUser');
+    document.getElementById('user-name-display').textContent = '';
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+    document.querySelector('.main-content').style.display = 'block';
+    document.getElementById('transaksi-page').style.display = 'none';
+    document.getElementById('cart-page').style.display = 'none';
+    document.getElementById('payment-page').style.display = 'none';
+    closeDrawer();
+}
+
+function updateSidebarByPermissions(permissions) {
+    ALL_MENUS.forEach(menu => {
+        const el = document.getElementById(menu.id);
+        if (el) el.style.display = 'none';
+    });
+    permissions.forEach(permId => {
+        const el = document.getElementById(permId);
+        if (el) el.style.display = 'block';
+    });
+}
+
+function bypassLogin() {
+    currentUser = { id: 'bypass', username: 'owner', roleId: null, name: 'Owner', permissions: ALL_MENUS.map(m => m.id) };
+    sessionStorage.setItem('currentUser', JSON.stringify({ id: 'bypass', roleId: null, name: 'Owner', permissions: ALL_MENUS.map(m => m.id) }));
+    document.getElementById('login-overlay').style.display = 'none';
+    updateSidebarByPermissions(ALL_MENUS.map(m => m.id));
+    document.getElementById('user-name-display').textContent = 'Owner';
+    showNotification('Mode owner (bypass)', 'info');
+}
+
+// ==================== FUNGSI UNTUK ADMIN PERTAMA ====================
+function openCreateAdminModal() {
+    document.getElementById('create-admin-modal').style.display = 'flex';
+}
+
+function closeCreateAdminModal() {
+    document.getElementById('create-admin-modal').style.display = 'none';
+}
+
+async function saveFirstAdmin() {
+    const username = document.getElementById('admin-username').value.trim();
+    const password = document.getElementById('admin-password').value.trim();
+    const name = document.getElementById('admin-name').value.trim();
+    if (!username || !password || !name) {
+        showNotification('Semua field harus diisi', 'error');
+        return;
+    }
+    if (users.some(u => u.username === username)) {
+        showNotification('Username sudah digunakan', 'error');
+        return;
+    }
+    const hashed = await hashPassword(password);
+    const now = new Date().toISOString();
+
+    let adminRole = roles.find(r => r.name === 'Admin');
+    if (!adminRole) {
+        adminRole = { name: 'Admin', permissions: ALL_MENUS.map(m => m.id) };
+        const roleId = await dbAdd(STORES.ROLES, adminRole);
+        adminRole.id = roleId;
+        roles.push(adminRole);
+    }
+
+    const newUser = {
+        username,
+        password: hashed,
+        roleId: adminRole.id,
+        name,
+        createdAt: now,
+        updatedAt: now
+    };
+    try {
+        showLoading();
+        const id = await dbAdd(STORES.USERS, newUser);
+        newUser.id = id;
+        users.push(newUser);
+        showNotification('Admin berhasil dibuat, silakan login', 'success');
+        closeCreateAdminModal();
+    } catch (error) {
+        showNotification('Gagal menyimpan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ==================== FUNGSI SETTINGS MODAL ====================
+async function exportData(skipAuth = false) {
+    if (!skipAuth && (!currentUser || !currentUser.permissions || !currentUser.permissions.includes('menu-sistem'))) {
+        showNotification('Anda tidak memiliki akses ke menu ini', 'error');
+        return false;
+    }
+    try {
+        showLoading();
+        const exportData = {
+            kasirCategories: await dbGetAll(STORES.KASIR_CATEGORIES),
+            kasirItems: await dbGetAll(STORES.KASIR_ITEMS),
+            kasirSatuan: await dbGetAll(STORES.KASIR_SATUAN),
+            customers: await dbGetAll(STORES.CUSTOMERS),
+            suppliers: await dbGetAll(STORES.SUPPLIERS),
+            pendingTransactions: await dbGetAll(STORES.PENDING_TRANSACTIONS),
+            settings: await dbGetAll(STORES.SETTINGS),
+            users: await dbGetAll(STORES.USERS),
+            roles: await dbGetAll(STORES.ROLES),
+            bundles: await dbGetAll(STORES.BUNDLES),
+            exportDate: new Date().toISOString(),
+            version: DB_VERSION
+        };
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        const exportFileName = `pos-backup-${new Date().toISOString().split('T')[0]}.json`;
+        const link = document.createElement('a');
+        link.href = dataUri;
+        link.download = exportFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotification('Data berhasil dieksport!', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        showNotification('Gagal mengeksport data: ' + error.message, 'error');
+        return false;
+    } finally {
+        hideLoading();
+    }
+}
+
+async function importData(skipAuth = false) {
+    if (!skipAuth && (!currentUser || !currentUser.permissions || !currentUser.permissions.includes('menu-sistem'))) {
+        showNotification('Anda tidak memiliki akses ke menu ini', 'error');
+        return false;
+    }
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) { resolve(false); return; }
+            showLoading();
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    
+                    const putAll = async (storeName, items) => {
+                        if (!items || !Array.isArray(items)) return;
+                        for (const item of items) {
+                            try {
+                                await dbPut(storeName, item);
+                            } catch (error) {
+                                console.warn(`Gagal mengupdate item di ${storeName}:`, item, error);
+                            }
+                        }
+                    };
+
+                    await putAll(STORES.KASIR_CATEGORIES, importedData.kasirCategories);
+                    await putAll(STORES.KASIR_ITEMS, importedData.kasirItems);
+                    await putAll(STORES.KASIR_SATUAN, importedData.kasirSatuan);
+                    await putAll(STORES.CUSTOMERS, importedData.customers);
+                    await putAll(STORES.SUPPLIERS, importedData.suppliers);
+                    await putAll(STORES.PENDING_TRANSACTIONS, importedData.pendingTransactions);
+                    await putAll(STORES.SETTINGS, importedData.settings);
+                    await putAll(STORES.USERS, importedData.users);
+                    await putAll(STORES.ROLES, importedData.roles);
+                    await putAll(STORES.BUNDLES, importedData.bundles);
+
+                    await loadKasirCategories();
+                    await loadKasirItems();
+                    await loadKasirSatuan();
+                    await loadCustomers();
+                    await loadSuppliers();
+                    await loadPendingTransactions();
+                    await loadUsers();
+                    await loadRoles();
+                    await loadBundles();
+
+                    await updateDashboard();
+
+                    showNotification('Data berhasil diimport (merge)!', 'success');
+                    resolve(true);
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    showNotification('Gagal mengimport data: ' + error.message, 'error');
+                    resolve(false);
+                } finally { hideLoading(); }
+            };
+            reader.onerror = () => { showNotification('Gagal membaca file', 'error'); hideLoading(); resolve(false); };
+            reader.readAsText(file);
+        };
+        input.click();
+    });
+}
+
+async function clearAllData() {
+    if (confirm('Apakah Anda yakin ingin menghapus SEMUA data?\nTindakan ini tidak dapat dibatalkan!')) {
+        try {
+            showLoading();
+            await dbClear(STORES.KASIR_CATEGORIES);
+            await dbClear(STORES.KASIR_ITEMS);
+            await dbClear(STORES.KASIR_SATUAN);
+            await dbClear(STORES.CUSTOMERS);
+            await dbClear(STORES.SUPPLIERS);
+            await dbClear(STORES.PENDING_TRANSACTIONS);
+            await dbClear(STORES.SETTINGS);
+            await dbClear(STORES.APP_STATE);
+            await dbClear(STORES.USERS);
+            await dbClear(STORES.ROLES);
+            await dbClear(STORES.BUNDLES);
+            kasirCategories = [];
+            kasirItems = [];
+            kasirSatuan = [];
+            customers = [];
+            suppliers = [];
+            pendingTransactions = [];
+            users = [];
+            roles = [];
+            bundles = [];
+            updatePendingBadge();
+            await updateDashboard();
+            showNotification('Semua data berhasil dihapus!', 'success');
+        } catch (error) {
+            console.error('Error clearing data:', error);
+            showNotification('Gagal menghapus data: ' + error.message, 'error');
+        } finally { hideLoading(); }
+    }
+}
+
+async function forceResetDatabase() {
+    if (confirm('Yakin ingin reset database? Semua data akan hilang dan aplikasi akan direfresh!')) {
+        try {
+            showLoading();
+            if (db) db.close();
+            const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+            deleteRequest.onsuccess = () => {
+                console.log('Database deleted successfully');
+                showNotification('Database direset. Halaman akan direfresh...', 'success');
+                setTimeout(() => location.reload(), 2000);
+            };
+            deleteRequest.onerror = (event) => {
+                console.error('Error deleting database:', event.target.error);
+                showNotification('Gagal mereset database: ' + event.target.error, 'error');
+                hideLoading();
+            };
+            deleteRequest.onblocked = () => {
+                showNotification('Database diblokir. Tutup tab lain dan coba lagi.', 'error');
+                hideLoading();
+            };
+        } catch (error) {
+            console.error('Error in force reset:', error);
+            showNotification('Error: ' + error.message, 'error');
+            hideLoading();
+        }
+    }
+}
+
+async function loadReceiptConfig() {
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readonly');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const request = store.get('receiptConfig');
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                if (request.result) {
+                    receiptConfig = request.result.value;
+                } else {
+                    receiptConfig = {
+                        paperWidth: 32,
+                        header: "TOKO LOKABUMBU\nTAN KES \n PURB \nTelp: 082",
+                        footer: "Terima kasih\nSelamat berbelanja kembali \n Delivery Order Via WhatsApp \n 082",
+                        showDateTime: true,
+                        showTransactionNumber: true,
+                        showCashier: false
+                    };
+                }
+                resolve();
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    } catch (error) {
+        console.error('Error loading receipt config:', error);
+        receiptConfig = {
+            paperWidth: 32,
+            header: "TOKO LOKABUMBU\nTAN KES \n PURB \nTelp: 082",
+            footer: "Terima kasih\nSelamat berbelanja kembali \n Delivery Order Via WhatsApp \n 082",
+            showDateTime: true,
+            showTransactionNumber: true,
+            showCashier: false
+        };
+    }
+}
+
+async function saveReceiptConfig() {
+    const paperWidth = parseInt(document.getElementById('receipt-paper-width').value);
+    if (isNaN(paperWidth) || paperWidth < 10) {
+        showNotification('Lebar kertas minimal 10 karakter', 'error');
+        return;
+    }
+
+    const headerRaw = document.getElementById('receipt-header').value;
+    const footerRaw = document.getElementById('receipt-footer').value;
+    const header = headerRaw.replace(/\\n/g, '\n');
+    const footer = footerRaw.replace(/\\n/g, '\n');
+
+    const showDateTime = document.getElementById('receipt-show-datetime').checked;
+    const showTransactionNumber = document.getElementById('receipt-show-transnum').checked;
+    const showCashier = document.getElementById('receipt-show-cashier').checked;
+
+    const newConfig = {
+        paperWidth,
+        header,
+        footer,
+        showDateTime,
+        showTransactionNumber,
+        showCashier
+    };
+
+    try {
+        showLoading();
+        const transaction = db.transaction([STORES.SETTINGS], 'readwrite');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const data = { key: 'receiptConfig', value: newConfig };
+        await new Promise((resolve, reject) => {
+            const request = store.put(data);
+            request.onsuccess = () => {
+                receiptConfig = newConfig;
+                resolve();
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+        showNotification('Pengaturan struk tersimpan', 'success');
+        closeSettingsModal();
+    } catch (error) {
+        showNotification('Gagal menyimpan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function showSettingsModal() {
+    if (!currentUser || !currentUser.permissions || !currentUser.permissions.includes('menu-master')) {
+        showNotification('Anda tidak memiliki akses ke pengaturan', 'error');
+        return;
+    }
+    const settingsContent = document.getElementById('settings-content');
+    settingsContent.innerHTML = `
+        <div style="margin-bottom:20px;">
+            <div style="color:#333333;margin-bottom:10px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Manajemen Data
+            </div>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" onclick="exportData()">${icons.upload} Export Data</button>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#006B54;color:white;font-weight:600;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #006B54;" onclick="importData()">${icons.download} Import Data</button>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #ff6b6b;" onclick="clearAllData()">${icons.delete} Hapus Semua Data</button>
+            <button style="width:100%;padding:12px;border:none;border-radius:15px;background:#dc3545;color:white;font-weight:600;margin-top:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dc3545;" onclick="forceResetDatabase()"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Force Reset Database</button>
+        </div>
+        <div style="margin-bottom:20px; border-top:1px solid #ddd; padding-top:20px;">
+            <div style="color:#333333;margin-bottom:15px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Konfigurasi Barcode Timbangan
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Panjang Digit Flex</label>
+                <input type="number" id="barcode-flex-length" class="form-input" value="${barcodeConfig.flexLength}" min="1" max="5">
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Nilai Flex (misal 11)</label>
+                <input type="text" id="barcode-flex-value" class="form-input" value="${barcodeConfig.flexValue}" maxlength="5">
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Panjang Digit Kode Item</label>
+                <input type="number" id="barcode-product-length" class="form-input" value="${barcodeConfig.productLength}" min="1" max="10">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px;">Panjang Digit Berat</label>
+                <input type="number" id="barcode-weight-length" class="form-input" value="${barcodeConfig.weightLength}" min="1" max="10">
+            </div>
+            <div style="color:#666; font-size:0.85rem; margin-bottom:10px;">Total panjang harus 13 digit. Saat ini: <span id="total-digits-display">${barcodeConfig.flexLength + barcodeConfig.productLength + barcodeConfig.weightLength}</span></div>
+            <button class="form-button-primary" style="width:100%;" onclick="saveBarcodeConfigFromUI()">Simpan Konfigurasi Barcode</button>
+        </div>
+
+        <div style="margin-bottom:20px; border-top:1px solid #ddd; padding-top:20px;">
+            <div style="color:#333333;margin-bottom:15px;font-weight:600;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#006B54;"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3h12v6"/><rect x="6" y="15" width="12" height="6" rx="2"/></svg> Pengaturan Struk
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Lebar Kertas (jumlah karakter)</label>
+                <input type="number" id="receipt-paper-width" class="form-input" value="${receiptConfig.paperWidth}" min="20" max="80">
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Header (pisahkan baris dengan \\n)</label>
+                <textarea id="receipt-header" class="form-input" rows="3">${receiptConfig.header.replace(/\n/g, '\\n')}</textarea>
+                <small style="color:#666;">Gunakan \\n untuk baris baru</small>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block; margin-bottom:5px;">Footer (pisahkan baris dengan \\n)</label>
+                <textarea id="receipt-footer" class="form-input" rows="3">${receiptConfig.footer.replace(/\n/g, '\\n')}</textarea>
+                <small style="color:#666;">Gunakan \\n untuk baris baru</small>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="receipt-show-datetime" ${receiptConfig.showDateTime ? 'checked' : ''}> Tampilkan Tanggal & Waktu
+                </label>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="receipt-show-transnum" ${receiptConfig.showTransactionNumber ? 'checked' : ''}> Tampilkan Nomor Transaksi
+                </label>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="receipt-show-cashier" ${receiptConfig.showCashier ? 'checked' : ''}> Tampilkan Nama Kasir
+                </label>
+            </div>
+            <button class="form-button-primary" style="width:100%;" onclick="saveReceiptConfig()">Simpan Pengaturan Struk</button>
+        </div>
+
+        <div style="margin-bottom:20px; border-top:1px solid #ddd; padding-top:20px;">
+            <div style="color:#333;margin-bottom:15px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg> Manajemen Pengguna
+            </div>
+            <div id="user-list-container" style="max-height:200px; overflow-y:auto; margin-bottom:10px;"></div>
+            <button class="form-button-primary" style="width:100%;" onclick="openAddUserModal()">Tambah Pengguna</button>
+        </div>
+
+        <div style="margin-top:20px;">
+            <button class="form-button-primary" style="width:100%;" onclick="window.open('admin-panel.html', '_blank')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
+                Admin Panel
+            </button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-top:20px;">
+            <button class="form-button-secondary" onclick="closeSettingsModal()"><svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#333333;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> TUTUP</button>
+        </div>
+    `;
+
+    const flexLen = document.getElementById('barcode-flex-length');
+    const prodLen = document.getElementById('barcode-product-length');
+    const weightLen = document.getElementById('barcode-weight-length');
+    const totalSpan = document.getElementById('total-digits-display');
+    function updateTotal() {
+        const total = (parseInt(flexLen.value) || 0) + (parseInt(prodLen.value) || 0) + (parseInt(weightLen.value) || 0);
+        totalSpan.textContent = total;
+        totalSpan.style.color = total === 13 ? 'green' : 'red';
+    }
+    flexLen.addEventListener('input', updateTotal);
+    prodLen.addEventListener('input', updateTotal);
+    weightLen.addEventListener('input', updateTotal);
+    
+    renderUserListSettings();
+    document.getElementById('settings-modal').style.display = 'flex';
+    closeDrawer();
+}
+
+function renderUserListSettings() {
+    const container = document.getElementById('user-list-container');
+    if (!container) return;
+    if (!users || users.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">Belum ada pengguna.</div>';
+        return;
+    }
+    let html = '';
+    users.forEach(user => {
+        const roleName = roles.find(r => r.id === user.roleId)?.name || 'Tanpa Role';
+        html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;">
+                <div>
+                    <strong>${user.name}</strong> (${user.username})<br>
+                    <span style="font-size:0.8rem;">Role: ${roleName}</span>
+                </div>
+                <div>
+                    <button class="action-btn edit-btn" style="padding:4px 8px; min-height:30px;" onclick="openEditUserModal(${user.id})">${icons.edit}</button>
+                    ${user.roleId ? `<button class="action-btn delete-btn" style="padding:4px 8px; min-height:30px;" onclick="deleteUser(${user.id})">${icons.delete}</button>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function renderUserList() {
+    renderUserListSettings();
+}
+
+let editingUserId = null;
+
+function openAddUserModal() {
+    editingUserId = null;
+    document.getElementById('user-modal-username').value = '';
+    document.getElementById('user-modal-password').value = '';
+    document.getElementById('user-modal-confirm-password').value = '';
+    document.getElementById('user-modal-name').value = '';
+    const roleSelect = document.getElementById('user-modal-role');
+    roleSelect.innerHTML = '<option value="">-- Pilih Role --</option>';
+    roles.forEach(role => {
+        roleSelect.innerHTML += `<option value="${role.id}">${role.name}</option>`;
+    });
+    document.getElementById('user-modal-title').innerHTML = `
+        <svg class="icon icon-primary" viewBox="0 0 24 24" width="24" height="24">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
+        </svg> Tambah Pengguna
+    `;
+    document.getElementById('user-modal').style.display = 'flex';
+}
+
+function openEditUserModal(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    editingUserId = userId;
+    document.getElementById('user-modal-username').value = user.username;
+    document.getElementById('user-modal-password').value = '';
+    document.getElementById('user-modal-confirm-password').value = '';
+    document.getElementById('user-modal-name').value = user.name;
+    const roleSelect = document.getElementById('user-modal-role');
+    roleSelect.innerHTML = '<option value="">-- Pilih Role --</option>';
+    roles.forEach(role => {
+        roleSelect.innerHTML += `<option value="${role.id}" ${user.roleId === role.id ? 'selected' : ''}>${role.name}</option>`;
+    });
+    document.getElementById('user-modal-title').innerHTML = `
+        <svg class="icon icon-primary" viewBox="0 0 24 24" width="24" height="24">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg> Edit Pengguna
+    `;
+    document.getElementById('user-modal').style.display = 'flex';
+}
+
+function closeUserModal() {
+    document.getElementById('user-modal').style.display = 'none';
+    editingUserId = null;
+}
+
+// ==================== FUNGSI TOGGLE PASSWORD ====================
+function togglePasswordVisibility(inputId, toggleElement) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+
+    const svg = toggleElement.querySelector('svg');
+    if (type === 'text') {
+        svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    } else {
+        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    }
+}
+
+async function saveUser() {
+    const username = document.getElementById('user-modal-username').value.trim();
+    const password = document.getElementById('user-modal-password').value.trim();
+    const confirmPassword = document.getElementById('user-modal-confirm-password').value.trim();
+    const name = document.getElementById('user-modal-name').value.trim();
+    const roleId = parseInt(document.getElementById('user-modal-role').value);
+
+    if (!username || !name || !roleId) {
+        showNotification('Username, Nama, dan Role harus diisi', 'error');
+        return;
+    }
+
+    if (!editingUserId && !password) {
+        showNotification('Password harus diisi untuk pengguna baru', 'error');
+        return;
+    }
+
+    if (password !== '') {
+        if (password !== confirmPassword) {
+            showNotification('Password dan konfirmasi password tidak cocok', 'error');
+            return;
+        }
+    }
+
+    if (editingUserId) {
+        const existing = users.find(u => u.username === username && u.id !== editingUserId);
+        if (existing) {
+            showNotification('Username sudah digunakan', 'error');
+            return;
+        }
+    } else {
+        if (users.some(u => u.username === username)) {
+            showNotification('Username sudah digunakan', 'error');
+            return;
+        }
+    }
+
+    try {
+        showLoading();
+        const now = new Date().toISOString();
+        if (editingUserId) {
+            const user = users.find(u => u.id === editingUserId);
+            if (user) {
+                user.username = username;
+                if (password) {
+                    user.password = await hashPassword(password);
+                }
+                user.name = name;
+                user.roleId = roleId;
+                user.updatedAt = now;
+                await dbPut(STORES.USERS, user);
+            }
+        } else {
+            const hashed = await hashPassword(password);
+            const newUser = {
+                username,
+                password: hashed,
+                name,
+                roleId,
+                createdAt: now,
+                updatedAt: now
+            };
+            const id = await dbAdd(STORES.USERS, newUser);
+            newUser.id = id;
+            users.push(newUser);
+        }
+        await loadUsers();
+        renderUserList();
+        showNotification('Pengguna berhasil disimpan', 'success');
+        closeUserModal();
+    } catch (error) {
+        showNotification('Gagal menyimpan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Hapus pengguna ini?')) return;
+    try {
+        showLoading();
+        await dbDelete(STORES.USERS, userId);
+        users = users.filter(u => u.id !== userId);
+        renderUserList();
+        showNotification('Pengguna dihapus', 'success');
+    } catch (error) {
+        showNotification('Gagal hapus: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function loadBarcodeConfig() {
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readonly');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const request = store.get('barcodeConfig');
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                if (request.result) {
+                    barcodeConfig = request.result.value;
+                } else {
+                    barcodeConfig = { flexLength: 2, flexValue: '11', productLength: 6, weightLength: 5 };
+                }
+                resolve();
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    } catch (error) {
+        console.error('Error loading barcode config:', error);
+        barcodeConfig = { flexLength: 2, flexValue: '11', productLength: 6, weightLength: 5};
+    }
+}
+
+async function saveBarcodeConfig(config) {
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readwrite');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const data = { key: 'barcodeConfig', value: config };
+        const request = store.put(data);
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                barcodeConfig = config;
+                resolve();
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    } catch (error) {
+        console.error('Error saving barcode config:', error);
+        throw error;
+    }
+}
+
+async function saveBarcodeConfigFromUI() {
+    const flexLength = parseInt(document.getElementById('barcode-flex-length').value);
+    const flexValue = document.getElementById('barcode-flex-value').value.trim();
+    const productLength = parseInt(document.getElementById('barcode-product-length').value);
+    const weightLength = parseInt(document.getElementById('barcode-weight-length').value);
+
+    if (isNaN(flexLength) || flexLength < 1) { showNotification('Panjang Flex harus angka positif', 'error'); return; }
+    if (!flexValue) { showNotification('Nilai Flex harus diisi', 'error'); return; }
+    if (isNaN(productLength) || productLength < 1) { showNotification('Panjang Kode Item harus angka positif', 'error'); return; }
+    if (isNaN(weightLength) || weightLength < 1) { showNotification('Panjang Berat harus angka positif', 'error'); return; }
+
+    const total = flexLength + productLength + weightLength;
+    if (total !== 13) {
+        showNotification(`Total panjang harus 13 digit, saat ini ${total}`, 'error');
+        return;
+    }
+
+    const newConfig = { flexLength, flexValue, productLength, weightLength };
+    try {
+        showLoading();
+        await saveBarcodeConfig(newConfig);
+        showNotification('Konfigurasi barcode tersimpan', 'success');
+        closeSettingsModal();
+    } catch (error) {
+        showNotification('Gagal menyimpan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function closeSettingsModal() {
+    document.getElementById('settings-modal').style.display = 'none';
+}
+
 // ==================== LOCALSTORAGE CART ====================
+const CART_STORAGE_KEY = 'pos_cart';
+const CUSTOMER_STORAGE_KEY = 'pos_selected_customer';
+
 function saveCartToLocalStorage() {
     try {
         const cartData = cart.map(c => ({
@@ -205,7 +1519,84 @@ async function loadCartFromLocalStorage() {
     }
 }
 
-// ==================== FUNGSI BUNDLE UI ====================
+// ==================== FUNGSI LOAD DATA ====================
+async function loadKasirCategories() {
+    try { kasirCategories = await dbGetAll(STORES.KASIR_CATEGORIES); kasirCategories.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading kasir categories:', error); kasirCategories = []; }
+}
+
+async function loadKasirItems() {
+    try { 
+        kasirItems = await dbGetAll(STORES.KASIR_ITEMS); 
+        kasirItems.forEach(item => { 
+            if (item.stock === undefined) item.stock = 0;
+            if (item.minStock === undefined) item.minStock = 5;
+        });
+        kasirItems.sort((a,b) => a.name.localeCompare(b.name)); 
+    } catch (error) { console.error('Error loading kasir items:', error); kasirItems = []; }
+}
+
+async function loadKasirSatuan() {
+    try { kasirSatuan = await dbGetAll(STORES.KASIR_SATUAN); kasirSatuan.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading satuan:', error); kasirSatuan = []; }
+}
+
+async function loadCustomers() {
+    try { 
+        customers = await dbGetAll(STORES.CUSTOMERS); 
+        customers.forEach(c => { if (c.outstanding === undefined) c.outstanding = 0; });
+        customers.sort((a,b) => a.name.localeCompare(b.name)); 
+    } catch (error) { console.error('Error loading customers:', error); customers = []; }
+}
+
+async function loadSuppliers() {
+    try { suppliers = await dbGetAll(STORES.SUPPLIERS); suppliers.sort((a,b) => a.name.localeCompare(b.name)); } catch (error) { console.error('Error loading suppliers:', error); suppliers = []; }
+}
+
+async function loadPendingTransactions() {
+    try { 
+        pendingTransactions = await dbGetAll(STORES.PENDING_TRANSACTIONS); 
+        updatePendingBadge();
+    } catch (error) { 
+        console.error('Error loading pending transactions:', error); 
+        pendingTransactions = []; 
+        updatePendingBadge();
+    }
+}
+
+// ==================== FUNGSI BUNDLE ====================
+async function loadBundles() {
+    try {
+        bundles = await dbGetAll(STORES.BUNDLES);
+        bundles.sort((a,b) => a.name.localeCompare(b.name));
+        return bundles;
+    } catch (error) {
+        console.error('Error loading bundles:', error);
+        bundles = [];
+        return bundles;
+    }
+}
+
+async function saveBundle(bundleData, id = null) {
+    const now = new Date().toISOString();
+    if (id) {
+        const bundle = await dbGet(STORES.BUNDLES, id);
+        if (bundle) {
+            Object.assign(bundle, bundleData);
+            bundle.updatedAt = now;
+            await dbPut(STORES.BUNDLES, bundle);
+        }
+    } else {
+        const newBundle = { ...bundleData, createdAt: now, updatedAt: now };
+        await dbAdd(STORES.BUNDLES, newBundle);
+    }
+    await loadBundles();
+}
+
+async function deleteBundle(id) {
+    await dbDelete(STORES.BUNDLES, id);
+    await loadBundles();
+}
+
+// ==================== FUNGSI UI BUNDLE (DENGAN EVENT DELEGATION) ====================
 async function openBundleModal() {
     console.log('openBundleModal dipanggil');
     const modal = document.getElementById('bundle-modal');
@@ -244,7 +1635,7 @@ async function loadAndRenderBundles() {
         );
 
         if (activeBundles.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:20px;">Tidak ada bundle aktif. <br><button class="form-button-primary" onclick="window.location.href=\'admin-panel.html\'">Buat Bundle</button></div>';
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Tidak ada bundle aktif. <br><button class="form-button-primary" onclick="window.open(\'admin-panel.html\', \'_blank\')">Buat Bundle</button></div>';
             return;
         }
 
@@ -274,6 +1665,7 @@ async function loadAndRenderBundles() {
         }
         container.innerHTML = html;
 
+        // Hapus event listener lama jika ada (untuk menghindari duplikasi)
         if (container._bundleClickListener) {
             container.removeEventListener('click', container._bundleClickListener);
         }
@@ -309,6 +1701,7 @@ async function addBundleToCart(bundleId) {
         return;
     }
     
+    // Cek apakah bundle sudah ada di keranjang
     const existingBundleInCart = cart.find(c => c.isBundle && c.bundleId == bundleId);
     if (existingBundleInCart) {
         showNotification('Bundle ini sudah ada di keranjang', 'warning');
@@ -523,7 +1916,7 @@ function renderCustomerListForSelect() {
     if (!container) return;
 
     if (!customers || customers.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px;">Belum ada pelanggan. <br><button class="form-button-primary" onclick="window.location.href=\'relasi.html?action=customerAdd\'">Tambah Pelanggan</button></div>';
+        container.innerHTML = '<div style="text-align:center; padding:20px;">Belum ada pelanggan. <br><button class="form-button-primary" onclick="openAddCustomerPage(); closeSelectCustomerModal();">Tambah Pelanggan</button></div>';
         return;
     }
 
@@ -560,7 +1953,6 @@ function selectCustomer(customerId) {
     closeSelectCustomerModal();
 }
 
-// ==================== FUNGSI CART ====================
 function openCartPage() {
     document.querySelector('.main-content').style.display = 'none';
     document.getElementById('transaksi-page').style.display = 'none';
@@ -620,6 +2012,10 @@ function removeFromCart(index) {
         document.getElementById('payment-total').textContent = formatRupiah(total);
         updatePaymentSummary();
     }
+}
+
+function formatRupiah(angka) {
+    return 'Rp ' + angka.toLocaleString('id-ID');
 }
 
 // ==================== FUNGSI PIUTANG ====================
@@ -933,7 +2329,207 @@ function closeConfirmPiutangModal() {
     pendingTotalPaid = 0;
 }
 
-// ==================== FUNGSI INVENTORY (masih dipertahankan sebagai modal) ====================
+// ==================== FUNGSI PRINT VIA WEB SERIAL ====================
+function wrapText(text, maxWidth) {
+    if (!text) return [];
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    for (let word of words) {
+        if (word.length > maxWidth) {
+            if (currentLine.length > 0) {
+                lines.push(currentLine);
+                currentLine = '';
+            }
+            for (let i = 0; i < word.length; i += maxWidth) {
+                lines.push(word.substr(i, maxWidth));
+            }
+        } else {
+            if (currentLine.length + word.length + 1 > maxWidth) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                if (currentLine.length === 0) {
+                    currentLine = word;
+                } else {
+                    currentLine += ' ' + word;
+                }
+            }
+        }
+    }
+    if (currentLine.length > 0) {
+        lines.push(currentLine);
+    }
+    return lines;
+}
+
+async function printReceipt() {
+    if (!printerPort) {
+        showNotification('Printer belum terhubung', 'error');
+        return;
+    }
+
+    let dataToPrint = lastTransactionData;
+    if (!dataToPrint) {
+        if (cart.length === 0) {
+            showNotification('Tidak ada data untuk dicetak', 'warning');
+            return;
+        }
+        const total = cart.reduce((s, c) => s + c.subtotal, 0);
+        dataToPrint = {
+            items: cart.map(c => ({
+                name: c.item.name,
+                qty: c.qty,
+                unit: c.unitConversion ? (kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name || '?') : (c.weightGram ? 'kg' : 'pcs'),
+                price: c.pricePerUnit,
+                subtotal: c.subtotal
+            })),
+            total: total,
+            paidAmount: total,
+            change: 0,
+            date: new Date().toLocaleString('id-ID'),
+            transactionNumber: 'DRAFT'
+        };
+    }
+
+    const { paperWidth, header, footer, showDateTime, showTransactionNumber, showCashier } = receiptConfig;
+
+    try {
+        const writer = printerPort.writable.getWriter();
+        const encoder = new TextEncoder();
+        let receipt = '\n';
+
+        const headerLines = header.split('\n');
+        headerLines.forEach(line => {
+            const wrapped = wrapText(line, paperWidth);
+            wrapped.forEach(l => {
+                receipt += l.padEnd(paperWidth) + '\n';
+            });
+        });
+        receipt += '='.repeat(paperWidth) + '\n';
+
+        if (showDateTime) {
+            receipt += `Tanggal: ${new Date().toLocaleString('id-ID')}\n`;
+        }
+        if (showTransactionNumber && dataToPrint.transactionNumber) {
+            receipt += `No.    : ${dataToPrint.transactionNumber}\n`;
+        }
+        if (showCashier) {
+            receipt += `Kasir  : ${currentUser ? currentUser.name : 'Admin'}\n`;
+        }
+        receipt += '-'.repeat(paperWidth) + '\n';
+
+        dataToPrint.items.forEach(item => {
+            const nameWrapped = wrapText(item.name, paperWidth - 5);
+            nameWrapped.forEach((line, idx) => {
+                if (idx === 0) {
+                    receipt += line + '\n';
+                } else {
+                    receipt += '     ' + line + '\n';
+                }
+            });
+            const qtyStr = `${item.qty} ${item.unit} x ${formatRupiah(item.price)}`;
+            const subtotalStr = formatRupiah(item.subtotal);
+            const line = qtyStr + ' '.repeat(Math.max(1, paperWidth - qtyStr.length - subtotalStr.length)) + subtotalStr;
+            receipt += line + '\n';
+        });
+
+        receipt += '-'.repeat(paperWidth) + '\n';
+
+        const totalLabel = 'Total';
+        const totalVal = formatRupiah(dataToPrint.total);
+        receipt += totalLabel + ' '.repeat(paperWidth - totalLabel.length - totalVal.length) + totalVal + '\n';
+
+        const paidLabel = 'Bayar';
+        const paidVal = formatRupiah(dataToPrint.paidAmount);
+        receipt += paidLabel + ' '.repeat(paperWidth - paidLabel.length - paidVal.length) + paidVal + '\n';
+
+        const changeLabel = 'Kembali';
+        const changeVal = formatRupiah(dataToPrint.change);
+        receipt += changeLabel + ' '.repeat(paperWidth - changeLabel.length - changeVal.length) + changeVal + '\n';
+
+        receipt += '='.repeat(paperWidth) + '\n';
+
+        const footerLines = footer.split('\n');
+        footerLines.forEach(line => {
+            const wrapped = wrapText(line, paperWidth);
+            wrapped.forEach(l => {
+                receipt += l.padEnd(paperWidth) + '\n';
+            });
+        });
+
+        receipt += '\n\n\n';
+
+        await writer.write(encoder.encode(receipt));
+        writer.releaseLock();
+        showNotification('Struk berhasil dicetak', 'success');
+    } catch (error) {
+        console.error('Error printing:', error);
+        showNotification('Gagal mencetak: ' + error.message, 'error');
+    }
+}
+
+async function togglePrinter() {
+    if (printerPort) {
+        try {
+            await printerPort.close();
+            printerPort = null;
+            updatePrinterStatus(false);
+            showNotification('Printer diputuskan', 'info');
+        } catch (error) {
+            console.error('Error disconnecting printer:', error);
+            showNotification('Gagal memutuskan printer: ' + error.message, 'error');
+        }
+    } else {
+        if (!navigator.serial) {
+            showNotification('Web Serial API tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
+            return;
+        }
+        try {
+            const port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 9600 });
+            printerPort = port;
+            updatePrinterStatus(true);
+            showNotification('Printer terhubung', 'success');
+        } catch (error) {
+            console.error('Error connecting printer:', error);
+            showNotification('Gagal connect printer: ' + error.message, 'error');
+        }
+    }
+}
+
+function updatePrinterStatus(connected) {
+    const statusLight = document.getElementById('printer-status-light');
+    const statusText = document.getElementById('printer-status-text');
+    const connectBtnText = document.getElementById('connect-btn-text');
+    if (connected) {
+        statusLight.classList.add('connected');
+        statusText.textContent = '';
+        connectBtnText.textContent = 'Disconnect';
+    } else {
+        statusLight.classList.remove('connected');
+        statusText.textContent = '';
+        connectBtnText.textContent = 'Connect';
+    }
+}
+
+async function autoReconnectPrinter() {
+    if (!navigator.serial) return;
+    try {
+        const ports = await navigator.serial.getPorts();
+        if (ports.length > 0) {
+            const port = ports[0];
+            await port.open({ baudRate: 9600 });
+            printerPort = port;
+            updatePrinterStatus(true);
+            console.log('Printer auto-connected');
+        }
+    } catch (error) {
+        console.warn('Auto reconnect printer failed:', error);
+    }
+}
+
+// ==================== FUNGSI INVENTORY ====================
 function openInventoryStokModal() {
     document.getElementById('inventory-modal-title').innerHTML = `
         <svg class="icon icon-primary" viewBox="0 0 24 24">
@@ -1410,12 +3006,120 @@ async function deletePendingTransaction(id) {
 
 // ==================== FUNGSI LAPORAN PENJUALAN ====================
 function openLaporanPage() {
-    window.location.href = 'laporan.html';
+    window.open('laporan.html', '_blank');
 }
 
 // ==================== FUNGSI PEMBELIAN ====================
 function openPembelianPage() {
-    window.location.href = 'pembelian.html';
+    window.open('pembelian.html', '_blank');
+}
+
+// ==================== FUNGSI GENERATE NOMOR PEMBELIAN ====================
+async function generatePurchaseNumber() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    let lastCounter = 0;
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readonly');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const request = store.get('lastPurchaseNumber');
+        await new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                if (request.result) {
+                    const data = request.result.value;
+                    if (data.date === dateStr) {
+                        lastCounter = data.counter;
+                    } else {
+                        lastCounter = 0;
+                    }
+                }
+                resolve();
+            };
+            request.onerror = reject;
+        });
+    } catch (error) {
+        console.warn('Gagal membaca counter purchase:', error);
+    }
+
+    const newCounter = lastCounter + 1;
+    const purchaseNumber = `PO-${dateStr}-${String(newCounter).padStart(5, '0')}`;
+
+    try {
+        await dbPut(STORES.SETTINGS, {
+            key: 'lastPurchaseNumber',
+            value: { date: dateStr, counter: newCounter }
+        });
+    } catch (error) {
+        console.error('Gagal menyimpan counter purchase:', error);
+    }
+
+    return purchaseNumber;
+}
+
+async function generateTransactionNumber() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    let lastCounter = 0;
+    try {
+        const transaction = db.transaction([STORES.SETTINGS], 'readonly');
+        const store = transaction.objectStore(STORES.SETTINGS);
+        const request = store.get('lastTransactionNumber');
+        await new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                if (request.result) {
+                    const data = request.result.value;
+                    if (data.date === dateStr) {
+                        lastCounter = data.counter;
+                    } else {
+                        lastCounter = 0;
+                    }
+                }
+                resolve();
+            };
+            request.onerror = reject;
+        });
+    } catch (error) {
+        console.warn('Gagal membaca counter transaksi:', error);
+    }
+
+    const newCounter = lastCounter + 1;
+    const transactionNumber = `INV-${dateStr}-${String(newCounter).padStart(5, '0')}`;
+
+    try {
+        await dbPut(STORES.SETTINGS, {
+            key: 'lastTransactionNumber',
+            value: { date: dateStr, counter: newCounter }
+        });
+    } catch (error) {
+        console.error('Gagal menyimpan counter transaksi:', error);
+    }
+
+    return transactionNumber;
+}
+
+async function refreshData() {
+    try {
+        showLoading();
+        await loadKasirCategories();
+        await loadKasirItems();
+        await loadKasirSatuan();
+        await loadCustomers();
+        await loadSuppliers();
+        await loadPendingTransactions();
+        await loadUsers();
+        await loadRoles();
+        await loadBundles();
+        await updateDashboard();
+        console.log('Data refreshed successfully');
+    } catch (error) { console.error('Error refreshing data:', error); } finally { hideLoading(); }
 }
 
 // ==================== FUNGSI DASHBOARD ====================
@@ -1461,7 +3165,7 @@ function renderNotifications(lowStockItems) {
     if (customersWithOutstanding.length > 0) {
         const notif = document.createElement('div');
         notif.className = 'notification danger';
-        notif.innerHTML = `💰 Total piutang dari ${customersWithOutstanding.length} pelanggan: ${formatRupiah(totalOutstanding)}. <button onclick="window.location.href='relasi.html?action=customerList'">Lihat</button>`;
+        notif.innerHTML = `💰 Total piutang dari ${customersWithOutstanding.length} pelanggan: ${formatRupiah(totalOutstanding)}. <button onclick="openDaftarCustomerModal()">Lihat</button>`;
         area.appendChild(notif);
     }
 
@@ -1548,9 +3252,328 @@ function updatePendingBadge() {
     }
 }
 
-// ==================== FUNGSI DAFTAR CUSTOMER (redirect) ====================
+// ==================== FUNGSI HALAMAN CUSTOMER ====================
+function openAddCustomerPage() {
+    editingCustomerId = null;
+    document.getElementById('customer-page-title').textContent = 'Tambah Pelanggan';
+    document.getElementById('customer-code').value = '';
+    document.getElementById('customer-name').value = '';
+    document.getElementById('customer-level').value = 'Bronze';
+    document.getElementById('customer-contact').value = '';
+    document.getElementById('customer-account').value = '';
+    document.getElementById('customer-bank').value = '';
+    document.getElementById('customer-token').value = '';
+    document.getElementById('customer-email').value = '';
+    document.getElementById('customer-address').value = '';
+    showCustomerPage();
+}
+
+function openEditCustomerPage(id) {
+    const cust = customers.find(c => c.id === id);
+    if (!cust) return;
+    editingCustomerId = id;
+    document.getElementById('customer-page-title').textContent = 'Edit Pelanggan';
+    document.getElementById('customer-code').value = cust.code || '';
+    document.getElementById('customer-name').value = cust.name || '';
+    document.getElementById('customer-level').value = cust.level || 'Bronze';
+    document.getElementById('customer-contact').value = cust.contact || '';
+    document.getElementById('customer-account').value = cust.accountNumber || '';
+    document.getElementById('customer-bank').value = cust.bankName || '';
+    document.getElementById('customer-token').value = cust.token || '';
+    document.getElementById('customer-email').value = cust.email || '';
+    document.getElementById('customer-address').value = cust.address || '';
+    showCustomerPage();
+}
+
+function showCustomerPage() {
+    document.querySelector('.main-content').style.display = 'none';
+    document.getElementById('transaksi-page').style.display = 'none';
+    document.getElementById('cart-page').style.display = 'none';
+    document.getElementById('payment-page').style.display = 'none';
+    document.getElementById('customer-list-page').style.display = 'none';
+    document.getElementById('supplier-add-page').style.display = 'none';
+    document.getElementById('supplier-list-page').style.display = 'none';
+    document.getElementById('customer-add-page').style.display = 'block';
+    closeDrawer();
+}
+
+function openListCustomerPage() {
+    document.querySelector('.main-content').style.display = 'none';
+    document.getElementById('transaksi-page').style.display = 'none';
+    document.getElementById('cart-page').style.display = 'none';
+    document.getElementById('payment-page').style.display = 'none';
+    document.getElementById('customer-add-page').style.display = 'none';
+    document.getElementById('supplier-add-page').style.display = 'none';
+    document.getElementById('supplier-list-page').style.display = 'none';
+    document.getElementById('customer-list-page').style.display = 'block';
+    renderCustomerList();
+    closeDrawer();
+}
+
+function closeCustomerPage() {
+    document.getElementById('customer-add-page').style.display = 'none';
+    document.getElementById('customer-list-page').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
+}
+
+function renderCustomerList() {
+    const container = document.getElementById('customer-list-container');
+    if (!container) return;
+    if (customers.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:20px;">Belum ada pelanggan.</p>';
+        return;
+    }
+    let html = '<table class="data-table"><thead><tr><th>Kode</th><th>Nama</th><th>Level</th><th>Kontak</th><th>Piutang</th><th>Aksi</th></tr></thead><tbody>';
+    customers.forEach(c => {
+        html += `<tr>
+            <td>${c.code || '-'}</td>
+            <td>${c.name}</td>
+            <td>${c.level || 'Bronze'}</td>
+            <td>${c.contact || '-'}</td>
+            <td>${formatRupiah(c.outstanding || 0)}</td>
+            <td>
+                <button class="action-btn edit-btn" onclick="openEditCustomerPage(${c.id})">${icons.edit}</button>
+                <button class="action-btn delete-btn" onclick="deleteCustomer(${c.id})">${icons.delete}</button>
+            </td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+async function saveCustomer() {
+    const code = document.getElementById('customer-code').value.trim();
+    const name = document.getElementById('customer-name').value.trim();
+    const level = document.getElementById('customer-level').value;
+    const contact = document.getElementById('customer-contact').value.trim();
+    const accountNumber = document.getElementById('customer-account').value.trim();
+    const bankName = document.getElementById('customer-bank').value.trim();
+    const token = document.getElementById('customer-token').value.trim();
+    const email = document.getElementById('customer-email').value.trim();
+    const address = document.getElementById('customer-address').value.trim();
+
+    if (!code || !name) {
+        showNotification('Kode dan Nama harus diisi', 'error');
+        return;
+    }
+
+    const duplicate = customers.find(c => c.code === code && c.id !== editingCustomerId);
+    if (duplicate) {
+        showNotification('Kode pelanggan sudah digunakan', 'error');
+        return;
+    }
+
+    const now = new Date().toISOString();
+    try {
+        showLoading();
+        if (editingCustomerId) {
+            const cust = customers.find(c => c.id === editingCustomerId);
+            if (cust) {
+                cust.code = code;
+                cust.name = name;
+                cust.level = level;
+                cust.contact = contact;
+                cust.accountNumber = accountNumber;
+                cust.bankName = bankName;
+                cust.token = token;
+                cust.email = email;
+                cust.address = address;
+                cust.updatedAt = now;
+                await dbPut(STORES.CUSTOMERS, cust);
+            }
+        } else {
+            const newCust = {
+                code, name, level, contact, accountNumber, bankName, token, email, address,
+                outstanding: 0,
+                createdAt: now,
+                updatedAt: now
+            };
+            await dbAdd(STORES.CUSTOMERS, newCust);
+        }
+        await loadCustomers();
+        showNotification('Pelanggan berhasil disimpan', 'success');
+        openListCustomerPage();
+    } catch (error) {
+        showNotification('Gagal menyimpan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteCustomer(id) {
+    if (!confirm('Hapus pelanggan ini?')) return;
+    try {
+        showLoading();
+        await dbDelete(STORES.CUSTOMERS, id);
+        customers = customers.filter(c => c.id !== id);
+        if (selectedCustomer && selectedCustomer.id === id) {
+            selectedCustomer = null;
+            document.getElementById('customer-badge').style.display = 'none';
+        }
+        renderCustomerList();
+        showNotification('Pelanggan dihapus', 'success');
+    } catch (error) {
+        showNotification('Gagal hapus: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 function openDaftarCustomerModal() {
-    window.location.href = 'relasi.html?action=customerList';
+    openListCustomerPage();
+}
+
+// ==================== FUNGSI HALAMAN SUPPLIER ====================
+function openAddSupplierPage() {
+    editingSupplierId = null;
+    document.getElementById('supplier-page-title').textContent = 'Tambah Supplier';
+    document.getElementById('supplier-code').value = '';
+    document.getElementById('supplier-name').value = '';
+    document.getElementById('supplier-contact').value = '';
+    document.getElementById('supplier-address').value = '';
+    document.getElementById('supplier-email').value = '';
+    document.getElementById('supplier-account').value = '';
+    document.getElementById('supplier-bank').value = '';
+    showSupplierPage();
+}
+
+function openEditSupplierPage(id) {
+    const sup = suppliers.find(s => s.id === id);
+    if (!sup) return;
+    editingSupplierId = id;
+    document.getElementById('supplier-page-title').textContent = 'Edit Supplier';
+    document.getElementById('supplier-code').value = sup.code || '';
+    document.getElementById('supplier-name').value = sup.name || '';
+    document.getElementById('supplier-contact').value = sup.contact || '';
+    document.getElementById('supplier-address').value = sup.address || '';
+    document.getElementById('supplier-email').value = sup.email || '';
+    document.getElementById('supplier-account').value = sup.accountNumber || '';
+    document.getElementById('supplier-bank').value = sup.bankName || '';
+    showSupplierPage();
+}
+
+function showSupplierPage() {
+    document.querySelector('.main-content').style.display = 'none';
+    document.getElementById('transaksi-page').style.display = 'none';
+    document.getElementById('cart-page').style.display = 'none';
+    document.getElementById('payment-page').style.display = 'none';
+    document.getElementById('customer-add-page').style.display = 'none';
+    document.getElementById('customer-list-page').style.display = 'none';
+    document.getElementById('supplier-list-page').style.display = 'none';
+    document.getElementById('supplier-add-page').style.display = 'block';
+    closeDrawer();
+}
+
+function openListSupplierPage() {
+    document.querySelector('.main-content').style.display = 'none';
+    document.getElementById('transaksi-page').style.display = 'none';
+    document.getElementById('cart-page').style.display = 'none';
+    document.getElementById('payment-page').style.display = 'none';
+    document.getElementById('customer-add-page').style.display = 'none';
+    document.getElementById('customer-list-page').style.display = 'none';
+    document.getElementById('supplier-add-page').style.display = 'none';
+    document.getElementById('supplier-list-page').style.display = 'block';
+    renderSupplierList();
+    closeDrawer();
+}
+
+function closeSupplierPage() {
+    document.getElementById('supplier-add-page').style.display = 'none';
+    document.getElementById('supplier-list-page').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
+}
+
+function renderSupplierList() {
+    const container = document.getElementById('supplier-list-container');
+    if (!container) return;
+    if (suppliers.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:20px;">Belum ada supplier.</p>';
+        return;
+    }
+    let html = '<table class="data-table"><thead><tr><th>Kode</th><th>Nama</th><th>Kontak</th><th>Email</th><th>Aksi</th></tr></thead><tbody>';
+    suppliers.forEach(s => {
+        html += `<tr>
+            <td>${s.code || '-'}</td>
+            <td>${s.name}</td>
+            <td>${s.contact || '-'}</td>
+            <td>${s.email || '-'}</td>
+            <td>
+                <button class="action-btn edit-btn" onclick="openEditSupplierPage(${s.id})">${icons.edit}</button>
+                <button class="action-btn delete-btn" onclick="deleteSupplier(${s.id})">${icons.delete}</button>
+            </td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+async function saveSupplier() {
+    const code = document.getElementById('supplier-code').value.trim();
+    const name = document.getElementById('supplier-name').value.trim();
+    const contact = document.getElementById('supplier-contact').value.trim();
+    const address = document.getElementById('supplier-address').value.trim();
+    const email = document.getElementById('supplier-email').value.trim();
+    const accountNumber = document.getElementById('supplier-account').value.trim();
+    const bankName = document.getElementById('supplier-bank').value.trim();
+
+    if (!code || !name) {
+        showNotification('Kode dan Nama harus diisi', 'error');
+        return;
+    }
+
+    const duplicate = suppliers.find(s => s.code === code && s.id !== editingSupplierId);
+    if (duplicate) {
+        showNotification('Kode supplier sudah digunakan', 'error');
+        return;
+    }
+
+    const now = new Date().toISOString();
+    try {
+        showLoading();
+        if (editingSupplierId) {
+            const sup = suppliers.find(s => s.id === editingSupplierId);
+            if (sup) {
+                sup.code = code;
+                sup.name = name;
+                sup.contact = contact;
+                sup.address = address;
+                sup.email = email;
+                sup.accountNumber = accountNumber;
+                sup.bankName = bankName;
+                sup.updatedAt = now;
+                await dbPut(STORES.SUPPLIERS, sup);
+            }
+        } else {
+            const newSup = {
+                code, name, contact, address, email, accountNumber, bankName,
+                createdAt: now,
+                updatedAt: now
+            };
+            await dbAdd(STORES.SUPPLIERS, newSup);
+        }
+        await loadSuppliers();
+        showNotification('Supplier berhasil disimpan', 'success');
+        openListSupplierPage();
+    } catch (error) {
+        showNotification('Gagal menyimpan: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteSupplier(id) {
+    if (!confirm('Hapus supplier ini?')) return;
+    try {
+        showLoading();
+        await dbDelete(STORES.SUPPLIERS, id);
+        suppliers = suppliers.filter(s => s.id !== id);
+        renderSupplierList();
+        showNotification('Supplier dihapus', 'success');
+    } catch (error) {
+        showNotification('Gagal hapus: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
 // ==================== INISIALISASI APLIKASI ====================
@@ -1571,7 +3594,7 @@ async function initApp() {
         await loadPendingTransactions();
         await loadBundles();
         await loadCartFromLocalStorage();
-        await autoReconnectPrinter(); // fungsi dari printer.js
+        await autoReconnectPrinter();
         await loadUsers();
         await loadRoles();
 
@@ -1670,6 +3693,10 @@ window.onclick = function(event) {
         else if (event.target.id === 'create-admin-modal') closeCreateAdminModal();
         else if (event.target.id === 'user-modal') closeUserModal();
         else if (event.target.id === 'bundle-modal') closeBundleModal();
+        else if (event.target.id === 'customer-add-page') closeCustomerPage();
+        else if (event.target.id === 'customer-list-page') closeCustomerPage();
+        else if (event.target.id === 'supplier-add-page') closeSupplierPage();
+        else if (event.target.id === 'supplier-list-page') closeSupplierPage();
     }
 };
 
