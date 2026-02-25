@@ -512,7 +512,7 @@
         input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            accent-color: #006B54; /* Warna hijau sesuai tema */
+            accent-color: #006B54;
             margin-right: 5px;
         }
         button {
@@ -729,8 +729,12 @@
         #pending-code-modal {
             display: none;
         }
-        /* ==================== MODAL BUNDLE (BARU) ==================== */
+        /* ==================== MODAL BUNDLE ==================== */
         #bundle-modal {
+            display: none;
+        }
+        /* ==================== MODAL PENDING TRANSACTIONS ==================== */
+        #pending-transactions-modal {
             display: none;
         }
         /* ==================== TOMBOL FLOATING UNTUK PENDING ==================== */
@@ -820,7 +824,7 @@
             align-items: center;
         }
         .password-wrapper .form-input {
-            padding-right: 40px; /* ruang untuk ikon */
+            padding-right: 40px;
         }
         .password-toggle {
             position: absolute;
@@ -1410,7 +1414,7 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL BUNDLE (BARU) ==================== -->
+    <!-- ==================== MODAL BUNDLE ==================== -->
     <div class="modal-overlay" id="bundle-modal">
         <div class="modal-content" style="max-width:600px;">
             <div class="modal-header">
@@ -1432,9 +1436,43 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL PENDING TRANSACTIONS ==================== -->
+    <div class="modal-overlay" id="pending-transactions-modal">
+        <div class="modal-content" style="max-width:600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <svg class="icon icon-primary" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    Transaksi Pending
+                </h2>
+            </div>
+            <div class="modal-body">
+                <div id="pending-transactions-list" style="max-height:400px; overflow-y:auto;"></div>
+                <div style="margin-top:20px; display:grid;grid-template-columns:1fr;gap:10px;">
+                    <button type="button" class="form-button-secondary" onclick="closePendingTransactionsModal()">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOMBOL FLOATING UNTUK PENDING ==================== -->
+    <button id="pending-transactions-btn" class="floating-btn" onclick="openPendingTransactionsModal()" title="Transaksi Pending">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span id="pending-badge" class="pending-badge" style="display: none;">0</span>
+    </button>
+
     <!-- ==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
+
+    <!-- Muat app.js yang berisi fungsi global -->
     <script src="app.js"></script>
+
+    <!-- Script khusus untuk halaman transaksi -->
     <script>
         // ==================== VARIABEL GLOBAL KHUSUS TRANSAKSI ====================
         let cart = [];
@@ -2697,6 +2735,145 @@
             }
         }
 
+        // ==================== FUNGSI PENDING TRANSACTIONS (MODAL) ====================
+        function openPendingTransactionsModal() {
+            const modal = document.getElementById('pending-transactions-modal');
+            renderPendingTransactionsList();
+            modal.style.display = 'flex';
+        }
+
+        function closePendingTransactionsModal() {
+            document.getElementById('pending-transactions-modal').style.display = 'none';
+        }
+
+        function renderPendingTransactionsList() {
+            const container = document.getElementById('pending-transactions-list');
+            if (!container) return;
+            if (!pendingTransactions || pendingTransactions.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tidak ada transaksi pending.</div>';
+                return;
+            }
+            let html = '';
+            pendingTransactions.forEach((trans, index) => {
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                        <div style="flex:1;">
+                            <strong>${trans.pendingCode || 'Transaksi ' + trans.id}</strong><br>
+                            <span style="font-size:0.8rem;">
+                                Tanggal: ${new Date(trans.createdAt).toLocaleString()}<br>
+                                Total: ${formatRupiah(trans.total)}<br>
+                                Customer: ${trans.customerName || '-'}
+                            </span>
+                        </div>
+                        <div>
+                            <button class="action-btn edit-btn" onclick="loadPendingTransaction(${trans.id})">Muat</button>
+                            <button class="action-btn delete-btn" onclick="deletePendingTransaction(${trans.id})">Hapus</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function loadPendingTransaction(id) {
+            try {
+                showLoading();
+                const trans = pendingTransactions.find(t => t.id === id);
+                if (!trans) {
+                    showNotification('Transaksi tidak ditemukan', 'error');
+                    return;
+                }
+
+                // Kosongkan cart saat ini
+                cart = [];
+
+                // Muat item-item dari transaksi pending
+                for (let itemData of trans.cart) {
+                    const item = kasirItems?.find(i => i.id === itemData.itemId);
+                    if (!item) {
+                        showNotification(`Item ${itemData.itemName} tidak ditemukan, dilewati`, 'warning');
+                        continue;
+                    }
+
+                    let pricePerUnit = itemData.pricePerUnit;
+                    // Recalculate price jika perlu
+                    if (!itemData.unitConversion) {
+                        pricePerUnit = getPriceForQty(item, itemData.qty);
+                    }
+
+                    cart.push({
+                        item,
+                        qty: itemData.qty,
+                        unitConversion: itemData.unitConversion || null,
+                        weightGram: itemData.weightGram || 0,
+                        pricePerUnit,
+                        subtotal: itemData.qty * pricePerUnit,
+                        isBundle: itemData.isBundle || false,
+                        bundleId: itemData.bundleId,
+                        components: itemData.components
+                    });
+                }
+
+                // Muat customer jika ada
+                if (trans.customerId) {
+                    const cust = customers?.find(c => c.id === trans.customerId);
+                    if (cust) {
+                        selectedCustomer = cust;
+                        const badge = document.getElementById('customer-badge');
+                        if (badge) {
+                            badge.textContent = cust.name.charAt(0).toUpperCase();
+                            badge.style.display = 'flex';
+                        }
+                        localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify({ id: cust.id, name: cust.name }));
+                    }
+                }
+
+                renderCartPage();
+                saveCartToLocalStorage();
+
+                // Tutup modal pending dan kembali ke halaman transaksi
+                closePendingTransactionsModal();
+                document.getElementById('cart-page').style.display = 'none';
+                document.getElementById('transaksi-page').style.display = 'block';
+
+                showNotification('Transaksi pending dimuat', 'success');
+            } catch (error) {
+                console.error('Error loading pending transaction:', error);
+                showNotification('Gagal memuat transaksi: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deletePendingTransaction(id) {
+            if (!confirm('Hapus transaksi pending ini?')) return;
+            try {
+                showLoading();
+                await dbDelete(STORES.PENDING_TRANSACTIONS, id);
+                pendingTransactions = pendingTransactions.filter(t => t.id !== id);
+                renderPendingTransactionsList();
+                updatePendingBadge();
+                showNotification('Transaksi pending dihapus', 'success');
+            } catch (error) {
+                console.error('Error deleting pending transaction:', error);
+                showNotification('Gagal menghapus: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updatePendingBadge() {
+            const badge = document.getElementById('pending-badge');
+            if (!badge) return;
+            const count = pendingTransactions ? pendingTransactions.length : 0;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         // ==================== FUNGSI BUNDLE ====================
         async function openBundleModal() {
             try {
@@ -2854,6 +3031,12 @@
                 return;
             }
 
+            // Load pending transactions untuk badge
+            if (typeof loadPendingTransactions === 'function') {
+                await loadPendingTransactions();
+                updatePendingBadge();
+            }
+
             await loadCartFromLocalStorage();
 
             currentFilteredItems = kasirItems ? [...kasirItems] : [];
@@ -2866,6 +3049,14 @@
             updatePiutangButtonCart();
 
             autoReconnectPrinter();
+
+            // Cek apakah ada parameter pendingId di URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const pendingId = urlParams.get('pendingId');
+            if (pendingId) {
+                await loadPendingTransaction(parseInt(pendingId));
+            }
+
             console.log('initTransaksi selesai');
         }
 
@@ -2876,7 +3067,6 @@
                 setTimeout(waitForUser, 100);
             }
         })();
-
     </script>
 </body>
 </html>
