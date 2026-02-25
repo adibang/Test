@@ -285,14 +285,12 @@ document.addEventListener('click', function initAudioOnInteraction() {
     }
 }, { once: true });
 
-// ==================== LOADING STATE FUNCTIONS (DIHAPUS) ====================
+// ==================== LOADING STATE FUNCTIONS ====================
 function showLoading() {
-    // Tidak melakukan apa-apa karena loading overlay sudah dihapus
     console.log('showLoading dipanggil (no operation)');
 }
 
 function hideLoading() {
-    // Tidak melakukan apa-apa
     console.log('hideLoading dipanggil (no operation)');
 }
 
@@ -1696,8 +1694,6 @@ function formatRupiah(angka) {
 function openInventoryStokModal() {
     // Implementasi di index.html, jika tidak ada maka abaikan
     if (!document.getElementById('inventory-modal')) return;
-    // ... kode asli (bisa dipertahankan jika diperlukan)
-    // Untuk sementara, kita kosongkan karena sudah dipindah ke index.html
     console.log('openInventoryStokModal dipanggil (fungsi asli di index.html)');
 }
 
