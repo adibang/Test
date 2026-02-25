@@ -1432,7 +1432,6 @@
         </div>
     </div>
 
-    <!-- ==================== TOMBOL FLOATING UNTUK PENDING (TIDAK DIPAKAI DI SINI, TAPI BISA DIHAPUS) ==================== -->
     <!-- ==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
 
@@ -2571,6 +2570,28 @@
                 showNotification('Gagal menyimpan draft: ' + error.message, 'error');
             } finally {
                 hideLoading();
+            }
+        }
+
+        // ==================== FUNGSI SAVE PENDING TRANSACTION (TAMBAHAN) ====================
+        async function savePendingTransaction(transactionData) {
+            try {
+                const now = new Date().toISOString();
+                const data = { ...transactionData, createdAt: now };
+                const id = await dbAdd(STORES.PENDING_TRANSACTIONS, data);
+                data.id = id;
+                // Update global pendingTransactions jika ada
+                if (typeof pendingTransactions !== 'undefined') {
+                    pendingTransactions.push(data);
+                }
+                // Panggil fungsi dari app.js untuk memuat ulang (opsional)
+                if (typeof loadPendingTransactions === 'function') {
+                    await loadPendingTransactions();
+                }
+                return data;
+            } catch (error) {
+                console.error('Error saving pending transaction:', error);
+                throw error;
             }
         }
 
