@@ -304,10 +304,10 @@ function playErrorSound() {
     } catch (error) { console.log("Error sound failed:", error); }
 }
 
-document.addEventListener('click', function initAudioOnInteraction() {
+document.add('click', function initAudioOnInteraction() {
     if (!audioInitialized) {
         initAudioSystem();
-        document.removeEventListener('click', initAudioOnInteraction);
+        document.remove('click', initAudioOnInteraction);
     }
 }, { once: true });
 
@@ -603,11 +603,11 @@ function showLoginScreen() {
 
     if (users.length === 0) {
         let tapCount = 0;
-        overlay.addEventListener('click', function tapHandler(e) {
+        overlay.add('click', function tapHandler(e) {
             if (e.target.closest('.login-container')) return;
             tapCount++;
             if (tapCount >= 10) {
-                overlay.removeEventListener('click', tapHandler);
+                overlay.remove('click', tapHandler);
                 openCreateAdminModal();
             }
         });
@@ -1093,9 +1093,9 @@ function showSettingsModal() {
         totalSpan.textContent = total;
         totalSpan.style.color = total === 13 ? 'green' : 'red';
     }
-    flexLen.addEventListener('input', updateTotal);
-    prodLen.addEventListener('input', updateTotal);
-    weightLen.addEventListener('input', updateTotal);
+    flexLen.add('input', updateTotal);
+    prodLen.add('input', updateTotal);
+    weightLen.add('input', updateTotal);
     
     renderUserListSettings();
     document.getElementById('settings-modal').style.display = 'flex';
@@ -1664,7 +1664,7 @@ async function loadAndRenderBundles() {
         container.innerHTML = html;
 
         if (container._bundleClickListener) {
-            container.removeEventListener('click', container._bundleClickListener);
+            container.remove('click', container._bundleClickListener);
         }
         container._bundleClickListener = function(e) {
             const btn = e.target.closest('button.select-bundle-btn');
@@ -1674,7 +1674,7 @@ async function loadAndRenderBundles() {
                 addBundleToCart(bundleId);
             }
         };
-        container.addEventListener('click', container._bundleClickListener);
+        container.add('click', container._bundleClickListener);
     } catch (error) {
         console.error('Error di loadAndRenderBundles:', error);
         container.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Gagal memuat bundle: ' + error.message + '</div>';
@@ -3249,6 +3249,14 @@ function updatePendingBadge() {
     }
 }
 
+function goHome() {
+    document.getElementById('transaksi-page').style.display = 'none';
+    document.getElementById('cart-page').style.display = 'none';
+    document.getElementById('payment-page').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
+    closeDrawer();
+}
+
 // ==================== INISIALISASI APLIKASI ====================
 async function initApp() {
     try {
@@ -3339,7 +3347,7 @@ async function initApp() {
 async function retryAppLoad() { await initApp(); }
 
 // ==================== EVENT LISTENERS ====================
-document.addEventListener('DOMContentLoaded', async () => { 
+document.add('DOMContentLoaded', async () => { 
     console.log('DOM fully loaded, initializing app...'); 
     await initApp(); 
 });
@@ -3369,7 +3377,7 @@ window.onclick = function(event) {
     }
 };
 
-document.addEventListener('visibilitychange', () => { 
+document.add('visibilitychange', () => { 
     if (!document.hidden) { 
         console.log('Page became visible, refreshing data...'); 
         refreshData(); 
