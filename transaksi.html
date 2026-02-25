@@ -1665,7 +1665,7 @@
         }
 
         // ==================== FUNGSI TAMPILAN PRODUK ====================
-        function setProductViewMode(mode) {
+        window.setProductViewMode = function(mode) {
             try {
                 console.log('setProductViewMode', mode);
                 productViewMode = mode;
@@ -1683,9 +1683,11 @@
                 renderProductList();
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         function renderProductList(itemsToRender = null) {
             try {
@@ -1752,11 +1754,13 @@
                 container.innerHTML = html;
             } catch (e) {
                 console.error(e);
-                showNotification('Error saat render produk: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error saat render produk: ' + e.message, 'error');
+                }
             }
         }
 
-        function filterProductList(keyword) {
+        window.filterProductList = function(keyword) {
             try {
                 keyword = keyword.toLowerCase().trim();
                 if (!keyword) {
@@ -1780,11 +1784,13 @@
                 renderProductList(currentFilteredItems);
             } catch (e) {
                 console.error(e);
-                showNotification('Error saat filter: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error saat filter: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        function adjustQty(btn, delta, itemId) {
+        window.adjustQty = function(btn, delta, itemId) {
             try {
                 const container = btn.closest('.product-list-item, .product-card');
                 const input = container.querySelector('.qty-input');
@@ -1806,11 +1812,13 @@
                 }
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        function addToCartFromProductWithQty(itemId, element) {
+        window.addToCartFromProductWithQty = function(itemId, element) {
             try {
                 const input = element.querySelector('.qty-input');
                 let qty = 1;
@@ -1824,9 +1832,11 @@
                 }
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         // ==================== FUNGSI HARGA BERDASARKAN LEVEL ====================
         function getPriceForQty(item, qty) {
@@ -1855,7 +1865,9 @@
                 }
                 
                 if (item.stock < requiredStock) {
-                    showNotification(`Stok ${item.name} tidak cukup. Tersedia: ${item.stock}`, 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification(`Stok ${item.name} tidak cukup. Tersedia: ${item.stock}`, 'error');
+                    }
                     return;
                 }
                 
@@ -1904,12 +1916,14 @@
                 saveCartToLocalStorage();
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
         }
 
         // ==================== FUNGSI PROSES BARCODE ====================
-        function processBarcode() {
+        window.processBarcode = function() {
             try {
                 const input = document.getElementById('barcode-input');
                 const barcode = input.value.trim();
@@ -1940,7 +1954,9 @@
                 if (barcode.length === 13 && typeof barcodeConfig !== 'undefined') {
                     const flex = barcode.substr(0, barcodeConfig.flexLength);
                     if (flex !== barcodeConfig.flexValue) {
-                        showNotification('Barcode tidak dikenal (flex tidak cocok)', 'error');
+                        if (typeof showNotification === 'function') {
+                            showNotification('Barcode tidak dikenal (flex tidak cocok)', 'error');
+                        }
                         input.value = '';
                         filterProductList('');
                         return;
@@ -1959,7 +1975,9 @@
                             filterProductList('');
                             return;
                         } else {
-                            showNotification('Produk dengan kode ' + productCode + ' tidak ditemukan atau bukan produk timbangan', 'error');
+                            if (typeof showNotification === 'function') {
+                                showNotification('Produk dengan kode ' + productCode + ' tidak ditemukan atau bukan produk timbangan', 'error');
+                            }
                             input.value = '';
                             filterProductList('');
                             return;
@@ -1967,17 +1985,21 @@
                     }
                 }
 
-                showNotification('Produk tidak ditemukan', 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Produk tidak ditemukan', 'error');
+                }
                 input.value = '';
                 filterProductList('');
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         // ==================== FUNGSI KERANJANG ====================
-        function openCartPage() {
+        window.openCartPage = function() {
             try {
                 console.log('openCartPage');
                 document.getElementById('transaksi-page').style.display = 'none';
@@ -1987,19 +2009,23 @@
                 updatePiutangButtonCart();
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        function closeCartPage() {
+        window.closeCartPage = function() {
             try {
                 document.getElementById('cart-page').style.display = 'none';
                 document.getElementById('transaksi-page').style.display = 'block';
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         function renderCartPage() {
             try {
@@ -2035,14 +2061,16 @@
                     total += c.subtotal;
                 });
                 totalEl.textContent = formatRupiah(total);
-                cartCount.textContent = cart.length;
+                if (cartCount) cartCount.textContent = cart.length;
             } catch (e) {
                 console.error(e);
-                showNotification('Error saat render cart: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error saat render cart: ' + e.message, 'error');
+                }
             }
         }
 
-        function removeFromCart(index) {
+        window.removeFromCart = function(index) {
             try {
                 cart.splice(index, 1);
                 renderCartPage();
@@ -2054,9 +2082,11 @@
                 }
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         // ==================== FUNGSI PIUTANG ====================
         function updatePiutangButtonCart() {
@@ -2075,15 +2105,19 @@
             }
         }
 
-        function addOutstandingToCart() {
+        window.addOutstandingToCart = function() {
             try {
                 if (!selectedCustomer || selectedCustomer.outstanding <= 0) {
-                    showNotification('Tidak ada piutang untuk ditambahkan', 'warning');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Tidak ada piutang untuk ditambahkan', 'warning');
+                    }
                     return;
                 }
                 const existing = cart.find(c => c.isOutstanding === true);
                 if (existing) {
-                    showNotification('Piutang sudah ada di keranjang', 'info');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Piutang sudah ada di keranjang', 'info');
+                    }
                     return;
                 }
                 const outstandingItem = {
@@ -2102,18 +2136,24 @@
                 renderCartPage();
                 saveCartToLocalStorage();
                 updatePiutangButtonCart();
-                showNotification('Piutang ditambahkan ke keranjang', 'success');
+                if (typeof showNotification === 'function') {
+                    showNotification('Piutang ditambahkan ke keranjang', 'success');
+                }
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         // ==================== FUNGSI PEMBAYARAN ====================
-        function openPaymentPage() {
+        window.openPaymentPage = function() {
             try {
                 if (cart.length === 0) {
-                    showNotification('Keranjang masih kosong', 'warning');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Keranjang masih kosong', 'warning');
+                    }
                     return;
                 }
                 document.getElementById('cart-page').style.display = 'none';
@@ -2129,21 +2169,25 @@
                 updatePaymentSummary();
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        function closePaymentPage() {
+        window.closePaymentPage = function() {
             try {
                 document.getElementById('payment-page').style.display = 'none';
                 document.getElementById('cart-page').style.display = 'block';
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        function updatePaymentSummary() {
+        window.updatePaymentSummary = function() {
             try {
                 const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
                 const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
@@ -2171,11 +2215,13 @@
                 }
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        async function processPayment() {
+        window.processPayment = async function() {
             try {
                 if (cart.length === 0) return;
 
@@ -2190,7 +2236,9 @@
 
                 if (shortage > 0) {
                     if (!selectedCustomer) {
-                        showNotification('Untuk mencatat piutang, harus pilih pelanggan terlebih dahulu', 'error');
+                        if (typeof showNotification === 'function') {
+                            showNotification('Untuk mencatat piutang, harus pilih pelanggan terlebih dahulu', 'error');
+                        }
                         return;
                     }
                     pendingPayments = [
@@ -2209,11 +2257,13 @@
                 await executePayment(paidTotal, 0);
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        async function processPaymentWithPiutang() {
+        window.processPaymentWithPiutang = async function() {
             try {
                 closeConfirmPiutangModal();
                 const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
@@ -2221,13 +2271,15 @@
                 await executePayment(pendingTotalPaid, shortage);
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         async function executePayment(paidTotal, outstandingAdded) {
             try {
-                showLoading();
+                if (typeof showLoading === 'function') showLoading();
                 for (let c of cart) {
                     if (c.isOutstanding) continue;
                     if (c.isBundle) {
@@ -2261,12 +2313,16 @@
                     if (c.isOutstanding) {
                         const custId = c.customerId;
                         if (!custId) {
-                            showNotification('Item piutang tidak memiliki customerId', 'warning');
+                            if (typeof showNotification === 'function') {
+                                showNotification('Item piutang tidak memiliki customerId', 'warning');
+                            }
                             continue;
                         }
                         const cust = customers?.find(cust => cust.id === custId);
                         if (!cust) {
-                            showNotification(`Customer dengan ID ${custId} tidak ditemukan`, 'warning');
+                            if (typeof showNotification === 'function') {
+                                showNotification(`Customer dengan ID ${custId} tidak ditemukan`, 'warning');
+                            }
                             continue;
                         }
                         const paymentAmount = c.subtotal;
@@ -2274,7 +2330,9 @@
                             cust.outstanding -= paymentAmount;
                         } else {
                             cust.outstanding = 0;
-                            showNotification(`Outstanding customer ${cust.name} lebih kecil dari pembayaran, diset 0`, 'warning');
+                            if (typeof showNotification === 'function') {
+                                showNotification(`Outstanding customer ${cust.name} lebih kecil dari pembayaran, diset 0`, 'warning');
+                            }
                         }
                         cust.updatedAt = new Date().toISOString();
                         await dbPut(STORES.CUSTOMERS, cust);
@@ -2378,7 +2436,9 @@
                 if (typeof loadKasirItems === 'function') await loadKasirItems();
                 if (typeof loadCustomers === 'function') await loadCustomers();
                 renderProductList();
-                showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
+                if (typeof showNotification === 'function') {
+                    showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
+                }
                 
                 document.getElementById('print-receipt-btn').disabled = false;
                 
@@ -2390,17 +2450,19 @@
 
             } catch (error) {
                 console.error('Error processing payment:', error);
-                showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
+                }
             } finally {
-                hideLoading();
+                if (typeof hideLoading === 'function') hideLoading();
             }
         }
 
-        function closeConfirmPiutangModal() {
+        window.closeConfirmPiutangModal = function() {
             document.getElementById('confirm-piutang-modal').style.display = 'none';
             pendingPayments = [];
             pendingTotalPaid = 0;
-        }
+        };
 
         // ==================== FUNGSI PRINT VIA WEB SERIAL ====================
         function wrapText(text, maxWidth) {
@@ -2436,17 +2498,21 @@
             return lines;
         }
 
-        async function printReceipt() {
+        window.printReceipt = async function() {
             try {
                 if (!printerPort) {
-                    showNotification('Printer belum terhubung', 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Printer belum terhubung', 'error');
+                    }
                     return;
                 }
 
                 let dataToPrint = lastTransactionData;
                 if (!dataToPrint) {
                     if (cart.length === 0) {
-                        showNotification('Tidak ada data untuk dicetak', 'warning');
+                        if (typeof showNotification === 'function') {
+                            showNotification('Tidak ada data untuk dicetak', 'warning');
+                        }
                         return;
                     }
                     const total = cart.reduce((s, c) => s + c.subtotal, 0);
@@ -2535,36 +2601,48 @@
 
                 await writer.write(encoder.encode(receipt));
                 writer.releaseLock();
-                showNotification('Struk berhasil dicetak', 'success');
+                if (typeof showNotification === 'function') {
+                    showNotification('Struk berhasil dicetak', 'success');
+                }
             } catch (error) {
                 console.error('Error printing:', error);
-                showNotification('Gagal mencetak: ' + error.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Gagal mencetak: ' + error.message, 'error');
+                }
             }
-        }
+        };
 
-        async function togglePrinter() {
+        window.togglePrinter = async function() {
             try {
                 if (printerPort) {
                     await printerPort.close();
                     printerPort = null;
                     updatePrinterStatus(false);
-                    showNotification('Printer diputuskan', 'info');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Printer diputuskan', 'info');
+                    }
                 } else {
                     if (!navigator.serial) {
-                        showNotification('Web Serial API tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
+                        if (typeof showNotification === 'function') {
+                            showNotification('Web Serial API tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
+                        }
                         return;
                     }
                     const port = await navigator.serial.requestPort();
                     await port.open({ baudRate: 9600 });
                     printerPort = port;
                     updatePrinterStatus(true);
-                    showNotification('Printer terhubung', 'success');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Printer terhubung', 'success');
+                    }
                 }
             } catch (error) {
                 console.error('Error connecting printer:', error);
-                showNotification('Gagal connect printer: ' + error.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Gagal connect printer: ' + error.message, 'error');
+                }
             }
-        }
+        };
 
         function updatePrinterStatus(connected) {
             const statusLight = document.getElementById('printer-status-light');
@@ -2598,7 +2676,7 @@
         }
 
         // ==================== FUNGSI PILIH CUSTOMER ====================
-        function openSelectCustomerModal() {
+        window.openSelectCustomerModal = function() {
             try {
                 console.log('openSelectCustomerModal');
                 const modal = document.getElementById('select-customer-modal');
@@ -2606,13 +2684,15 @@
                 modal.style.display = 'flex';
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        function closeSelectCustomerModal() {
+        window.closeSelectCustomerModal = function() {
             document.getElementById('select-customer-modal').style.display = 'none';
-        }
+        };
 
         function renderCustomerListForSelect() {
             const container = document.getElementById('select-customer-list');
@@ -2635,7 +2715,7 @@
             container.innerHTML = html;
         }
 
-        function selectCustomer(customerId) {
+        window.selectCustomer = function(customerId) {
             try {
                 const customer = customers?.find(c => c.id === customerId);
                 if (customer) {
@@ -2651,36 +2731,44 @@
                             name: customer.name
                         }));
                     } catch (e) {}
-                    showNotification(`Pelanggan ${customer.name} dipilih`, 'success');
+                    if (typeof showNotification === 'function') {
+                        showNotification(`Pelanggan ${customer.name} dipilih`, 'success');
+                    }
                     updatePiutangButtonCart();
                 }
                 closeSelectCustomerModal();
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         // ==================== FUNGSI DRAFT ====================
-        function saveDraftTransaction() {
+        window.saveDraftTransaction = function() {
             try {
                 if (cart.length === 0) {
-                    showNotification('Keranjang kosong, tidak ada yang disimpan', 'warning');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Keranjang kosong, tidak ada yang disimpan', 'warning');
+                    }
                     return;
                 }
                 document.getElementById('pending-code-input').value = '';
                 document.getElementById('pending-code-modal').style.display = 'flex';
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
-        function closePendingCodeModal() {
+        window.closePendingCodeModal = function() {
             document.getElementById('pending-code-modal').style.display = 'none';
-        }
+        };
 
-        async function confirmSaveDraft() {
+        window.confirmSaveDraft = async function() {
             try {
                 const pendingCode = document.getElementById('pending-code-input').value.trim();
                 closePendingCodeModal();
@@ -2705,15 +2793,19 @@
                     total: total,
                     createdAt: new Date().toISOString()
                 };
-                showLoading();
+                if (typeof showLoading === 'function') showLoading();
                 await savePendingTransaction(transactionData);
-                showNotification('Transaksi disimpan sebagai draft', 'success');
+                if (typeof showNotification === 'function') {
+                    showNotification('Transaksi disimpan sebagai draft', 'success');
+                }
             } catch (error) {
-                showNotification('Gagal menyimpan draft: ' + error.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Gagal menyimpan draft: ' + error.message, 'error');
+                }
             } finally {
-                hideLoading();
+                if (typeof hideLoading === 'function') hideLoading();
             }
-        }
+        };
 
         // ==================== FUNGSI SAVE PENDING TRANSACTION ====================
         async function savePendingTransaction(transactionData) {
@@ -2736,15 +2828,15 @@
         }
 
         // ==================== FUNGSI PENDING TRANSACTIONS (MODAL) ====================
-        function openPendingTransactionsModal() {
+        window.openPendingTransactionsModal = function() {
             const modal = document.getElementById('pending-transactions-modal');
             renderPendingTransactionsList();
             modal.style.display = 'flex';
-        }
+        };
 
-        function closePendingTransactionsModal() {
+        window.closePendingTransactionsModal = function() {
             document.getElementById('pending-transactions-modal').style.display = 'none';
-        }
+        };
 
         function renderPendingTransactionsList() {
             const container = document.getElementById('pending-transactions-list');
@@ -2775,12 +2867,14 @@
             container.innerHTML = html;
         }
 
-        async function loadPendingTransaction(id) {
+        window.loadPendingTransaction = async function(id) {
             try {
-                showLoading();
+                if (typeof showLoading === 'function') showLoading();
                 const trans = pendingTransactions.find(t => t.id === id);
                 if (!trans) {
-                    showNotification('Transaksi tidak ditemukan', 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Transaksi tidak ditemukan', 'error');
+                    }
                     return;
                 }
 
@@ -2791,7 +2885,9 @@
                 for (let itemData of trans.cart) {
                     const item = kasirItems?.find(i => i.id === itemData.itemId);
                     if (!item) {
-                        showNotification(`Item ${itemData.itemName} tidak ditemukan, dilewati`, 'warning');
+                        if (typeof showNotification === 'function') {
+                            showNotification(`Item ${itemData.itemName} tidak ditemukan, dilewati`, 'warning');
+                        }
                         continue;
                     }
 
@@ -2836,31 +2932,39 @@
                 document.getElementById('cart-page').style.display = 'none';
                 document.getElementById('transaksi-page').style.display = 'block';
 
-                showNotification('Transaksi pending dimuat', 'success');
+                if (typeof showNotification === 'function') {
+                    showNotification('Transaksi pending dimuat', 'success');
+                }
             } catch (error) {
                 console.error('Error loading pending transaction:', error);
-                showNotification('Gagal memuat transaksi: ' + error.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Gagal memuat transaksi: ' + error.message, 'error');
+                }
             } finally {
-                hideLoading();
+                if (typeof hideLoading === 'function') hideLoading();
             }
-        }
+        };
 
-        async function deletePendingTransaction(id) {
+        window.deletePendingTransaction = async function(id) {
             if (!confirm('Hapus transaksi pending ini?')) return;
             try {
-                showLoading();
+                if (typeof showLoading === 'function') showLoading();
                 await dbDelete(STORES.PENDING_TRANSACTIONS, id);
                 pendingTransactions = pendingTransactions.filter(t => t.id !== id);
                 renderPendingTransactionsList();
                 updatePendingBadge();
-                showNotification('Transaksi pending dihapus', 'success');
+                if (typeof showNotification === 'function') {
+                    showNotification('Transaksi pending dihapus', 'success');
+                }
             } catch (error) {
                 console.error('Error deleting pending transaction:', error);
-                showNotification('Gagal menghapus: ' + error.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Gagal menghapus: ' + error.message, 'error');
+                }
             } finally {
-                hideLoading();
+                if (typeof hideLoading === 'function') hideLoading();
             }
-        }
+        };
 
         function updatePendingBadge() {
             const badge = document.getElementById('pending-badge');
@@ -2875,7 +2979,7 @@
         }
 
         // ==================== FUNGSI BUNDLE ====================
-        async function openBundleModal() {
+        window.openBundleModal = async function() {
             try {
                 console.log('openBundleModal dipanggil');
                 const modal = document.getElementById('bundle-modal');
@@ -2894,11 +2998,11 @@
                 const modal = document.getElementById('bundle-modal');
                 if (modal) modal.style.display = 'flex';
             }
-        }
+        };
 
-        function closeBundleModal() {
+        window.closeBundleModal = function() {
             document.getElementById('bundle-modal').style.display = 'none';
-        }
+        };
 
         async function loadAndRenderBundles() {
             const container = document.getElementById('bundle-list-container');
@@ -2961,12 +3065,14 @@
             }
         }
 
-        async function addBundleToCart(bundleId) {
+        window.addBundleToCart = async function(bundleId) {
             try {
                 console.log('addBundleToCart dipanggil dengan bundleId:', bundleId, 'tipe:', typeof bundleId);
                 
                 if (!bundleId) {
-                    showNotification('ID Bundle tidak valid', 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification('ID Bundle tidak valid', 'error');
+                    }
                     return;
                 }
                 
@@ -2975,25 +3081,33 @@
                 console.log('Bundle ditemukan:', bundle);
                 
                 if (!bundle) {
-                    showNotification('Bundle tidak ditemukan', 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Bundle tidak ditemukan', 'error');
+                    }
                     return;
                 }
                 
                 const existingBundleInCart = cart.find(c => c.isBundle && c.bundleId == bundleId);
                 if (existingBundleInCart) {
-                    showNotification('Bundle ini sudah ada di keranjang', 'warning');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Bundle ini sudah ada di keranjang', 'warning');
+                    }
                     return;
                 }
                 
                 const qtyBundle = 1;
                 if (!checkBundleStock(bundle, qtyBundle)) {
-                    showNotification('Stok komponen bundle tidak cukup', 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Stok komponen bundle tidak cukup', 'error');
+                    }
                     return;
                 }
                 
                 if (typeof bundle.price !== 'number' || bundle.price <= 0) {
                     console.error('Harga bundle tidak valid:', bundle.price);
-                    showNotification('Harga bundle tidak valid', 'error');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Harga bundle tidak valid', 'error');
+                    }
                     return;
                 }
                 
@@ -3015,13 +3129,17 @@
                 renderCartPage();
                 saveCartToLocalStorage();
                 closeBundleModal();
-                showNotification(`Bundle "${bundle.name}" ditambahkan`, 'success');
-                playSuccessSound();
+                if (typeof showNotification === 'function') {
+                    showNotification(`Bundle "${bundle.name}" ditambahkan`, 'success');
+                }
+                if (typeof playSuccessSound === 'function') playSuccessSound();
             } catch (e) {
                 console.error(e);
-                showNotification('Error: ' + e.message, 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + e.message, 'error');
+                }
             }
-        }
+        };
 
         // ==================== INISIALISASI HALAMAN TRANSAKSI ====================
         async function initTransaksi() {
