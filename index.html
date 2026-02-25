@@ -685,49 +685,9 @@
         #user-modal {
             display: none;
         }
-        /* ==================== TOMBOL FLOATING UNTUK PENDING ==================== */
-        .floating-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #006B54;
-            color: white;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            transition: transform 0.2s;
-        }
-        .floating-btn:hover {
-            transform: scale(1.1);
-        }
-        .floating-btn svg {
-            width: 30px;
-            height: 30px;
-        }
-        .pending-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            min-width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid white;
-            font-weight: bold;
-            padding: 0 4px;
-        }
+        /* ==================== TOMBOL FLOATING UNTUK PENDING (DIHAPUS) ==================== */
+        /* (Kode tombol floating telah dihapus) */
+        
         #notification {
             position: fixed;
             top: 20px;
@@ -770,49 +730,6 @@
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
-        }
-        /* ==================== TOMBOL FLOATING UNTUK PENDING ==================== */
-        .floating-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #006B54;
-            color: white;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            transition: transform 0.2s;
-        }
-        .floating-btn:hover {
-            transform: scale(1.1);
-        }
-        .floating-btn svg {
-            width: 30px;
-            height: 30px;
-        }
-        .pending-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            min-width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid white;
-            font-weight: bold;
-            padding: 0 4px;
         }
     </style>
 </head>
@@ -1293,14 +1210,8 @@
         </div>
     </div>
 
-    <!-- ==================== TOMBOL FLOATING UNTUK PENDING ==================== -->
-    <button id="pending-transactions-btn" class="floating-btn" onclick="openPendingTransactionsModal()" title="Transaksi Pending">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <span id="pending-badge" class="pending-badge" style="display: none;">0</span>
-    </button>
+    <!-- ==================== TOMBOL FLOATING UNTUK PENDING (DIHAPUS) ==================== -->
+    <!-- Tombol floating telah dipindahkan ke transaksi.html -->
 
     <!-- ==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
