@@ -1073,7 +1073,7 @@ function showSettingsModal() {
         </div>
 
         <div style="margin-top:20px;">
-            <button class="form-button-primary" style="width:100%;" onclick="window.open('admin-panel.html', '_blank')">
+            <button class="form-button-primary" style="width:100%;" onclick="window.location.href='admin-panel.html'">
                 <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
                 Admin Panel
             </button>
