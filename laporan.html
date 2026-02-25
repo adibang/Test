@@ -53,33 +53,10 @@
             gap: 8px;
             color: #006B54;
         }
-        .header-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .header-actions button {
-            background: #FFFFFF;
-            color: #006B54;
-            padding: 8px 12px;
-            border-radius: 15px;
-            border: 1px solid #006B54;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-        .header-actions button:hover {
-            background: #006B54;
-            color: white;
-        }
         #user-name-display {
-            margin-right: 10px;
             font-weight: 600;
             color: #006B54;
+            margin-right: 10px;
         }
         .logout-btn {
             background: none;
@@ -433,8 +410,9 @@
         <div style="flex:1;"></div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <span id="user-name-display" style="font-weight:600; color:#006B54;"></span>
-            <a href="index.html" style="display: flex; align-items: center; color: #006B54; text-decoration: none;" target="_self">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <!-- Ikon Home dengan class logout-btn agar tampil sama dengan tombol logout -->
+            <a href="index.html" class="logout-btn" target="_self">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                     <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
