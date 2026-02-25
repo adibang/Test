@@ -3003,12 +3003,14 @@ async function deletePendingTransaction(id) {
 
 // ==================== FUNGSI LAPORAN PENJUALAN ====================
 function openLaporanPage() {
-    window.open('laporan.html', '_blank');
+    // Ubah dari window.open menjadi navigasi di tab yang sama
+    window.location.href = 'laporan.html';
 }
 
 // ==================== FUNGSI PEMBELIAN ====================
 function openPembelianPage() {
-    window.open('pembelian.html', '_blank');
+    // Ubah dari window.open menjadi navigasi di tab yang sama
+    window.location.href = 'pembelian.html';
 }
 
 // ==================== FUNGSI GENERATE NOMOR PEMBELIAN ====================
