@@ -1688,7 +1688,7 @@ async function loadAndRenderBundles() {
         );
 
         if (activeBundles.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:20px;">Tidak ada bundle aktif. <br><button class="form-button-primary" onclick="window.open(\'admin-panel.html\', \'_blank\')">Buat Bundle</button></div>';
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Tidak ada bundle aktif. <br><button class="form-button-primary" onclick="window.location.href='master-data.html'">Buat Bundle</button></div>';
             return;
         }
 
