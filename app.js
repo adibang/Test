@@ -61,6 +61,24 @@ const icons = {
     download: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 };
 
+// ==================== FUNGSI NOTIFIKASI ====================
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    if (!notification) {
+        alert(message); // fallback jika elemen tidak ada
+        return;
+    }
+    notification.textContent = message;
+    notification.style.backgroundColor = 
+        type === 'error' ? '#dc3545' : 
+        type === 'success' ? '#28a745' : 
+        type === 'warning' ? '#ffc107' : '#006B54';
+    notification.style.display = 'block';
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
 // ==================== FUNGSI CEK STOK BUNDLE ====================
 function checkBundleStock(bundle, qty) {
     if (!bundle.components || !Array.isArray(bundle.components)) return false;
