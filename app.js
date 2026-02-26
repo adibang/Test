@@ -84,7 +84,7 @@ function showNotification(message, type = 'info') {
 function checkBundleStock(bundle, qty) {
     if (!bundle.components || !Array.isArray(bundle.components)) return false;
     for (let comp of bundle.components) {
-        const item = kasirItems.find(i => i.id == comp.itemId); // gunakan ==
+        const item = kasirItems.find(i => i.id === comp.itemId);
         if (!item) return false;
         let needed = comp.qty * qty;
         if (comp.unitConversionId) {
@@ -3365,26 +3365,6 @@ function goHome() {
     document.getElementById('payment-page').style.display = 'none';
     document.querySelector('.main-content').style.display = 'block';
     closeDrawer();
-}
-
-// ==================== FUNGSI UNTUK TOMBOL KEMBALI DAN BATAL DI HALAMAN PEMBAYARAN ====================
-function closePaymentPage() {
-    console.log('closePaymentPage dipanggil');
-    const paymentPage = document.getElementById('payment-page');
-    const cartPage = document.getElementById('cart-page');
-    
-    if (paymentPage) {
-        paymentPage.style.display = 'none';
-    } else {
-        console.warn('Elemen payment-page tidak ditemukan');
-    }
-    
-    if (cartPage) {
-        cartPage.style.display = 'block';
-    } else {
-        console.warn('Elemen cart-page tidak ditemukan, mengarahkan ke beranda');
-        goHome(); // fallback jika halaman cart tidak ada
-    }
 }
 
 // ==================== INISIALISASI APLIKASI ====================
