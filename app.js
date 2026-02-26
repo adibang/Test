@@ -66,7 +66,7 @@ function showNotification(message, type = 'info') {
     console.log(`[${type}] ${message}`);
     const notification = document.getElementById('notification');
     if (!notification) {
-        alert(message); // fallback
+        alert(message);
         return;
     }
     notification.textContent = message;
@@ -2178,8 +2178,8 @@ function updatePaymentSummary() {
     }
 }
 
-async function processPayment() {
-    console.log('processPayment dipanggil');
+async function processPayment(autoPrint = false) {
+    console.log('processPayment dipanggil, autoPrint:', autoPrint);
     if (cart.length === 0) {
         showNotification('Keranjang kosong', 'warning');
         return;
@@ -2218,14 +2218,39 @@ async function processPayment() {
     }
 
     await executePayment(paidTotal, 0);
+    await handlePostPayment(autoPrint);
 }
 
-async function processPaymentWithPiutang() {
-    console.log('processPaymentWithPiutang dipanggil');
+async function processPaymentWithPiutang(autoPrint = false) {
+    console.log('processPaymentWithPiutang dipanggil, autoPrint:', autoPrint);
     closeConfirmPiutangModal();
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
     const shortage = total - pendingTotalPaid;
     await executePayment(pendingTotalPaid, shortage);
+    await handlePostPayment(autoPrint);
+}
+
+async function handlePostPayment(autoPrint) {
+    // Fungsi ini dipanggil setelah executePayment sukses
+    if (autoPrint) {
+        // Jika autoPrint true, cetak langsung tanpa konfirmasi
+        if (printerPort && lastTransactionData) {
+            await doPrint(lastTransactionData);
+        } else {
+            showNotification('Printer tidak terhubung atau data tidak ada', 'warning');
+        }
+        openTransaksiPage();
+    } else {
+        // Tawarkan cetak
+        if (confirm('Transaksi berhasil. Cetak struk sekarang?')) {
+            if (printerPort) {
+                await doPrint(lastTransactionData);
+            } else {
+                showNotification('Printer tidak terhubung. Anda dapat mencetak nanti.', 'warning');
+            }
+        }
+        openTransaksiPage();
+    }
 }
 
 async function executePayment(paidTotal, outstandingAdded) {
@@ -2397,10 +2422,6 @@ async function executePayment(paidTotal, outstandingAdded) {
         showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded > 0 ? ' (dengan piutang)' : ''}`, 'success');
         console.log('Transaksi selesai');
 
-        // Beralih ke halaman cart (kosong) atau tetap di payment? Lebih baik ke cart
-        document.getElementById('payment-page').style.display = 'none';
-        document.getElementById('cart-page').style.display = 'block';
-
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
@@ -2536,21 +2557,19 @@ async function printReceipt() {
         return;
     }
 
-    if (lastTransactionData) {
-        await doPrint(lastTransactionData);
-        return;
-    }
-
+    // Jika ada item di keranjang, tawarkan untuk memproses pembayaran terlebih dahulu
     if (cart.length > 0) {
         const confirmMsg = "Transaksi belum diproses. Apakah Anda ingin memproses pembayaran sekarang?";
         if (confirm(confirmMsg)) {
-            await processPayment();
-            if (lastTransactionData) {
-                await doPrint(lastTransactionData);
-            } else {
-                showNotification("Pembayaran gagal atau dibatalkan.", "error");
-            }
+            await processPayment(true); // autoPrint = true
         }
+        // Jika user memilih tidak, tetap di halaman payment (tidak ada perubahan)
+        return;
+    }
+
+    // Jika keranjang kosong, cetak struk terakhir jika ada
+    if (lastTransactionData) {
+        await doPrint(lastTransactionData);
         return;
     }
 
