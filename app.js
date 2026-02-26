@@ -3367,6 +3367,26 @@ function goHome() {
     closeDrawer();
 }
 
+// ==================== FUNGSI UNTUK TOMBOL KEMBALI DAN BATAL DI HALAMAN PEMBAYARAN ====================
+function closePaymentPage() {
+    console.log('closePaymentPage dipanggil');
+    const paymentPage = document.getElementById('payment-page');
+    const cartPage = document.getElementById('cart-page');
+    
+    if (paymentPage) {
+        paymentPage.style.display = 'none';
+    } else {
+        console.warn('Elemen payment-page tidak ditemukan');
+    }
+    
+    if (cartPage) {
+        cartPage.style.display = 'block';
+    } else {
+        console.warn('Elemen cart-page tidak ditemukan, mengarahkan ke beranda');
+        goHome(); // fallback jika halaman cart tidak ada
+    }
+}
+
 // ==================== INISIALISASI APLIKASI ====================
 async function initApp() {
     try {
