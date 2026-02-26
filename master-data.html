@@ -1521,9 +1521,13 @@
             renderConversionsList();
         }
 
-        function showItemListPage() {
+        // Fungsi untuk menghasilkan baris tabel item (digunakan untuk pencarian)
+        function generateItemRows(items) {
+            if (!items || items.length === 0) {
+                return '<tr><td colspan="5" style="text-align:center;">Tidak ada item</td></tr>';
+            }
             let rows = '';
-            kasirItems.forEach(item => {
+            items.forEach(item => {
                 rows += `
                     <tr>
                         <td>${item.name}</td>
@@ -1547,12 +1551,19 @@
                     </tr>
                 `;
             });
+            return rows;
+        }
+
+        function showItemListPage() {
             const html = `
                 <div class="content-card">
                     <h2 class="page-title">
                         Daftar Item
                         <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addItem')">+ Tambah Item</button>
                     </h2>
+                    <div class="search-box" style="margin-bottom:15px;">
+                        <input type="text" id="item-list-search" class="form-input" placeholder="Cari nama, kode, barcode...">
+                    </div>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
@@ -1564,14 +1575,35 @@
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                ${rows || '<tr><td colspan="5" style="text-align:center;">Belum ada item</td></tr>'}
+                            <tbody id="item-table-body">
+                                ${generateItemRows(kasirItems)}
                             </tbody>
                         </table>
                     </div>
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
+
+            // Event listener untuk pencarian item
+            const searchInput = document.getElementById('item-list-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    const filtered = kasirItems.filter(item => {
+                        if (item.name.toLowerCase().includes(query)) return true;
+                        if (item.code.toLowerCase().includes(query)) return true;
+                        if (item.barcode && item.barcode.toLowerCase().includes(query)) return true;
+                        // Cek barcode satuan
+                        if (item.unitConversions && item.unitConversions.length) {
+                            for (let conv of item.unitConversions) {
+                                if (conv.barcode && conv.barcode.toLowerCase().includes(query)) return true;
+                            }
+                        }
+                        return false;
+                    });
+                    document.getElementById('item-table-body').innerHTML = generateItemRows(filtered);
+                });
+            }
         }
 
         async function deleteItemPrompt(id) {
@@ -1633,9 +1665,13 @@
             document.getElementById('kasir-category-name').value = cat.name;
         }
 
-        function showCategoryListPage() {
+        // Fungsi untuk menghasilkan baris tabel kategori
+        function generateCategoryRows(categories) {
+            if (!categories || categories.length === 0) {
+                return '<tr><td colspan="2" style="text-align:center;">Belum ada kategori</td></tr>';
+            }
             let rows = '';
-            kasirCategories.forEach(cat => {
+            categories.forEach(cat => {
                 rows += `
                     <tr>
                         <td>${cat.name}</td>
@@ -1656,21 +1692,39 @@
                     </tr>
                 `;
             });
+            return rows;
+        }
+
+        function showCategoryListPage() {
             const html = `
                 <div class="content-card">
                     <h2 class="page-title">
                         Daftar Kategori
                         <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addCategory')">+ Tambah Kategori</button>
                     </h2>
+                    <div class="search-box" style="margin-bottom:15px;">
+                        <input type="text" id="category-list-search" class="form-input" placeholder="Cari nama kategori...">
+                    </div>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
-                            <tbody>${rows || '<tr><td colspan="2" style="text-align:center;">Belum ada kategori</td></tr>'}</tbody>
+                            <tbody id="category-table-body">
+                                ${generateCategoryRows(kasirCategories)}
+                            </tbody>
                         </table>
                     </div>
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
+
+            const searchInput = document.getElementById('category-list-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    const filtered = kasirCategories.filter(cat => cat.name.toLowerCase().includes(query));
+                    document.getElementById('category-table-body').innerHTML = generateCategoryRows(filtered);
+                });
+            }
         }
 
         async function deleteCategoryPrompt(id) {
