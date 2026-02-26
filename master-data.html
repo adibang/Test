@@ -1129,8 +1129,8 @@
                 navigateTo('listBundles');
                 return;
             }
-            editingBundleId = id;
             showAddBundlePage();
+            editingBundleId = id;
             document.getElementById('bundle-name').value = bundle.name;
             document.getElementById('bundle-description').value = bundle.description || '';
             document.getElementById('bundle-price').value = bundle.price;
@@ -1264,11 +1264,9 @@
         }
 
         async function saveBundleFromPage() {
-            // Pastikan editingBundleId dalam bentuk number jika ada
             if (editingBundleId) {
                 editingBundleId = Number(editingBundleId);
             }
-
             const name = document.getElementById('bundle-name').value.trim();
             const price = parseFloat(document.getElementById('bundle-price').value);
             if (!name || !price) {
@@ -1317,7 +1315,6 @@
             const container = document.getElementById('item-list-container');
             if (!container) return;
 
-            // Filter item berdasarkan query
             const filtered = kasirItems.filter(item => {
                 if (!query) return true;
                 const q = query.toLowerCase();
@@ -1339,7 +1336,6 @@
 
             let html = '';
             filtered.forEach(item => {
-                // Format barcode untuk ditampilkan
                 let barcodeText = item.barcode ? item.barcode : '-';
                 if (item.unitConversions && item.unitConversions.length > 0) {
                     const count = item.unitConversions.length;
@@ -1492,8 +1488,8 @@
                 navigateTo('listItems');
                 return;
             }
-            editingItemId = itemId;
             showAddItemPage();
+            editingItemId = itemId;
             document.getElementById('kasir-item-name').value = item.name;
             document.getElementById('kasir-item-code').value = item.code;
             document.getElementById('kasir-item-barcode').value = item.barcode || item.code;
@@ -1628,8 +1624,8 @@
         function showEditCategoryPage(id) {
             const cat = kasirCategories.find(c => c.id === id);
             if (!cat) { navigateTo('listCategories'); return; }
-            editingCategoryId = id;
             showAddCategoryPage();
+            editingCategoryId = id;
             document.getElementById('kasir-category-name').value = cat.name;
         }
 
@@ -1724,8 +1720,8 @@
         function showEditUnitPage(id) {
             const unit = kasirSatuan.find(u => u.id === id);
             if (!unit) { navigateTo('listUnits'); return; }
-            editingUnitId = id;
             showAddUnitPage();
+            editingUnitId = id;
             document.getElementById('satuan-name').value = unit.name;
         }
 
@@ -1939,11 +1935,9 @@
 
         // ==================== FUNGSI PENYIMPANAN (DIPERBAIKI) ====================
         async function saveKasirItemFromPage() {
-            // Pastikan editingItemId dalam bentuk number jika ada
             if (editingItemId) {
                 editingItemId = Number(editingItemId);
             }
-
             const name = document.getElementById('kasir-item-name').value.trim();
             const code = document.getElementById('kasir-item-code').value.trim();
             const barcode = document.getElementById('kasir-item-barcode').value.trim() || code;
@@ -2013,11 +2007,9 @@
         }
 
         async function saveCategoryFromPage() {
-            // Pastikan editingCategoryId dalam bentuk number jika ada
             if (editingCategoryId) {
                 editingCategoryId = Number(editingCategoryId);
             }
-
             const name = document.getElementById('kasir-category-name').value.trim();
             if (!name) { showNotification('Nama kategori harus diisi', 'error'); return; }
             const now = new Date().toISOString();
@@ -2046,11 +2038,9 @@
         }
 
         async function saveUnitFromPage() {
-            // Pastikan editingUnitId dalam bentuk number jika ada
             if (editingUnitId) {
                 editingUnitId = Number(editingUnitId);
             }
-
             const name = document.getElementById('satuan-name').value.trim();
             if (!name) { showNotification('Nama satuan harus diisi', 'error'); return; }
             const now = new Date().toISOString();
