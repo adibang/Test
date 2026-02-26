@@ -2212,6 +2212,7 @@ async function processPaymentWithPiutang() {
 async function executePayment(paidTotal, outstandingAdded) {
     try {
         showLoading();
+        // Kurangi stok untuk setiap item di keranjang
         for (let c of cart) {
             if (c.isOutstanding) continue;
             if (c.isBundle) {
@@ -2241,6 +2242,7 @@ async function executePayment(paidTotal, outstandingAdded) {
             }
         }
 
+        // Update piutang jika ada item outstanding di keranjang
         for (let c of cart) {
             if (c.isOutstanding) {
                 const custId = c.customerId;
@@ -2274,6 +2276,7 @@ async function executePayment(paidTotal, outstandingAdded) {
             }
         }
 
+        // Tambahkan piutang baru jika outstandingAdded > 0
         if (outstandingAdded > 0 && selectedCustomer) {
             const cust = customers.find(c => c.id === selectedCustomer.id);
             if (cust) {
@@ -2284,6 +2287,7 @@ async function executePayment(paidTotal, outstandingAdded) {
             }
         }
 
+        // Kumpulkan data pembayaran
         const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
         const card = parseFloat(document.getElementById('payment-card').value) || 0;
         const transfer = parseFloat(document.getElementById('payment-transfer').value) || 0;
@@ -2344,6 +2348,7 @@ async function executePayment(paidTotal, outstandingAdded) {
 
         await dbAdd(STORES.SALES, salesData);
 
+        // Simpan data transaksi terakhir untuk keperluan cetak struk
         lastTransactionData = {
             items: cart.map(c => ({
                 name: c.item.name,
@@ -2362,18 +2367,18 @@ async function executePayment(paidTotal, outstandingAdded) {
         await loadKasirItems();
         await loadCustomers();
         renderProductList();
-        showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
-        
-        // Aktifkan tombol print
-        document.getElementById('print-receipt-btn').disabled = false;
-        
+        showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded > 0 ? ' (dengan piutang)' : ''}`, 'success');
+
         // Kosongkan keranjang dan reset halaman pembayaran
         cart = [];
         selectedCustomer = null;
         document.getElementById('customer-badge').style.display = 'none';
         renderCartPage();
         saveCartToLocalStorage();
-        resetPaymentPage(); // reset input pembayaran
+        resetPaymentPage(); // ← Reset input, tapi jangan nonaktifkan tombol print!
+
+        // AKTIFKAN TOMBOL PRINT karena data transaksi terakhir masih ada
+        document.getElementById('print-receipt-btn').disabled = false;
 
         await updateDashboard();
     } catch (error) {
@@ -2381,7 +2386,7 @@ async function executePayment(paidTotal, outstandingAdded) {
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
     } finally {
         hideLoading();
-        setPaymentInputsDisabled(false); // pastikan input diaktifkan kembali
+        setPaymentInputsDisabled(false); // Aktifkan kembali input pembayaran jika ada error
     }
 }
 
