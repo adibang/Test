@@ -63,9 +63,10 @@ const icons = {
 
 // ==================== FUNGSI NOTIFIKASI ====================
 function showNotification(message, type = 'info') {
+    console.log(`[${type}] ${message}`);
     const notification = document.getElementById('notification');
     if (!notification) {
-        alert(message); // fallback jika elemen tidak ada
+        alert(message); // fallback
         return;
     }
     notification.textContent = message;
@@ -2111,7 +2112,7 @@ function addOutstandingToCart() {
     showNotification('Piutang ditambahkan ke keranjang', 'success');
 }
 
-// ==================== FUNGSI PEMBAYARAN ====================
+// ==================== FUNGSI PEMBAYARAN (REVISI) ====================
 function resetPaymentPage() {
     document.getElementById('payment-cash').value = '0';
     document.getElementById('payment-card').value = '0';
@@ -2132,6 +2133,7 @@ function setPaymentInputsDisabled(disabled) {
 }
 
 function openPaymentPage() {
+    console.log('openPaymentPage dipanggil, cart length:', cart.length);
     if (cart.length === 0) {
         showNotification('Keranjang masih kosong', 'warning');
         return;
@@ -2142,24 +2144,22 @@ function openPaymentPage() {
     resetPaymentPage();
 
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
-    document.getElementById('payment-total').textContent = formatRupiah(total);
+    const paymentTotalEl = document.getElementById('payment-total');
+    if (paymentTotalEl) paymentTotalEl.textContent = formatRupiah(total);
     updatePaymentSummary();
 }
 
-function closePaymentPage() {
-    document.getElementById('payment-page').style.display = 'none';
-    document.getElementById('cart-page').style.display = 'block';
-}
-
 function updatePaymentSummary() {
+    console.log('updatePaymentSummary dipanggil');
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
-    const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
-    const card = parseFloat(document.getElementById('payment-card').value) || 0;
-    const transfer = parseFloat(document.getElementById('payment-transfer').value) || 0;
-    const ewallet = parseFloat(document.getElementById('payment-ewallet').value) || 0;
+    const cash = parseFloat(document.getElementById('payment-cash')?.value) || 0;
+    const card = parseFloat(document.getElementById('payment-card')?.value) || 0;
+    const transfer = parseFloat(document.getElementById('payment-transfer')?.value) || 0;
+    const ewallet = parseFloat(document.getElementById('payment-ewallet')?.value) || 0;
     const paidTotal = cash + card + transfer + ewallet;
 
-    document.getElementById('payment-grand-total').textContent = formatRupiah(paidTotal);
+    const grandTotalEl = document.getElementById('payment-grand-total');
+    if (grandTotalEl) grandTotalEl.textContent = formatRupiah(paidTotal);
 
     const change = paidTotal - total;
     const changeEl = document.getElementById('change-amount');
@@ -2167,28 +2167,34 @@ function updatePaymentSummary() {
     const shortageAmount = document.getElementById('shortage-amount');
 
     if (change >= 0) {
-        changeEl.textContent = `Kembalian: ${formatRupiah(change)}`;
-        changeEl.style.color = '#006B54';
-        shortageEl.style.display = 'none';
+        if (changeEl) changeEl.textContent = `Kembalian: ${formatRupiah(change)}`;
+        if (changeEl) changeEl.style.color = '#006B54';
+        if (shortageEl) shortageEl.style.display = 'none';
     } else {
-        changeEl.textContent = `Kembalian: Rp 0`;
-        changeEl.style.color = 'red';
-        shortageEl.style.display = 'block';
-        shortageAmount.textContent = formatRupiah(total - paidTotal);
+        if (changeEl) changeEl.textContent = `Kembalian: Rp 0`;
+        if (changeEl) changeEl.style.color = 'red';
+        if (shortageEl) shortageEl.style.display = 'block';
+        if (shortageAmount) shortageAmount.textContent = formatRupiah(total - paidTotal);
     }
 }
 
 async function processPayment() {
-    if (cart.length === 0) return;
+    console.log('processPayment dipanggil');
+    if (cart.length === 0) {
+        showNotification('Keranjang kosong', 'warning');
+        return;
+    }
 
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
-    const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
-    const card = parseFloat(document.getElementById('payment-card').value) || 0;
-    const transfer = parseFloat(document.getElementById('payment-transfer').value) || 0;
-    const ewallet = parseFloat(document.getElementById('payment-ewallet').value) || 0;
+    const cash = parseFloat(document.getElementById('payment-cash')?.value) || 0;
+    const card = parseFloat(document.getElementById('payment-card')?.value) || 0;
+    const transfer = parseFloat(document.getElementById('payment-transfer')?.value) || 0;
+    const ewallet = parseFloat(document.getElementById('payment-ewallet')?.value) || 0;
 
     const paidTotal = cash + card + transfer + ewallet;
     const shortage = total - paidTotal;
+
+    console.log('Total:', total, 'Dibayar:', paidTotal, 'Kurang:', shortage);
 
     if (shortage > 0) {
         if (!selectedCustomer) {
@@ -2205,7 +2211,8 @@ async function processPayment() {
 
         setPaymentInputsDisabled(true);
 
-        document.getElementById('shortage-confirm').textContent = formatRupiah(shortage);
+        const shortageConfirm = document.getElementById('shortage-confirm');
+        if (shortageConfirm) shortageConfirm.textContent = formatRupiah(shortage);
         document.getElementById('confirm-piutang-modal').style.display = 'flex';
         return;
     }
@@ -2214,19 +2221,19 @@ async function processPayment() {
 }
 
 async function processPaymentWithPiutang() {
+    console.log('processPaymentWithPiutang dipanggil');
     closeConfirmPiutangModal();
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
     const shortage = total - pendingTotalPaid;
     await executePayment(pendingTotalPaid, shortage);
 }
 
-// ==================== FUNGSI EKSEKUSI PEMBAYARAN (SATU VERSION) ====================
 async function executePayment(paidTotal, outstandingAdded) {
+    console.log('executePayment dimulai, paidTotal:', paidTotal, 'outstandingAdded:', outstandingAdded);
     try {
-        showLoading();
-        console.log('Memulai proses pembayaran...');
-        
-        // Kurangi stok untuk setiap item di keranjang
+        showLoading('Memproses pembayaran...');
+
+        // 1. Kurangi stok
         for (let c of cart) {
             if (c.isOutstanding) continue;
             if (c.isBundle) {
@@ -2258,7 +2265,7 @@ async function executePayment(paidTotal, outstandingAdded) {
             }
         }
 
-        // Update piutang jika ada item outstanding di keranjang
+        // 2. Update piutang dari item outstanding di keranjang
         for (let c of cart) {
             if (c.isOutstanding) {
                 const custId = c.customerId;
@@ -2284,16 +2291,11 @@ async function executePayment(paidTotal, outstandingAdded) {
 
                 if (selectedCustomer && selectedCustomer.id === custId) {
                     selectedCustomer.outstanding = cust.outstanding;
-                    const badge = document.getElementById('customer-badge');
-                    if (badge) {
-                        badge.textContent = selectedCustomer.name.charAt(0).toUpperCase();
-                        badge.style.display = 'flex';
-                    }
                 }
             }
         }
 
-        // Tambahkan piutang baru jika outstandingAdded > 0
+        // 3. Tambah piutang baru jika ada outstandingAdded
         if (outstandingAdded > 0 && selectedCustomer) {
             const cust = customers.find(c => c.id === selectedCustomer.id);
             if (cust) {
@@ -2305,15 +2307,15 @@ async function executePayment(paidTotal, outstandingAdded) {
             }
         }
 
-        // Kumpulkan data pembayaran (gunakan pendingPayments jika ada, atau dari form)
+        // 4. Kumpulkan data pembayaran
         let payments = [];
         if (pendingPayments.length > 0) {
             payments = pendingPayments;
         } else {
-            const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
-            const card = parseFloat(document.getElementById('payment-card').value) || 0;
-            const transfer = parseFloat(document.getElementById('payment-transfer').value) || 0;
-            const ewallet = parseFloat(document.getElementById('payment-ewallet').value) || 0;
+            const cash = parseFloat(document.getElementById('payment-cash')?.value) || 0;
+            const card = parseFloat(document.getElementById('payment-card')?.value) || 0;
+            const transfer = parseFloat(document.getElementById('payment-transfer')?.value) || 0;
+            const ewallet = parseFloat(document.getElementById('payment-ewallet')?.value) || 0;
             if (cash > 0) payments.push({ method: 'cash', amount: cash });
             if (card > 0) payments.push({ method: 'card', amount: card });
             if (transfer > 0) payments.push({ method: 'transfer', amount: transfer });
@@ -2329,29 +2331,19 @@ async function executePayment(paidTotal, outstandingAdded) {
         const total = subtotal - discount + tax;
         const change = paidTotal - total;
 
-        const items = cart.map(c => {
-            let costPerUnit = 0;
-            if (!c.isOutstanding) {
-                if (c.unitConversion && c.unitConversion.basePrice !== undefined) {
-                    costPerUnit = c.unitConversion.basePrice;
-                } else if (c.item.hargaDasar !== undefined) {
-                    costPerUnit = c.item.hargaDasar;
-                }
-            }
-            return {
-                itemId: c.item.id,
-                itemName: c.item.name,
-                qty: c.qty,
-                pricePerUnit: c.pricePerUnit,
-                subtotal: c.subtotal,
-                unitConversion: c.unitConversion ? { id: c.unitConversion.unit, name: kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name } : null,
-                weightGram: c.weightGram || 0,
-                cost: costPerUnit,
-                isBundle: c.isBundle || false,
-                bundleId: c.bundleId || null,
-                components: c.isBundle ? c.components : null
-            };
-        });
+        const items = cart.map(c => ({
+            itemId: c.item.id,
+            itemName: c.item.name,
+            qty: c.qty,
+            pricePerUnit: c.pricePerUnit,
+            subtotal: c.subtotal,
+            unitConversion: c.unitConversion ? { id: c.unitConversion.unit, name: kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name } : null,
+            weightGram: c.weightGram || 0,
+            cost: (c.unitConversion?.basePrice || c.item.hargaDasar || 0),
+            isBundle: c.isBundle || false,
+            bundleId: c.bundleId || null,
+            components: c.isBundle ? c.components : null
+        }));
 
         const salesData = {
             transactionNumber,
@@ -2372,7 +2364,7 @@ async function executePayment(paidTotal, outstandingAdded) {
         await dbAdd(STORES.SALES, salesData);
         console.log('Data penjualan disimpan');
 
-        // Simpan data transaksi terakhir untuk keperluan cetak struk
+        // Simpan data struk
         lastTransactionData = {
             items: cart.map(c => ({
                 name: c.item.name,
@@ -2387,31 +2379,27 @@ async function executePayment(paidTotal, outstandingAdded) {
             date: new Date().toLocaleString('id-ID'),
             transactionNumber: transactionNumber
         };
-        console.log('Data struk terakhir disimpan');
 
         // Kosongkan keranjang
         cart = [];
         selectedCustomer = null;
         document.getElementById('customer-badge').style.display = 'none';
-        
-        // Perbarui tampilan keranjang
-        renderCartPage();
-        
-        // Simpan ke localStorage (array kosong)
-        saveCartToLocalStorage();
-        console.log('Cart setelah dikosongkan, panjang:', cart.length);
 
-        // Reset halaman pembayaran
+        renderCartPage();
+        saveCartToLocalStorage();
         resetPaymentPage();
 
-        // Perbarui data lainnya
         await loadKasirItems();
         await loadCustomers();
         renderProductList();
         await updateDashboard();
-        
+
         showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded > 0 ? ' (dengan piutang)' : ''}`, 'success');
-        console.log('Transaksi selesai, tombol print tetap aktif');
+        console.log('Transaksi selesai');
+
+        // Beralih ke halaman cart (kosong) atau tetap di payment? Lebih baik ke cart
+        document.getElementById('payment-page').style.display = 'none';
+        document.getElementById('cart-page').style.display = 'block';
 
     } catch (error) {
         console.error('Error processing payment:', error);
@@ -2465,7 +2453,6 @@ function wrapText(text, maxWidth) {
     return lines;
 }
 
-// Fungsi cetak yang sebenarnya
 async function doPrint(dataToPrint) {
     const { paperWidth, header, footer, showDateTime, showTransactionNumber, showCashier } = receiptConfig;
     try {
@@ -2549,30 +2536,24 @@ async function printReceipt() {
         return;
     }
 
-    // Jika ada data transaksi terakhir, cetak langsung
     if (lastTransactionData) {
         await doPrint(lastTransactionData);
         return;
     }
 
-    // Jika tidak ada data terakhir tapi keranjang masih berisi (belum dibayar)
     if (cart.length > 0) {
         const confirmMsg = "Transaksi belum diproses. Apakah Anda ingin memproses pembayaran sekarang?";
         if (confirm(confirmMsg)) {
-            // Proses pembayaran terlebih dahulu
             await processPayment();
-            // Setelah proses, jika berhasil, lastTransactionData akan terisi
             if (lastTransactionData) {
                 await doPrint(lastTransactionData);
             } else {
                 showNotification("Pembayaran gagal atau dibatalkan.", "error");
             }
         }
-        // Jika tidak, tidak melakukan apa-apa, kembali ke halaman pembayaran
         return;
     }
 
-    // Tidak ada data sama sekali
     showNotification("Tidak ada data untuk dicetak.", "warning");
 }
 
