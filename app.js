@@ -84,7 +84,7 @@ function showNotification(message, type = 'info') {
 function checkBundleStock(bundle, qty) {
     if (!bundle.components || !Array.isArray(bundle.components)) return false;
     for (let comp of bundle.components) {
-        const item = kasirItems.find(i => i.id === comp.itemId);
+        const item = kasirItems.find(i => i.id == comp.itemId); // gunakan ==
         if (!item) return false;
         let needed = comp.qty * qty;
         if (comp.unitConversionId) {
