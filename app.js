@@ -304,7 +304,6 @@ function playErrorSound() {
     } catch (error) { console.log("Error sound failed:", error); }
 }
 
-// Perbaikan: ganti document.add menjadi addEventListener
 document.addEventListener('click', function initAudioOnInteraction() {
     if (!audioInitialized) {
         initAudioSystem();
@@ -312,7 +311,7 @@ document.addEventListener('click', function initAudioOnInteraction() {
     }
 }, { once: true });
 
-// ==================== LOADING STATE FUNCTIONS (REVISED) ====================
+// ==================== LOADING STATE FUNCTIONS ====================
 let loadingNotificationTimeout = null;
 
 function showLoading(message = 'Memproses...') {
@@ -749,7 +748,6 @@ async function saveFirstAdmin() {
 }
 
 // ==================== FUNGSI SETTINGS MODAL ====================
-// Perbaikan: ganti document.add menjadi addEventListener dan perbaiki export/import
 async function exportData(skipAuth = false) {
     if (!skipAuth && (!currentUser || !currentUser.permissions || !currentUser.permissions.includes('menu-sistem'))) {
         showNotification('Anda tidak memiliki akses ke menu ini', 'error');
@@ -2096,7 +2094,7 @@ function addOutstandingToCart() {
 }
 
 // ==================== FUNGSI PEMBAYARAN ====================
-// Tambahkan fungsi untuk mereset halaman pembayaran
+// Fungsi untuk mereset halaman pembayaran (tanpa menonaktifkan tombol print)
 function resetPaymentPage() {
     document.getElementById('payment-cash').value = '0';
     document.getElementById('payment-card').value = '0';
@@ -2106,7 +2104,7 @@ function resetPaymentPage() {
     document.getElementById('payment-grand-total').textContent = 'Rp 0';
     document.getElementById('change-amount').textContent = 'Kembalian: Rp 0';
     document.getElementById('shortage-display').style.display = 'none';
-    document.getElementById('print-receipt-btn').disabled = true;
+    // Jangan ubah status disabled tombol print di sini
 }
 
 // Fungsi untuk menonaktifkan input pembayaran saat modal piutang muncul
@@ -2375,7 +2373,7 @@ async function executePayment(paidTotal, outstandingAdded) {
         document.getElementById('customer-badge').style.display = 'none';
         renderCartPage();
         saveCartToLocalStorage();
-        resetPaymentPage(); // ← Reset input, tapi jangan nonaktifkan tombol print!
+        resetPaymentPage(); // Reset input, tetapi tidak menonaktifkan tombol print
 
         // AKTIFKAN TOMBOL PRINT karena data transaksi terakhir masih ada
         document.getElementById('print-receipt-btn').disabled = false;
