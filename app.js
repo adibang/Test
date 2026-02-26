@@ -2362,6 +2362,94 @@ async function executePayment(paidTotal, outstandingAdded) {
         const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
         const card = parseFloat(document.getElementById('payment-card').value) || 0;
         const transfer = parseFloat(document.getElementById('payment-transfer').value) || 0;
+async function executePayment(paidTotal, outstandingAdded) {
+    try {
+        showLoading();
+        console.log('Memulai proses pembayaran...');
+        
+        // Kurangi stok untuk setiap item di keranjang
+        for (let c of cart) {
+            if (c.isOutstanding) continue;
+            if (c.isBundle) {
+                for (let comp of c.components) {
+                    const item = kasirItems.find(i => i.id === comp.itemId);
+                    if (!item) continue;
+                    let needed = comp.qty * c.qty;
+                    if (comp.unitConversionId) {
+                        const conv = item.unitConversions?.find(u => u.id == comp.unitConversionId);
+                        if (conv) needed *= conv.value;
+                    }
+                    item.stock -= needed;
+                    item.updatedAt = new Date().toISOString();
+                    await dbPut(STORES.KASIR_ITEMS, item);
+                    console.log(`Stok ${item.name} berkurang ${needed}`);
+                }
+            } else {
+                let requiredStock;
+                if (c.weightGram > 0) requiredStock = c.qty;
+                else if (c.unitConversion) requiredStock = c.qty * c.unitConversion.value;
+                else requiredStock = c.qty;
+                const item = kasirItems.find(i => i.id === c.item.id);
+                if (item) {
+                    item.stock -= requiredStock;
+                    item.updatedAt = new Date().toISOString();
+                    await dbPut(STORES.KASIR_ITEMS, item);
+                    console.log(`Stok ${item.name} berkurang ${requiredStock}`);
+                }
+            }
+        }
+
+        // Update piutang jika ada item outstanding di keranjang
+        for (let c of cart) {
+            if (c.isOutstanding) {
+                const custId = c.customerId;
+                if (!custId) {
+                    showNotification('Item piutang tidak memiliki customerId', 'warning');
+                    continue;
+                }
+                const cust = customers.find(cust => cust.id === custId);
+                if (!cust) {
+                    showNotification(`Customer dengan ID ${custId} tidak ditemukan`, 'warning');
+                    continue;
+                }
+                const paymentAmount = c.subtotal;
+                if (cust.outstanding >= paymentAmount) {
+                    cust.outstanding -= paymentAmount;
+                } else {
+                    cust.outstanding = 0;
+                    showNotification(`Outstanding customer ${cust.name} lebih kecil dari pembayaran, diset 0`, 'warning');
+                }
+                cust.updatedAt = new Date().toISOString();
+                await dbPut(STORES.CUSTOMERS, cust);
+                console.log(`Piutang customer ${cust.name} berkurang ${paymentAmount}`);
+
+                if (selectedCustomer && selectedCustomer.id === custId) {
+                    selectedCustomer.outstanding = cust.outstanding;
+                    const badge = document.getElementById('customer-badge');
+                    if (badge) {
+                        badge.textContent = selectedCustomer.name.charAt(0).toUpperCase();
+                        badge.style.display = 'flex';
+                    }
+                }
+            }
+        }
+
+        // Tambahkan piutang baru jika outstandingAdded > 0
+        if (outstandingAdded > 0 && selectedCustomer) {
+            const cust = customers.find(c => c.id === selectedCustomer.id);
+            if (cust) {
+                cust.outstanding = (cust.outstanding || 0) + outstandingAdded;
+                cust.updatedAt = new Date().toISOString();
+                await dbPut(STORES.CUSTOMERS, cust);
+                selectedCustomer.outstanding = cust.outstanding;
+                console.log(`Piutang baru ${outstandingAdded} ditambahkan ke ${cust.name}`);
+            }
+        }
+
+        // Kumpulkan data pembayaran
+        const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
+        const card = parseFloat(document.getElementById('payment-card').value) || 0;
+        const transfer = parseFloat(document.getElementById('payment-transfer').value) || 0;
         const ewallet = parseFloat(document.getElementById('payment-ewallet').value) || 0;
         const payments = [];
         if (cash > 0) payments.push({ method: 'cash', amount: cash });
@@ -2438,11 +2526,6 @@ async function executePayment(paidTotal, outstandingAdded) {
         };
         console.log('Data struk terakhir disimpan');
 
-        await loadKasirItems();
-        await loadCustomers();
-        renderProductList();
-        showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded > 0 ? ' (dengan piutang)' : ''}`, 'success');
-
         // Kosongkan keranjang
         cart = [];
         selectedCustomer = null;
@@ -2453,14 +2536,20 @@ async function executePayment(paidTotal, outstandingAdded) {
         
         // Simpan ke localStorage (array kosong)
         saveCartToLocalStorage();
-        console.log('Cart setelah dikosongkan:', cart.length);
-        
+        console.log('Cart setelah dikosongkan, panjang:', cart.length);
+
         // Reset halaman pembayaran
         resetPaymentPage();
 
-        // Update dashboard
+        // Perbarui data lainnya
+        await loadKasirItems();
+        await loadCustomers();
+        renderProductList();
         await updateDashboard();
-        console.log('Dashboard diperbarui');
+        
+        showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded > 0 ? ' (dengan piutang)' : ''}`, 'success');
+        console.log('Transaksi selesai, tombol print tetap aktif');
+
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
@@ -2469,7 +2558,6 @@ async function executePayment(paidTotal, outstandingAdded) {
         setPaymentInputsDisabled(false);
     }
 }
-
 function closeConfirmPiutangModal() {
     document.getElementById('confirm-piutang-modal').style.display = 'none';
     setPaymentInputsDisabled(false);
