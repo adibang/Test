@@ -2148,6 +2148,23 @@ function openPaymentPage() {
     if (paymentTotalEl) paymentTotalEl.textContent = formatRupiah(total);
     updatePaymentSummary();
 }
+function closePaymentPage() {
+    // Sembunyikan halaman pembayaran
+    document.getElementById('payment-page').style.display = 'none';
+    // Tampilkan halaman keranjang
+    document.getElementById('cart-page').style.display = 'block';
+    // Tutup modal konfirmasi piutang jika masih terbuka
+    document.getElementById('confirm-piutang-modal').style.display = 'none';
+    // Reset semua input pembayaran ke 0
+    resetPaymentPage();
+    // Aktifkan kembali input jika sebelumnya dinonaktifkan (misal saat proses piutang)
+    setPaymentInputsDisabled(false);
+    // Kosongkan data pending pembayaran
+    pendingPayments = [];
+    pendingTotalPaid = 0;
+    // Render ulang keranjang untuk memastikan tampilan terbaru
+    renderCartPage();
+}
 
 function updatePaymentSummary() {
     console.log('updatePaymentSummary dipanggil');
