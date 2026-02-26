@@ -1257,7 +1257,11 @@
                 const qty = parseFloat(row.querySelector('.component-qty').value);
                 const unitConversionId = row.querySelector('.component-unit').value;
                 if (itemId && qty > 0) {
-                    components.push({ itemId: parseInt(itemId), qty, unitConversionId: unitConversionId || null });
+                    components.push({ 
+                        itemId: parseInt(itemId), 
+                        qty, 
+                        unitConversionId: unitConversionId ? parseInt(unitConversionId) : null 
+                    });
                 }
             });
             return components;
