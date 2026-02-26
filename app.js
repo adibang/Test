@@ -2335,6 +2335,141 @@ async function executePayment(paidTotal, outstandingAdded) {
             subtotal,
             discount,
             tax,
+async function executePayment(paidTotal, outstandingAdded) {
+    try {
+        showLoading();
+        console.log('Memulai proses pembayaran...');
+        
+        // Kurangi stok untuk setiap item di keranjang
+        for (let c of cart) {
+            if (c.isOutstanding) continue;
+            if (c.isBundle) {
+                for (let comp of c.components) {
+                    const item = kasirItems.find(i => i.id === comp.itemId);
+                    if (!item) continue;
+                    let needed = comp.qty * c.qty;
+                    if (comp.unitConversionId) {
+                        const conv = item.unitConversions?.find(u => u.id == comp.unitConversionId);
+                        if (conv) needed *= conv.value;
+                    }
+                    item.stock -= needed;
+                    item.updatedAt = new Date().toISOString();
+                    await dbPut(STORES.KASIR_ITEMS, item);
+                    console.log(`Stok ${item.name} berkurang ${needed}`);
+                }
+            } else {
+                let requiredStock;
+                if (c.weightGram > 0) requiredStock = c.qty;
+                else if (c.unitConversion) requiredStock = c.qty * c.unitConversion.value;
+                else requiredStock = c.qty;
+                const item = kasirItems.find(i => i.id === c.item.id);
+                if (item) {
+                    item.stock -= requiredStock;
+                    item.updatedAt = new Date().toISOString();
+                    await dbPut(STORES.KASIR_ITEMS, item);
+                    console.log(`Stok ${item.name} berkurang ${requiredStock}`);
+                }
+            }
+        }
+
+        // Update piutang jika ada item outstanding di keranjang
+        for (let c of cart) {
+            if (c.isOutstanding) {
+                const custId = c.customerId;
+                if (!custId) {
+                    showNotification('Item piutang tidak memiliki customerId', 'warning');
+                    continue;
+                }
+                const cust = customers.find(cust => cust.id === custId);
+                if (!cust) {
+                    showNotification(`Customer dengan ID ${custId} tidak ditemukan`, 'warning');
+                    continue;
+                }
+                const paymentAmount = c.subtotal;
+                if (cust.outstanding >= paymentAmount) {
+                    cust.outstanding -= paymentAmount;
+                } else {
+                    cust.outstanding = 0;
+                    showNotification(`Outstanding customer ${cust.name} lebih kecil dari pembayaran, diset 0`, 'warning');
+                }
+                cust.updatedAt = new Date().toISOString();
+                await dbPut(STORES.CUSTOMERS, cust);
+                console.log(`Piutang customer ${cust.name} berkurang ${paymentAmount}`);
+
+                if (selectedCustomer && selectedCustomer.id === custId) {
+                    selectedCustomer.outstanding = cust.outstanding;
+                    const badge = document.getElementById('customer-badge');
+                    if (badge) {
+                        badge.textContent = selectedCustomer.name.charAt(0).toUpperCase();
+                        badge.style.display = 'flex';
+                    }
+                }
+            }
+        }
+
+        // Tambahkan piutang baru jika outstandingAdded > 0
+        if (outstandingAdded > 0 && selectedCustomer) {
+            const cust = customers.find(c => c.id === selectedCustomer.id);
+            if (cust) {
+                cust.outstanding = (cust.outstanding || 0) + outstandingAdded;
+                cust.updatedAt = new Date().toISOString();
+                await dbPut(STORES.CUSTOMERS, cust);
+                selectedCustomer.outstanding = cust.outstanding;
+                console.log(`Piutang baru ${outstandingAdded} ditambahkan ke ${cust.name}`);
+            }
+        }
+
+        // Kumpulkan data pembayaran
+        const cash = parseFloat(document.getElementById('payment-cash').value) || 0;
+        const card = parseFloat(document.getElementById('payment-card').value) || 0;
+        const transfer = parseFloat(document.getElementById('payment-transfer').value) || 0;
+        const ewallet = parseFloat(document.getElementById('payment-ewallet').value) || 0;
+        const payments = [];
+        if (cash > 0) payments.push({ method: 'cash', amount: cash });
+        if (card > 0) payments.push({ method: 'card', amount: card });
+        if (transfer > 0) payments.push({ method: 'transfer', amount: transfer });
+        if (ewallet > 0) payments.push({ method: 'ewallet', amount: ewallet });
+
+        const transactionNumber = await generateTransactionNumber();
+        console.log('Nomor transaksi:', transactionNumber);
+
+        const subtotal = cart.reduce((sum, c) => sum + c.subtotal, 0);
+        const discount = 0;
+        const tax = 0;
+        const total = subtotal - discount + tax;
+        const change = paidTotal - total;
+
+        const items = cart.map(c => {
+            let costPerUnit = 0;
+            if (!c.isOutstanding) {
+                if (c.unitConversion && c.unitConversion.basePrice !== undefined) {
+                    costPerUnit = c.unitConversion.basePrice;
+                } else if (c.item.hargaDasar !== undefined) {
+                    costPerUnit = c.item.hargaDasar;
+                }
+            }
+            return {
+                itemId: c.item.id,
+                itemName: c.item.name,
+                qty: c.qty,
+                pricePerUnit: c.pricePerUnit,
+                subtotal: c.subtotal,
+                unitConversion: c.unitConversion ? { id: c.unitConversion.unit, name: kasirSatuan.find(s => s.id == c.unitConversion.unit)?.name } : null,
+                weightGram: c.weightGram || 0,
+                cost: costPerUnit,
+                isBundle: c.isBundle || false,
+                bundleId: c.bundleId || null,
+                components: c.isBundle ? c.components : null
+            };
+        });
+
+        const salesData = {
+            transactionNumber,
+            date: new Date().toISOString(),
+            items,
+            subtotal,
+            discount,
+            tax,
             total,
             payments,
             paidTotal,
@@ -2345,6 +2480,7 @@ async function executePayment(paidTotal, outstandingAdded) {
         };
 
         await dbAdd(STORES.SALES, salesData);
+        console.log('Data penjualan disimpan');
 
         // Simpan data transaksi terakhir untuk keperluan cetak struk
         lastTransactionData = {
@@ -2361,6 +2497,7 @@ async function executePayment(paidTotal, outstandingAdded) {
             date: new Date().toLocaleString('id-ID'),
             transactionNumber: transactionNumber
         };
+        console.log('Data struk terakhir disimpan');
 
         await loadKasirItems();
         await loadCustomers();
@@ -2375,10 +2512,17 @@ async function executePayment(paidTotal, outstandingAdded) {
         saveCartToLocalStorage();
         resetPaymentPage(); // Reset input, tetapi tidak menonaktifkan tombol print
 
-        // AKTIFKAN TOMBOL PRINT karena data transaksi terakhir masih ada
-        document.getElementById('print-receipt-btn').disabled = false;
+        // AKTIFKAN TOMBOL PRINT
+        const printBtn = document.getElementById('print-receipt-btn');
+        if (printBtn) {
+            printBtn.disabled = false;
+            console.log('Tombol print diaktifkan');
+        } else {
+            console.error('Tombol print tidak ditemukan!');
+        }
 
         await updateDashboard();
+        console.log('Dashboard diperbarui');
     } catch (error) {
         console.error('Error processing payment:', error);
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
