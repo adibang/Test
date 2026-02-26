@@ -2096,6 +2096,28 @@ function addOutstandingToCart() {
 }
 
 // ==================== FUNGSI PEMBAYARAN ====================
+// Tambahkan fungsi untuk mereset halaman pembayaran
+function resetPaymentPage() {
+    document.getElementById('payment-cash').value = '0';
+    document.getElementById('payment-card').value = '0';
+    document.getElementById('payment-transfer').value = '0';
+    document.getElementById('payment-ewallet').value = '0';
+    document.getElementById('payment-total').textContent = 'Rp 0';
+    document.getElementById('payment-grand-total').textContent = 'Rp 0';
+    document.getElementById('change-amount').textContent = 'Kembalian: Rp 0';
+    document.getElementById('shortage-display').style.display = 'none';
+    document.getElementById('print-receipt-btn').disabled = true;
+}
+
+// Fungsi untuk menonaktifkan input pembayaran saat modal piutang muncul
+function setPaymentInputsDisabled(disabled) {
+    const inputs = ['payment-cash', 'payment-card', 'payment-transfer', 'payment-ewallet'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = disabled;
+    });
+}
+
 function openPaymentPage() {
     if (cart.length === 0) {
         showNotification('Keranjang masih kosong', 'warning');
@@ -2104,10 +2126,8 @@ function openPaymentPage() {
     document.getElementById('cart-page').style.display = 'none';
     document.getElementById('payment-page').style.display = 'block';
 
-    document.getElementById('payment-cash').value = '0';
-    document.getElementById('payment-card').value = '0';
-    document.getElementById('payment-transfer').value = '0';
-    document.getElementById('payment-ewallet').value = '0';
+    // Reset input sebelum ditampilkan
+    resetPaymentPage();
 
     const total = cart.reduce((sum, c) => sum + c.subtotal, 0);
     document.getElementById('payment-total').textContent = formatRupiah(total);
@@ -2163,6 +2183,7 @@ async function processPayment() {
             showNotification('Untuk mencatat piutang, harus pilih pelanggan terlebih dahulu', 'error');
             return;
         }
+        // Simpan data pembayaran parsial dan nonaktifkan input
         pendingPayments = [
             { method: 'cash', amount: cash },
             { method: 'card', amount: card },
@@ -2170,6 +2191,8 @@ async function processPayment() {
             { method: 'ewallet', amount: ewallet }
         ].filter(p => p.amount > 0);
         pendingTotalPaid = paidTotal;
+
+        setPaymentInputsDisabled(true); // nonaktifkan input
 
         document.getElementById('shortage-confirm').textContent = formatRupiah(shortage);
         document.getElementById('confirm-piutang-modal').style.display = 'flex';
@@ -2341,13 +2364,16 @@ async function executePayment(paidTotal, outstandingAdded) {
         renderProductList();
         showNotification(`Pembayaran berhasil (${payments.map(p => p.method).join(', ')})${outstandingAdded>0 ? ' (dengan piutang)' : ''}`, 'success');
         
+        // Aktifkan tombol print
         document.getElementById('print-receipt-btn').disabled = false;
         
+        // Kosongkan keranjang dan reset halaman pembayaran
         cart = [];
         selectedCustomer = null;
         document.getElementById('customer-badge').style.display = 'none';
         renderCartPage();
         saveCartToLocalStorage();
+        resetPaymentPage(); // reset input pembayaran
 
         await updateDashboard();
     } catch (error) {
@@ -2355,11 +2381,13 @@ async function executePayment(paidTotal, outstandingAdded) {
         showNotification('Gagal memproses pembayaran: ' + error.message, 'error');
     } finally {
         hideLoading();
+        setPaymentInputsDisabled(false); // pastikan input diaktifkan kembali
     }
 }
 
 function closeConfirmPiutangModal() {
     document.getElementById('confirm-piutang-modal').style.display = 'none';
+    setPaymentInputsDisabled(false); // aktifkan kembali input
     pendingPayments = [];
     pendingTotalPaid = 0;
 }
@@ -2406,6 +2434,7 @@ async function printReceipt() {
 
     let dataToPrint = lastTransactionData;
     if (!dataToPrint) {
+        // Jika tidak ada data transaksi terakhir, gunakan cart (misal untuk draft)
         if (cart.length === 0) {
             showNotification('Tidak ada data untuk dicetak', 'warning');
             return;
@@ -3407,7 +3436,9 @@ window.onclick = function(event) {
         else if (event.target.id === 'list-supplier-modal') closeListSupplierModal?.();
         else if (event.target.id === 'select-customer-modal') closeSelectCustomerModal();
         else if (event.target.id === 'pending-transactions-modal') closePendingTransactionsModal();
-        else if (event.target.id === 'confirm-piutang-modal') closeConfirmPiutangModal();
+        else if (event.target.id === 'confirm-piutang-modal') {
+            closeConfirmPiutangModal();
+        }
         else if (event.target.id === 'pending-code-modal') closePendingCodeModal();
         else if (event.target.id === 'create-admin-modal') closeCreateAdminModal();
         else if (event.target.id === 'user-modal') closeUserModal();
